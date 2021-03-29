@@ -33,7 +33,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
-use ff::Field;
+use ff::{Field, PrimeField};
 use group::{CurveAffine, CurveProjective, EncodedPoint};
 use hex_fmt::HexFmt;
 use log::debug;
@@ -54,6 +54,13 @@ pub use crate::into_fr::IntoFr;
 mod util;
 use util::sha3_256;
 
+use blst::BLST_ERROR;
+use blst::min_pk::{
+    SecretKey as BlstSecretKey,
+    PublicKey as BlstPublicKey,
+    Signature as BlstSignature
+};
+
 #[cfg(feature = "use-insecure-test-only-mock-crypto")]
 mod mock;
 
@@ -73,6 +80,9 @@ pub const PK_SIZE: usize = 48;
 /// The size of a signature's representation in bytes.
 #[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
 pub const SIG_SIZE: usize = 96;
+
+/// The domain separator tag
+pub const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 /// A public key.
 #[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
@@ -113,7 +123,14 @@ impl PublicKey {
     ///
     /// This is equivalent to `verify_g2(sig, hash_g2(msg))`.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
-        self.verify_g2(sig, hash_g2(msg))
+        // TC
+        //self.verify_g2(sig, hash_g2(msg))
+        // BLST
+        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes()).unwrap();
+        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes()).unwrap();
+        blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false) == BLST_ERROR::BLST_SUCCESS
+        // DISABLED
+        //true
     }
 
     /// Encrypts the message using the OS random number generator.
@@ -175,7 +192,14 @@ impl PublicKeyShare {
     ///
     /// This is equivalent to `verify_g2(sig, hash_g2(msg))`.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {
-        self.verify_g2(sig, hash_g2(msg))
+        // TC
+        //self.verify_g2(sig, hash_g2(msg))
+        // BLST
+        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes()).unwrap();
+        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes()).unwrap();
+        blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false) == BLST_ERROR::BLST_SUCCESS
+        // DISABLED
+        //true
     }
 
     /// Returns `true` if the decryption share matches the ciphertext.
@@ -377,7 +401,30 @@ impl SecretKey {
     ///
     /// This is equivalent to `sign_g2(hash_g2(msg))`.
     pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
-        self.sign_g2(hash_g2(msg))
+        // TC
+        //self.sign_g2(hash_g2(msg))
+        // BLST
+        let blst_sk = BlstSecretKey::from_bytes(&self.to_bytes()).unwrap();
+        let blst_sig = blst_sk.sign(msg.as_ref(), DST, &[]);
+        Signature::from_bytes(blst_sig.to_bytes()).unwrap()
+        // DISABLED
+        //Signature::from_bytes([
+        //    174, 110, 104, 53, 218, 40, 126, 73, 178, 216, 213, 13, 22, 20,
+        //    166, 46, 201, 163, 42, 74, 181, 235, 176, 22, 48, 117, 85, 234,
+        //    236, 215, 64, 46, 166, 100, 98, 63, 112, 27, 79, 224, 189, 80,
+        //    214, 39, 45, 233, 94, 141, 1, 14, 227, 20, 128, 126, 235, 99, 222,
+        //    6, 89, 192, 186, 12, 237, 209, 190, 36, 2, 126, 48, 168, 57, 240,
+        //    25, 169, 238, 190, 77, 132, 88, 41, 192, 45, 221, 113, 162, 17,
+        //    127, 230, 122, 254, 54, 247, 58, 169, 160, 151
+        //]).unwrap()
+    }
+
+    /// Converts the secret key to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::<u8>::new();
+        self.0.into_repr().0.iter().for_each(|n| bytes.extend(&n.to_le_bytes()));
+        bytes.reverse();
+        bytes
     }
 
     /// Returns the decrypted text, or `None`, if the ciphertext isn't valid.
@@ -1078,5 +1125,43 @@ mod tests {
         let mut rng = ChaChaRng::from_seed(seed);
         let sk4: SecretKey = rng.sample(Standard);
         assert_eq!(sk3, sk4);
+    }
+
+    #[test]
+    fn test_interoperability() {
+        // This test only pases if fn sign and fn verify are using the BLST code
+        // https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249-L260
+        let skbytes = [
+            74,53,59,227,218,192,145,160,167,230,64,98,3,114,245,225,226,228,
+            64,23,23,193,231,156,172,111,251,168,246,144,86,4
+        ];
+        let pkbytes = [
+            133,105,95,203,192,108,196,196,201,69,31,77,206,33,203,248,222,62,
+            90,19,191,72,244,76,219,177,142,32,56,186,123,139,177,99,45,121,17,
+            239,30,46,8,116,155,221,191,22,83,82
+        ];
+        let msgbytes = [7,8,9];
+        let sigbytes = [
+            184,250,166,214,163,136,28,159,219,173,128,59,23,13,112,202,92,191,
+            30,107,165,165,134,38,45,243,104,199,90,205,29,31,250,58,182,238,
+            33,199,31,132,68,148,101,152,120,245,235,35,12,149,141,213,118,176,
+            139,133,100,170,210,238,9,146,232,90,30,86,95,41,156,213,58,40,93,
+            231,41,147,127,112,220,23,106,31,1,67,33,41,187,43,148,211,213,3,
+            31,128,101,161
+        ];
+        // no SecretKey::from_bytes method, so use bincode which requires
+        // little endian bytes.
+        let mut leskbytes = skbytes.clone();
+        leskbytes.reverse();
+        let sk: SecretKey = bincode::deserialize(&leskbytes).unwrap();
+        let pk = sk.public_key();
+        // secret key gives same public key
+        assert_eq!(pkbytes, pk.to_bytes());
+        // signature matches test vector
+        let sig = sk.sign(&msgbytes);
+        assert_eq!(sigbytes, sig.to_bytes());
+        // signature can be verified
+        let is_valid = pk.verify(&sig, msgbytes);
+        assert_eq!(is_valid, true);
     }
 }
