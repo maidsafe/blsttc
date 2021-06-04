@@ -422,6 +422,8 @@ impl SecretKey {
     /// Converts the secret key to big endian bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::<u8>::new();
+        // iterating 4 u64s which are in order suiting little endian bytes
+        // and must be reversed to get big endian bytes
         self.0.into_repr().0.iter().for_each(|n| bytes.extend(&n.to_le_bytes()));
         bytes.reverse();
         bytes
@@ -1163,5 +1165,17 @@ mod tests {
         // signature can be verified
         let is_valid = pk.verify(&sig, msgbytes);
         assert_eq!(is_valid, true);
+    }
+
+    #[test]
+    fn test_sk_to_bytes() {
+        use crate::serde_impl::SerdeSecret;
+        let sk = SecretKey::random();
+        // bincode is little endian, so must reverse to get big endian
+        let mut bincode_bytes = bincode::serialize(&SerdeSecret(&sk)).unwrap();
+        bincode_bytes.reverse();
+        // sk.to_bytes() is big endian
+        let sk_be_bytes = sk.to_bytes();
+        assert_eq!(bincode_bytes, sk_be_bytes);
     }
 }
