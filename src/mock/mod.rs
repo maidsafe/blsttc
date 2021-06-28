@@ -6,7 +6,7 @@
 //! smaller than 2^31), but should not produce accidental collisions at an unacceptable rate.
 //!
 //! As a result, all "cryptographic" operations can be carried out much faster. This module is
-//! intended to be used during unit-tests of applications that build on top of `threshold_crypto`;
+//! intended to be used during unit-tests of applications that build on top of `blsttc`;
 //! enabling this in production code of any application will immediately break its cryptographic
 //! security.
 

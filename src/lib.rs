@@ -633,7 +633,7 @@ impl PublicKeySet {
     /// # extern crate rand;
     /// #
     /// # use std::collections::BTreeMap;
-    /// # use threshold_crypto::SecretKeySet;
+    /// # use blsttc::SecretKeySet;
     /// #
     /// let sk_set = SecretKeySet::random(3, &mut rand::thread_rng());
     /// let sk_shares: Vec<_> = (0..6).map(|i| sk_set.secret_key_share(i)).collect();

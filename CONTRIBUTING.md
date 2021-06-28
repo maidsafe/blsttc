@@ -4,7 +4,7 @@ Thank your for contributing to this project! We welcome collaborators and
 expect users to follow our [code of conduct](CODE_OF_CONDUCT.md) when
 submitting code or comments.
 
-1. [Fork the repo](https://github.com/poanetwork/threshold_crypto/fork).
+1. [Fork the repo](https://github.com/maidsafe/blsttc/fork).
 2. Create your feature branch (`git checkout -b my-new-feature`).
 3. Write tests that cover your work.
 4. Run Rustfmt, Clippy, and all tests to ensure CI rules are satisfied.
@@ -34,7 +34,7 @@ submitting code or comments.
 
 ### Issues
 
-Creating and discussing [Issues](https://github.com/poanetwork/threshold_crypto/issues)
+Creating and discussing [Issues](https://github.com/maidsafe/blsttc/issues)
 provides significant value to the project. If you find a bug you can report it
 in an Issue.
 
