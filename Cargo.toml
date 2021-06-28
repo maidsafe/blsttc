@@ -1,17 +1,16 @@
 [package]
 name = "blsttc"
-# REMINDER: Update version in `README.md` when incrementing:
-version = "0.4.1"
+version = "1.0.1"
 authors = [
-    "Vladimir Komendantskiy <komendantsky@gmail.com>",
-    "Andreas Fackler <AndreasFackler@gmx.de>",
-    "Peter van Nostrand <jnz@riseup.net>",
-    "Andrew Gross <andogro@gmail.com>",
-    "Nick Sanders <nsan1129@gmail.com>",
-    "Marc Brinkmann <git@marcbrinkmann.de>",
+  "Vladimir Komendantskiy <komendantsky@gmail.com>",
+  "Andreas Fackler <AndreasFackler@gmx.de>",
+  "Peter van Nostrand <jnz@riseup.net>",
+  "Andrew Gross <andogro@gmail.com>",
+  "Nick Sanders <nsan1129@gmail.com>",
+  "Marc Brinkmann <git@marcbrinkmann.de>"
 ]
-categories = ["cryptography"]
-keywords = ["pairing", "threshold"]
+categories = [ "cryptography" ]
+keywords = [ "pairing", "threshold" ]
 license = "MIT/Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/maidsafe/blsttc"
@@ -28,14 +27,27 @@ log = "0.4.8"
 pairing = "0.16.0"
 rand = "0.7.3"
 rand_chacha = "0.2.2"
-serde = { version = "1.0.104", features = ["derive"] }
 thiserror = "1.0.22"
-tiny-keccak = { version = "2.0.1", features = ["sha3"] }
 zeroize = "1.1.0"
 
-# optional
-bincode = { version = "1.2.1", optional = true }
-codec = { package = "parity-scale-codec", version = "1.2.0", default-features = false, features = ["derive"], optional = true }
+  [dependencies.serde]
+  version = "1.0.104"
+  features = [ "derive" ]
+
+  [dependencies.tiny-keccak]
+  version = "2.0.1"
+  features = [ "sha3" ]
+
+  [dependencies.bincode]
+  version = "1.2.1"
+  optional = true
+
+  [dependencies.codec]
+  package = "parity-scale-codec"
+  version = "1.2.0"
+  default-features = false
+  features = [ "derive" ]
+  optional = true
 
 [dev-dependencies]
 bincode = "1.2.1"
@@ -47,5 +59,5 @@ name = "bench"
 harness = false
 
 [features]
-use-insecure-test-only-mock-crypto = []
-codec-support = ["codec", "bincode"]
+use-insecure-test-only-mock-crypto = [ ]
+codec-support = [ "codec", "bincode" ]
