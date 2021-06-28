@@ -54,12 +54,10 @@ pub use crate::into_fr::IntoFr;
 mod util;
 use util::sha3_256;
 
-use blst::BLST_ERROR;
 use blst::min_pk::{
-    SecretKey as BlstSecretKey,
-    PublicKey as BlstPublicKey,
-    Signature as BlstSignature
+    PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature,
 };
+use blst::BLST_ERROR;
 
 #[cfg(feature = "use-insecure-test-only-mock-crypto")]
 mod mock;
@@ -163,7 +161,7 @@ impl PublicKey {
     }
 
     /// Returns a byte string representation of the public key.
-    pub fn to_bytes(&self) -> [u8; PK_SIZE] {
+    pub fn to_bytes(self) -> [u8; PK_SIZE] {
         let mut bytes = [0u8; PK_SIZE];
         bytes.copy_from_slice(self.0.into_affine().into_compressed().as_ref());
         bytes
@@ -215,7 +213,7 @@ impl PublicKeyShare {
     }
 
     /// Returns a byte string representation of the public key share.
-    pub fn to_bytes(&self) -> [u8; PK_SIZE] {
+    pub fn to_bytes(self) -> [u8; PK_SIZE] {
         self.0.to_bytes()
     }
 }
@@ -424,7 +422,11 @@ impl SecretKey {
         let mut bytes = Vec::<u8>::new();
         // iterating 4 u64s which are in order suiting little endian bytes
         // and must be reversed to get big endian bytes
-        self.0.into_repr().0.iter().for_each(|n| bytes.extend(&n.to_le_bytes()));
+        self.0
+            .into_repr()
+            .0
+            .iter()
+            .for_each(|n| bytes.extend(&n.to_le_bytes()));
         bytes.reverse();
         bytes
     }
@@ -1134,22 +1136,22 @@ mod tests {
         // This test only pases if fn sign and fn verify are using the BLST code
         // https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249-L260
         let skbytes = [
-            74,53,59,227,218,192,145,160,167,230,64,98,3,114,245,225,226,228,
-            64,23,23,193,231,156,172,111,251,168,246,144,86,4
+            74, 53, 59, 227, 218, 192, 145, 160, 167, 230, 64, 98, 3, 114, 245, 225, 226, 228, 64,
+            23, 23, 193, 231, 156, 172, 111, 251, 168, 246, 144, 86, 4,
         ];
         let pkbytes = [
-            133,105,95,203,192,108,196,196,201,69,31,77,206,33,203,248,222,62,
-            90,19,191,72,244,76,219,177,142,32,56,186,123,139,177,99,45,121,17,
-            239,30,46,8,116,155,221,191,22,83,82
+            133, 105, 95, 203, 192, 108, 196, 196, 201, 69, 31, 77, 206, 33, 203, 248, 222, 62, 90,
+            19, 191, 72, 244, 76, 219, 177, 142, 32, 56, 186, 123, 139, 177, 99, 45, 121, 17, 239,
+            30, 46, 8, 116, 155, 221, 191, 22, 83, 82,
         ];
-        let msgbytes = [7,8,9];
+        let msgbytes = [7, 8, 9];
         let sigbytes = [
-            184,250,166,214,163,136,28,159,219,173,128,59,23,13,112,202,92,191,
-            30,107,165,165,134,38,45,243,104,199,90,205,29,31,250,58,182,238,
-            33,199,31,132,68,148,101,152,120,245,235,35,12,149,141,213,118,176,
-            139,133,100,170,210,238,9,146,232,90,30,86,95,41,156,213,58,40,93,
-            231,41,147,127,112,220,23,106,31,1,67,33,41,187,43,148,211,213,3,
-            31,128,101,161
+            184, 250, 166, 214, 163, 136, 28, 159, 219, 173, 128, 59, 23, 13, 112, 202, 92, 191,
+            30, 107, 165, 165, 134, 38, 45, 243, 104, 199, 90, 205, 29, 31, 250, 58, 182, 238, 33,
+            199, 31, 132, 68, 148, 101, 152, 120, 245, 235, 35, 12, 149, 141, 213, 118, 176, 139,
+            133, 100, 170, 210, 238, 9, 146, 232, 90, 30, 86, 95, 41, 156, 213, 58, 40, 93, 231,
+            41, 147, 127, 112, 220, 23, 106, 31, 1, 67, 33, 41, 187, 43, 148, 211, 213, 3, 31, 128,
+            101, 161,
         ];
         // no SecretKey::from_bytes method, so use bincode which requires
         // little endian bytes.
