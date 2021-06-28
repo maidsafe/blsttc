@@ -1,7 +1,7 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-use ff::Field;
 use blsttc::poly::Poly;
 use blsttc::Fr;
+use criterion::{criterion_group, criterion_main, Criterion};
+use ff::Field;
 
 const TEST_DEGREES: [usize; 4] = [5, 10, 20, 40];
 const TEST_THRESHOLDS: [usize; 4] = [5, 10, 20, 40];
@@ -91,10 +91,10 @@ mod poly_benches {
 
 mod public_key_set_benches {
     use super::*;
+    use blsttc::SecretKeySet;
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
     use std::collections::BTreeMap;
-    use blsttc::SecretKeySet;
 
     /// Benchmarks combining signatures
     fn combine_signatures(c: &mut Criterion) {
