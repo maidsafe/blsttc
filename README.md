@@ -1,12 +1,10 @@
-# threshold_crypto
-
-[![crates.io](https://img.shields.io/crates/v/threshold_crypto.svg)](https://crates.io/crates/threshold_crypto)
-[![Documentation](https://docs.rs/threshold_crypto/badge.svg)](https://docs.rs/threshold_crypto)
-[![Build Status](https://travis-ci.org/poanetwork/threshold_crypto.svg?branch=master)](https://travis-ci.org/poanetwork/threshold_crypto)
+# BLST Threshold Crypto (`blsttc`)
 
 A pairing-based threshold cryptosystem for collaborative decryption and signatures.
 
-The `threshold_crypto` crate provides cryptographic keys with methods for signing and encrypting messages, as well as key sets for _threshold_ signatures and threshold encryption.
+The `blsttc` crate provides cryptographic keys with methods for signing and encrypting messages, as well as key sets for _threshold_ signatures and threshold encryption.
+
+`blsttc` is an adaptation of the [threshold_crypto](https://github.com/poanetwork/threshold_crypto) crate using blast ([blst](https://github.com/supranational/blst)) for signing and verification speed improvements.
 
 The threshold signature scheme is described in [Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme](https://www.iacr.org/archive/pkc2003/25670031/25670031.pdf) by Alexandra Boldyreva. This paper extends [Boneh-Lynn-Shacham](https://www.iacr.org/archive/asiacrypt2001/22480516.pdf) signatures to the threshold setting. Message encryption uses the [scheme by Baek and Zhang](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1717&rep=rep1&type=pdf).
 Our implementation is based on the [`pairing`](https://crates.io/crates/pairing) elliptic curve library.
@@ -24,16 +22,16 @@ An [official security audit](https://github.com/poanetwork/wiki/wiki/Threshold-C
 
 ```toml
 [dependencies]
-threshold_crypto = { version = "0.4.1", git = "https://github.com/maidsafe/blsttc" }
+blsttc = "0.4.1"
 ```
 
 `main.rs`:
 
 ```rust
 extern crate rand;
-extern crate threshold_crypto;
+extern crate blsttc;
 
-use threshold_crypto::SecretKey;
+use blsttc::SecretKey;
 
 /// Very basic secret key usage.
 fn main() {
@@ -102,8 +100,8 @@ by third-parties as representing the consensus of the network.
 
 ### Documentation
 
-* [crate documentation](https://docs.rs/threshold_crypto/)
-* [crates.io package](https://crates.io/crates/threshold_crypto)
+* [threshold_crypto crate documentation](https://docs.rs/threshold_crypto/)
+* [threshold_crypto crates.io package](https://crates.io/crates/threshold_crypto)
 
 ## Performance
 
