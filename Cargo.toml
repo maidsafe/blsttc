@@ -1,6 +1,6 @@
 [package]
 name = "blsttc"
-version = "2.0.0"
+version = "2.0.1"
 authors = [
   "Vladimir Komendantskiy <komendantsky@gmail.com>",
   "Andreas Fackler <AndreasFackler@gmx.de>",
