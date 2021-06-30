@@ -1155,7 +1155,7 @@ mod tests {
         ];
         // no SecretKey::from_bytes method, so use bincode which requires
         // little endian bytes.
-        let mut leskbytes = skbytes.clone();
+        let mut leskbytes = skbytes;
         leskbytes.reverse();
         let sk: SecretKey = bincode::deserialize(&leskbytes).unwrap();
         let pk = sk.public_key();
@@ -1166,7 +1166,7 @@ mod tests {
         assert_eq!(sigbytes, sig.to_bytes());
         // signature can be verified
         let is_valid = pk.verify(&sig, msgbytes);
-        assert_eq!(is_valid, true);
+        assert!(is_valid);
     }
 
     #[test]
