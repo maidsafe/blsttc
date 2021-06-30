@@ -14,7 +14,7 @@ mod poly_benches {
 
     /// Benchmarks multiplication of two polynomials.
     fn multiplication(c: &mut Criterion) {
-        let mut group = c.benchmark_group("Polynomial multiplication Group");
+        let mut group = c.benchmark_group("Polynomial multiplication");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
             let parameter_string = format!("{}", deg);
