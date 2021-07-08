@@ -586,7 +586,7 @@ impl fmt::Debug for DecryptionShare {
 }
 
 /// A public key and an associated set of public key shares.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct PublicKeySet {
     /// The coefficients of a polynomial whose value at `0` is the "master key", and value at
     /// `i + 1` is key share number `i`.
@@ -596,6 +596,15 @@ pub struct PublicKeySet {
 impl Hash for PublicKeySet {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.commit.hash(state);
+    }
+}
+
+impl fmt::Debug for PublicKeySet {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("PublicKeySet")
+            .field("public_key", &self.public_key())
+            .field("threshold", &self.threshold())
+            .finish()
     }
 }
 
