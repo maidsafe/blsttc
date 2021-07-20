@@ -561,6 +561,16 @@ impl Ciphertext {
         let hash = hash_g1_g2(*u, v);
         PEngine::pairing(G1Affine::one(), *w) == PEngine::pairing(*u, hash)
     }
+
+    /// Returns byte representation of Ciphertext
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let Ciphertext(ref u, ref v, ref w) = *self;
+        let mut result: Vec<u8> = Default::default();
+        result.append(&mut u.into_affine().into_compressed().as_ref().to_vec());
+        result.append(&mut v.clone());
+        result.append(&mut w.into_affine().into_compressed().as_ref().to_vec());
+        result
+    }
 }
 
 /// A decryption share. A threshold of decryption shares can be used to decrypt a message.
