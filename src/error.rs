@@ -1,4 +1,5 @@
 //! Crypto errors.
+use ff::PrimeFieldDecodingError;
 
 use thiserror::Error;
 
@@ -42,3 +43,9 @@ pub enum FromBytesError {
 
 /// The result of attempting to read a structure from an array of bytes.
 pub type FromBytesResult<T> = ::std::result::Result<T, FromBytesError>;
+
+impl From<PrimeFieldDecodingError> for FromBytesError {
+    fn from(_: PrimeFieldDecodingError) -> Self {
+        FromBytesError::Invalid
+    }
+}
