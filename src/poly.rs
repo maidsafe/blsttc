@@ -30,10 +30,11 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
-use crate::error::{Error, Result};
+use crate::error::{Error, FromBytesResult, Result};
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
-use crate::{Fr, G1Affine, G1};
+use crate::util::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes};
+use crate::{Fr, G1Affine, G1, PK_SIZE, SK_SIZE};
 
 /// A univariate polynomial in the prime field.
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -376,6 +377,37 @@ impl Poly {
         }
     }
 
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let coeff_size = self.coeff.len();
+        let bytes_size = coeff_size * SK_SIZE;
+        let mut poly_bytes = vec![0; bytes_size];
+        for i in 0..coeff_size {
+            let fr = self.coeff[i];
+            let fr_bytes = fr_to_be_bytes(fr);
+            let fr_size = fr_bytes.len();
+            for j in 0..fr_size {
+                poly_bytes[i * SK_SIZE + j] = fr_bytes[j];
+            }
+        }
+        poly_bytes
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+        let mut c: Vec<Fr> = vec![];
+        let coeff_size = bytes.len() / SK_SIZE;
+        for i in 0..coeff_size {
+            let mut fr_bytes = [0u8; SK_SIZE];
+            for j in 0..SK_SIZE {
+                fr_bytes[j] = bytes[i * SK_SIZE + j];
+            }
+            let fr = fr_from_be_bytes(fr_bytes)?;
+            c.push(fr);
+        }
+        Ok(Poly { coeff: c })
+    }
+
     /// Removes all trailing zero coefficients.
     fn remove_zeros(&mut self) {
         let zeros = self.coeff.iter().rev().take_while(|c| c.is_zero()).count();
@@ -505,6 +537,37 @@ impl Commitment {
             result.add_assign(c);
         }
         result
+    }
+
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let coeff_size = self.coeff.len();
+        let bytes_size = coeff_size * PK_SIZE;
+        let mut commit_bytes = vec![0; bytes_size];
+        for i in 0..coeff_size {
+            let g1 = self.coeff[i];
+            let g1_bytes = g1.into_affine().into_compressed().as_ref().to_vec();
+            let g1_size = g1_bytes.len();
+            for j in 0..g1_size {
+                commit_bytes[i * PK_SIZE + j] = g1_bytes[j];
+            }
+        }
+        commit_bytes
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+        let mut c: Vec<G1> = vec![];
+        let coeff_size = bytes.len() / PK_SIZE;
+        for i in 0..coeff_size {
+            let mut g1_bytes = [0; PK_SIZE];
+            for j in 0..PK_SIZE {
+                g1_bytes[j] = bytes[i * PK_SIZE + j];
+            }
+            let g1 = g1_from_be_bytes(g1_bytes)?;
+            c.push(g1);
+        }
+        Ok(Commitment { coeff: c })
     }
 
     /// Removes all trailing zero coefficients.
@@ -645,6 +708,42 @@ impl BivarPoly {
             self.degree, self.coeff
         )
     }
+
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let coeff_size = self.coeff.len();
+        let bytes_size = coeff_size * SK_SIZE;
+        let mut poly_bytes = vec![0; bytes_size];
+        for i in 0..coeff_size {
+            let fr = self.coeff[i];
+            let fr_bytes = fr_to_be_bytes(fr);
+            let fr_size = fr_bytes.len();
+            for j in 0..fr_size {
+                poly_bytes[i * SK_SIZE + j] = fr_bytes[j];
+            }
+        }
+        poly_bytes
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+        let mut c: Vec<Fr> = vec![];
+        let coeff_size = bytes.len() / SK_SIZE;
+        for coeff_index in 0..coeff_size {
+            // get the Fr for this coeff
+            let mut fr_bytes = [0u8; SK_SIZE];
+            for i in 0..SK_SIZE {
+                fr_bytes[i] = bytes[coeff_index * SK_SIZE + i];
+            }
+            let fr = fr_from_be_bytes(fr_bytes)?;
+            c.push(fr);
+        }
+        let d = ((2 * coeff_size) as f64).sqrt() as usize - 1;
+        Ok(BivarPoly {
+            degree: d,
+            coeff: c,
+        })
+    }
 }
 
 /// A commitment to a symmetric bivariate polynomial.
@@ -729,6 +828,43 @@ impl BivarCommitment {
     fn powers<T: IntoFr>(&self, x: T) -> Vec<Fr> {
         powers(x, self.degree)
     }
+
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let coeff_size = self.coeff.len();
+        let bytes_size = coeff_size * PK_SIZE;
+        let mut commit_bytes = vec![0; bytes_size];
+        for i in 0..coeff_size {
+            let g1 = self.coeff[i];
+            let g1_bytes = g1.into_affine().into_compressed().as_ref().to_vec();
+            let g1_size = g1_bytes.len();
+            // TODO if not equal then should do padding instead of fail?
+            assert_eq!(g1_size, PK_SIZE);
+            for j in 0..g1_size {
+                commit_bytes[i * PK_SIZE + j] = g1_bytes[j];
+            }
+        }
+        commit_bytes
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+        let mut c: Vec<G1> = vec![];
+        let coeff_size = bytes.len() / PK_SIZE;
+        for i in 0..coeff_size {
+            let mut g1_bytes = [0; PK_SIZE];
+            for j in 0..PK_SIZE {
+                g1_bytes[j] = bytes[i * PK_SIZE + j];
+            }
+            let g1 = g1_from_be_bytes(g1_bytes)?;
+            c.push(g1);
+        }
+        let d = ((2 * coeff_size) as f64).sqrt() as usize - 1;
+        Ok(BivarCommitment {
+            degree: d,
+            coeff: c,
+        })
+    }
 }
 
 /// Returns the `0`-th to `degree`-th power of `x`.
@@ -756,10 +892,13 @@ pub(crate) fn coeff_pos(i: usize, j: usize) -> Option<usize> {
 mod tests {
     use std::collections::BTreeMap;
 
-    use super::{coeff_pos, BivarPoly, IntoFr, Poly};
+    use super::fr_to_be_bytes;
+    use super::{coeff_pos, BivarCommitment, BivarPoly, Commitment, IntoFr, Poly};
     use super::{Fr, G1Affine, G1};
+    use super::{PK_SIZE, SK_SIZE};
     use ff::Field;
     use group::{CurveAffine, CurveProjective};
+    use hex_fmt::HexFmt;
     use zeroize::Zeroize;
 
     #[test]
@@ -897,5 +1036,188 @@ mod tests {
             sum_commit += bi_commit.row(0);
         }
         assert_eq!(sum_commit, sec_key_set.commitment());
+    }
+
+    #[test]
+    fn test_commitment_to_from_bytes() {
+        let degree = 3;
+        let mut rng = rand::thread_rng();
+        let poly = Poly::random(degree, &mut rng);
+        let commitment = poly.commitment();
+        // length is fixed to (degree + 1) * 48
+        let commitment_bytes = commitment.to_bytes();
+        assert_eq!(commitment_bytes.len(), (degree + 1) * 48);
+        // the first bytes of the commitment match the first G1
+        let g1 = commitment.evaluate(0);
+        let g1_bytes = g1.into_affine().into_compressed().as_ref().to_vec();
+        let g1_bytes_size = g1_bytes.len();
+        for i in 0..g1_bytes_size {
+            assert_eq!(g1_bytes[i], commitment_bytes[i]);
+        }
+        // from bytes gives original commitment
+        let restored_commitment =
+            Commitment::from_bytes(commitment_bytes).expect("invalid commitment bytes");
+        assert_eq!(commitment, restored_commitment);
+        // for vectors see PublicKeySet
+    }
+
+    #[test]
+    fn test_bivar_commitment_to_from_bytes() {
+        let mut rng = rand::thread_rng();
+        let degree = 3;
+        let bi_poly = BivarPoly::random(degree, &mut rng);
+        let bi_commit = bi_poly.commitment();
+        let commitment = bi_commit.row(0);
+        // length is fixed by the degree and G1 size
+        let bi_commit_bytes = bi_commit.to_bytes();
+        let dp1 = degree + 1;
+        let sum = dp1 * (dp1 + 1) / 2; // sum 1,2,3,...,dp1
+        let expected_size = sum * PK_SIZE;
+        assert_eq!(bi_commit_bytes.len(), expected_size);
+        // the first bytes of the bivarcommitment match the first commitment public key
+        let commitment_bytes = commitment.to_bytes();
+        for i in 0..PK_SIZE {
+            assert_eq!(commitment_bytes[i], bi_commit_bytes[i]);
+        }
+        // from_bytes gives original bivar_commitment
+        let restored_bi_commit =
+            BivarCommitment::from_bytes(bi_commit_bytes).expect("invalid bivar commitment bytes");
+        assert_eq!(bi_commit, restored_bi_commit);
+        // test rows match
+        for i in 0..10 {
+            assert_eq!(bi_commit.row(i), restored_bi_commit.row(i));
+        }
+    }
+
+    #[test]
+    fn vectors_bivar_commitment_to_from_bytes() {
+        let vectors = vec![
+            // Plain old Bivar Commitment
+            vec![
+                // bivar commitment
+                "84339010af2fa47ebb8294681b2b61d6ec4c0d6ce595c0a8c57234d348c7be120520a6b710f061196d3fa30323e1bcb48ad0b4a8180ff4ca8888f6e8bd869c43c5b111c2733bab514d826bed4ec10f5ca4aacc838c69cba6a99c14cc59646e69ad14932a863413cbb57d3a0aad84d7ec62276a63990d686058c24fef6e0cc17f9360ac4f8e20725bdabd591ad25c4cf98f9fe02f53ef5876dc6744f18f3462e9a5d0a83d30e949acb2e48ba8ee50d3674a7c4b7d75372983c2fd3e9e9291b0e697993cefe339b05133e2ebb51ff3c63e711969c6d0704631059db9a990183aca270acd5fb82ea78bab983c39290b8c71afd930a68bd2a35bd6fd5e7bc09877dfe7dbafd8f953172016da9cd9e816a09677df3a4c8c2339e530acda235f5feefd",
+                // commitment row 0
+                "84339010af2fa47ebb8294681b2b61d6ec4c0d6ce595c0a8c57234d348c7be120520a6b710f061196d3fa30323e1bcb48ad0b4a8180ff4ca8888f6e8bd869c43c5b111c2733bab514d826bed4ec10f5ca4aacc838c69cba6a99c14cc59646e698f9fe02f53ef5876dc6744f18f3462e9a5d0a83d30e949acb2e48ba8ee50d3674a7c4b7d75372983c2fd3e9e9291b0e6",
+                // commitment row 1
+                "b9ee0808165ae836d0bf3deeb4e3f3399dde9c6377bf1f0f1dd5096f5f2f61afad3109e9454521832eeac831cad46ef48a0974487ffb0e5343f387e39d5f40312522ca0d90e51d20c89ff7347a724705f8d4429bb6e27100e603195cf89d38a1a4346721f22704f18b2a9fa001944ebe48b8e08eca91c06c23f13061e5929503d67549526591693da175125eb2d17178",
+            ]
+        ];
+        for vector in vectors {
+            // read bivar commitment
+            let bi_commit_bytes = hex::decode(vector[0]).unwrap();
+            let bi_commit = BivarCommitment::from_bytes(bi_commit_bytes)
+                .expect("invalid bivar commitment bytes");
+            // check row 0
+            let row_0 = bi_commit.row(0);
+            let row_0_hex = &format!("{}", HexFmt(&row_0.to_bytes()));
+            assert_eq!(row_0_hex, vector[1]);
+            // check row 1
+            let row_1 = bi_commit.row(1);
+            let row_1_hex = &format!("{}", HexFmt(&row_1.to_bytes()));
+            assert_eq!(row_1_hex, vector[2]);
+        }
+    }
+
+    #[test]
+    fn test_bivar_commitment_to_from_bytes_large_degree() {
+        // The overall size increases rapidly, size is sum(1..degree+1)
+        let mut rng = rand::thread_rng();
+        let degree = 9; // TODO pick a less magic value here
+        let bi_poly = BivarPoly::random(degree, &mut rng);
+        let bi_commit = bi_poly.commitment();
+        let bi_commit_bytes = bi_commit.to_bytes();
+        let dp1 = degree + 1;
+        let sum = dp1 * (dp1 + 1) / 2; // sum of 1,2,3,...,dp1
+        let expected_size = sum * 48;
+        assert_eq!(bi_commit_bytes.len(), expected_size);
+    }
+
+    #[test]
+    fn test_poly_to_from_bytes() {
+        let degree = 3;
+        let mut rng = rand::thread_rng();
+        let poly = Poly::random(degree, &mut rng);
+        // length is fixed to (degree + 1) * 32
+        let poly_bytes = poly.to_bytes();
+        assert_eq!(poly_bytes.len(), (degree + 1) * 32);
+        // the first bytes of the poly match the first Fr
+        let fr = poly.evaluate(0);
+        let fr_bytes = fr_to_be_bytes(fr);
+        let fr_bytes_size = fr_bytes.len();
+        for i in 0..fr_bytes_size {
+            assert_eq!(fr_bytes[i], poly_bytes[i]);
+        }
+        // from bytes gives original poly
+        let restored_poly = Poly::from_bytes(poly_bytes).expect("invalid poly bytes");
+        assert_eq!(poly, restored_poly);
+        // for vectors see SecretKeySet
+    }
+
+    #[test]
+    fn test_bivar_poly_to_from_bytes() {
+        let degree = 3;
+        let mut rng = rand::thread_rng();
+        let bi_poly = BivarPoly::random(degree, &mut rng);
+        // length is fixed by the degree and Fr size
+        let bi_poly_bytes = bi_poly.to_bytes();
+        let dp1 = degree + 1;
+        let sum = dp1 * (dp1 + 1) / 2; // sum 1,2,3,...,dp1
+        let expected_size = sum * SK_SIZE;
+        assert_eq!(bi_poly_bytes.len(), expected_size);
+        // the first bytes of the bivarypoly match the first poly
+        let poly = bi_poly.row(0);
+        let poly_bytes = poly.to_bytes();
+        for i in 0..SK_SIZE {
+            assert_eq!(poly_bytes[i], bi_poly_bytes[i]);
+        }
+        // from_bytes gives original bivar_poly
+        let restored_bi_poly = BivarPoly::from_bytes(bi_poly_bytes).expect("invalid bipoly bytes");
+        // cannot test equality for bi_poly so test using reveal
+        assert_eq!(bi_poly.reveal(), restored_bi_poly.reveal());
+        // test rows match
+        for i in 0..10 {
+            assert_eq!(bi_poly.row(i), restored_bi_poly.row(i));
+        }
+    }
+
+    #[test]
+    fn test_bivar_poly_to_from_bytes_large_degree() {
+        let mut rng = rand::thread_rng();
+        let degree = 9; // TODO pick a less magic value here
+        let bi_poly = BivarPoly::random(degree, &mut rng);
+        let bi_poly_bytes = bi_poly.to_bytes();
+        let dp1 = degree + 1;
+        let sum = dp1 * (dp1 + 1) / 2; // sum of 1,2,3,...,dp1
+        let expected_size = sum * SK_SIZE;
+        assert_eq!(bi_poly_bytes.len(), expected_size);
+    }
+
+    #[test]
+    fn vectors_bivar_poly_to_from_bytes() {
+        let vectors = vec![
+            // Plain old Bivar Poly
+            // Sourced from BivarPoly::reveal and Poly::reveal
+            vec![
+                // bivar poly
+                "016088115a0e8748a29b4bd8dd930692b86241405844f0bbd2fcafb6b4f03880222caa92f7eea1dd8a0e4f2d1e62672a5c12dfcb86199515d4a450ed7921d7ca1407dec2b53c472ffcaf4dbfcd8fe5089cb64a7b5ce7e38655aa97400a3bc1bb4045160918bad84c11afc883e514321009a113cb9bc3b7b941486ec3ca4a273565951ee649287a5809bc0036b8ffee73eb51dc4e3f35e7578169e66823da066672c4060b5f46f15eb1a7c253bb564d9ad2e9c12182a0df61499788817d21a133",
+                // row 0 poly
+                "016088115a0e8748a29b4bd8dd930692b86241405844f0bbd2fcafb6b4f03880222caa92f7eea1dd8a0e4f2d1e62672a5c12dfcb86199515d4a450ed7921d7ca4045160918bad84c11afc883e514321009a113cb9bc3b7b941486ec3ca4a2735",
+                // row 1 poly
+                "63d248ad6ab801723e596389e1099fcd1e1634d77a223d8ae8e96f67f85c377f27dc00e8ccb5e61d5d3fc51b9b5062a1905d6292223903f4abb8ce96a7379fea30c2ec546def4972669fdafe4626be14206169355d9dc6740c49ddaf6b45cecc",
+            ],
+        ];
+        for vector in vectors {
+            // read BivarPoly from hex
+            let bi_poly_bytes = hex::decode(vector[0]).unwrap();
+            let bi_poly = BivarPoly::from_bytes(bi_poly_bytes).expect("invalid bipoly bytes");
+            // check row 0
+            let row_0 = bi_poly.row(0);
+            let row_0_hex = &format!("{}", HexFmt(&row_0.to_bytes()));
+            assert_eq!(row_0_hex, vector[1]);
+            // check row 1
+            let row_1 = bi_poly.row(1);
+            let row_1_hex = &format!("{}", HexFmt(&row_1.to_bytes()));
+            assert_eq!(row_1_hex, vector[2]);
+        }
     }
 }

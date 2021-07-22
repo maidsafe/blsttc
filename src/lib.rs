@@ -27,7 +27,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
-use ff::{Field, PrimeField};
+use ff::Field;
 use group::{CurveAffine, CurveProjective, EncodedPoint};
 use hex_fmt::HexFmt;
 use log::debug;
@@ -46,14 +46,17 @@ use crate::secret::clear_fr;
 pub use crate::into_fr::IntoFr;
 
 mod util;
-use util::sha3_256;
+use util::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes, sha3_256};
 
-use blst::min_pk::{
-    PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature,
+use blst::{
+    min_pk::{PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature},
+    BLST_ERROR,
 };
-use blst::BLST_ERROR;
 
 pub use pairing::bls12_381::{Bls12 as PEngine, Fr, FrRepr, G1Affine, G2Affine, G1, G2};
+
+/// The size of a secret key's representation in bytes.
+pub const SK_SIZE: usize = 32;
 
 /// The size of a key's representation in bytes.
 pub const PK_SIZE: usize = 48;
@@ -100,8 +103,6 @@ impl PublicKey {
     }
 
     /// Returns `true` if the signature matches the message.
-    ///
-    /// This is equivalent to `verify_g2(sig, hash_g2(msg))`.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
         // TC
         //self.verify_g2(sig, hash_g2(msg))
@@ -134,19 +135,14 @@ impl PublicKey {
     }
 
     /// Returns the key with the given representation, if valid.
-    pub fn from_bytes<B: Borrow<[u8; PK_SIZE]>>(bytes: B) -> FromBytesResult<Self> {
-        let mut compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
-        compressed.as_mut().copy_from_slice(bytes.borrow());
-        let opt_affine = compressed.into_affine().ok();
-        let projective = opt_affine.ok_or(FromBytesError::Invalid)?.into_projective();
-        Ok(PublicKey(projective))
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
+        let g1 = g1_from_be_bytes(bytes)?;
+        Ok(PublicKey(g1))
     }
 
     /// Returns a byte string representation of the public key.
     pub fn to_bytes(self) -> [u8; PK_SIZE] {
-        let mut bytes = [0u8; PK_SIZE];
-        bytes.copy_from_slice(self.0.into_affine().into_compressed().as_ref());
-        bytes
+        g1_to_be_bytes(self.0)
     }
 }
 
@@ -169,8 +165,6 @@ impl PublicKeyShare {
     }
 
     /// Returns `true` if the signature matches the message.
-    ///
-    /// This is equivalent to `verify_g2(sig, hash_g2(msg))`.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {
         // TC
         //self.verify_g2(sig, hash_g2(msg))
@@ -190,7 +184,7 @@ impl PublicKeyShare {
     }
 
     /// Returns the key share with the given representation, if valid.
-    pub fn from_bytes<B: Borrow<[u8; PK_SIZE]>>(bytes: B) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
         Ok(PublicKeyShare(PublicKey::from_bytes(bytes)?))
     }
 
@@ -247,7 +241,7 @@ impl Signature {
     }
 
     /// Returns the signature with the given representation, if valid.
-    pub fn from_bytes<B: Borrow<[u8; SIG_SIZE]>>(bytes: B) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
         let mut compressed: <G2Affine as CurveAffine>::Compressed = EncodedPoint::empty();
         compressed.as_mut().copy_from_slice(bytes.borrow());
         let opt_affine = compressed.into_affine().ok();
@@ -284,7 +278,7 @@ impl fmt::Debug for SignatureShare {
 
 impl SignatureShare {
     /// Returns the signature share with the given representation, if valid.
-    pub fn from_bytes<B: Borrow<[u8; SIG_SIZE]>>(bytes: B) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
         Ok(SignatureShare(Signature::from_bytes(bytes)?))
     }
 
@@ -378,8 +372,6 @@ impl SecretKey {
     }
 
     /// Signs the given message.
-    ///
-    /// This is equivalent to `sign_g2(hash_g2(msg))`.
     pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
         // TC
         //self.sign_g2(hash_g2(msg))
@@ -400,17 +392,14 @@ impl SecretKey {
     }
 
     /// Converts the secret key to big endian bytes
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::<u8>::new();
-        // iterating 4 u64s which are in order suiting little endian bytes
-        // and must be reversed to get big endian bytes
-        self.0
-            .into_repr()
-            .0
-            .iter()
-            .for_each(|n| bytes.extend(&n.to_le_bytes()));
-        bytes.reverse();
-        bytes
+    pub fn to_bytes(&self) -> [u8; SK_SIZE] {
+        fr_to_be_bytes(self.0)
+    }
+
+    /// Deserialize from big endian bytes
+    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Self> {
+        let mut fr = fr_from_be_bytes(bytes)?;
+        Ok(SecretKey::from_mut(&mut fr))
     }
 
     /// Returns the decrypted text, or `None`, if the ciphertext isn't valid.
@@ -499,6 +488,16 @@ impl SecretKeyShare {
     /// field element.
     pub fn reveal(&self) -> String {
         format!("SecretKeyShare({:?})", (self.0).0)
+    }
+
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> [u8; SK_SIZE] {
+        self.0.to_bytes()
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Self> {
+        Ok(SecretKeyShare(SecretKey::from_bytes(bytes)?))
     }
 }
 
@@ -608,6 +607,19 @@ impl fmt::Debug for DecryptionShare {
     }
 }
 
+impl DecryptionShare {
+    /// Deserializes the share from big endian bytes
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
+        let g1 = g1_from_be_bytes(bytes)?;
+        Ok(DecryptionShare(g1))
+    }
+
+    /// Serializes the share as big endian bytes
+    pub fn to_bytes(&self) -> [u8; PK_SIZE] {
+        g1_to_be_bytes(self.0)
+    }
+}
+
 /// A public key and an associated set of public key shares.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct PublicKeySet {
@@ -707,6 +719,17 @@ impl PublicKeySet {
         let g = interpolate(self.commit.degree(), samples)?;
         Ok(xor_with_hash(g, &ct.1))
     }
+
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.commit.to_bytes()
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+        let commit = Commitment::from_bytes(bytes)?;
+        Ok(PublicKeySet { commit })
+    }
 }
 
 /// A secret key and an associated set of secret key shares.
@@ -771,6 +794,17 @@ impl SecretKeySet {
     pub fn secret_key(&self) -> SecretKey {
         let mut fr = self.poly.evaluate(0);
         SecretKey::from_mut(&mut fr)
+    }
+
+    /// Serializes to big endian bytes
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.poly.to_bytes()
+    }
+
+    /// Deserializes from big endian bytes
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+        let poly = Poly::from_bytes(bytes)?;
+        Ok(SecretKeySet { poly })
     }
 }
 
@@ -1210,7 +1244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sk_to_bytes() {
+    fn test_sk_to_from_bytes() {
         use crate::serde_impl::SerdeSecret;
         let sk = SecretKey::random();
         // bincode is little endian, so must reverse to get big endian
@@ -1219,5 +1253,247 @@ mod tests {
         // sk.to_bytes() is big endian
         let sk_be_bytes = sk.to_bytes();
         assert_eq!(bincode_bytes, sk_be_bytes);
+        // from bytes gives original secret key
+        let restored_sk = SecretKey::from_bytes(sk_be_bytes).expect("invalid sk bytes");
+        assert_eq!(sk, restored_sk);
+    }
+
+    #[test]
+    fn vectors_sk_to_from_bytes() {
+        // from https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249
+        let sk_hex = "4a353be3dac091a0a7e640620372f5e1e2e4401717c1e79cac6ffba8f6905604";
+        let pk_hex = "85695fcbc06cc4c4c9451f4dce21cbf8de3e5a13bf48f44cdbb18e2038ba7b8bb1632d7911ef1e2e08749bddbf165352";
+        let sk_vec = hex::decode(sk_hex).unwrap();
+        let mut sk_bytes = [0u8; SK_SIZE];
+        sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
+        let sk = SecretKey::from_bytes(sk_bytes).expect("invalid sk bytes");
+        let pk = sk.public_key();
+        let pk_bytes = pk.to_bytes();
+        let pk_to_hex = &format!("{}", HexFmt(&pk_bytes));
+        assert_eq!(pk_to_hex, pk_hex);
+    }
+
+    #[test]
+    fn test_public_key_set_to_from_bytes_distinctive_properties() {
+        let threshold = 3;
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(threshold, &mut rng);
+        let pk_set = sk_set.public_keys();
+        // length is fixed to (threshold + 1) * 48
+        let pk_set_bytes = pk_set.to_bytes();
+        assert_eq!(pk_set_bytes.len(), (threshold + 1) * PK_SIZE);
+        // the first bytes of the public key set match the public key
+        let pk = pk_set.public_key();
+        let pk_bytes = pk.to_bytes();
+        let pk_bytes_size = pk_bytes.len();
+        for i in 0..pk_bytes_size {
+            assert_eq!(pk_bytes[i], pk_set_bytes[i]);
+        }
+        // from bytes gives original pk set
+        let restored_pk_set =
+            PublicKeySet::from_bytes(pk_set_bytes).expect("invalid public key set bytes");
+        assert_eq!(pk_set, restored_pk_set);
+    }
+
+    #[test]
+    fn test_public_key_set_to_from_bytes_threshold_0() {
+        // for threshold 0 the public key set matches the public key and all
+        // public key shares
+        let threshold = 0;
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(threshold, &mut rng);
+        let pk_set = sk_set.public_keys();
+        let pk_set_bytes = pk_set.to_bytes();
+        let pk = pk_set.public_key();
+        let pk_bytes = pk.to_bytes();
+        assert_eq!(pk_set_bytes, pk_bytes);
+        let pk_share_0 = pk_set.public_key_share(0);
+        let pk_share_0_bytes = pk_share_0.to_bytes();
+        assert_eq!(pk_set_bytes, pk_share_0_bytes);
+        let pk_share_1 = pk_set.public_key_share(1);
+        let pk_share_1_bytes = pk_share_1.to_bytes();
+        assert_eq!(pk_set_bytes, pk_share_1_bytes);
+    }
+
+    #[test]
+    fn vectors_public_key_set_to_from_bytes() {
+        let vectors = vec![
+            // Plain old Public Key Set
+            vec![
+                // public key set
+                "b89f8983d73b6ef75f07f90bc5a58d501b9204f9f304fc9354a66271944b25460845b22d3759c2c8889be552ae23617096b5bfcf90273c61ad102f97c66155de2d9eee3b803e83118095d8b0955f177b105371481e8d9b18d8f610a05b94c1cf",
+                // public key
+                "b89f8983d73b6ef75f07f90bc5a58d501b9204f9f304fc9354a66271944b25460845b22d3759c2c8889be552ae236170",
+                // public key share 0
+                "a0f7640853a86e68ef7ac705b6f5bdd15bb4656dbe9578b24b2cceb1ee8576646de140a417eb687e7dbe1a1bfff4f5cd",
+                // public key share 1
+                "8c2e9d7c02fb3ec87548cc2456904899b9d100c798ae2e08461dc8471b907664e38af99701adaaf6b604367ce70a72ce",
+                // public key share 2
+                "851d512dfbc25d2200982d70b107dad84bfef82d6f9fe9ce9c7bef7917755e3b2e504324ba2b7ed233b77f9c825188e8",
+            ],
+            // Trailing zero in the Public Key Set
+            // This will fail any implementation with little endian shenaigans
+            vec![
+                "9455aa0495c1b0706507dd09531c71940e4cfeca1d5533dc096f4d5f045ba02f362790486e44e9d4a204938c65bd45208d19e0f29c53f6a1491c5aa24c4095759b57acccf1b801e5ea0270dac3c1e0d24a1058cbc4d8a3f185c1e87cefdaaa00",
+                "9455aa0495c1b0706507dd09531c71940e4cfeca1d5533dc096f4d5f045ba02f362790486e44e9d4a204938c65bd4520",
+                "881ffed3cc7a51355ffb1a99928ddfa16fb739ee7d4194e94e614ff0144d9978270cd2ffc0d2f95a664d450c4a7890c5",
+                "b06db35fe602cbe651667aef2a77f53af1e8a4abb8764cec021d0aeac77728a5accc519bcfb07b609874fa76bd36452c",
+                "856bb79f082919dfe2a4601765c2d6094ff122f494db7593a3eab2340136a50d7ad8ba20b09367c6c2b87a543cfee014",
+            ],
+            // Trailing zero in the Public Key
+            vec![
+                "afddb9cb9b636f176fd3e4d66ebf1d5e1b8feb0e43723e10fb4e4bc00bbbc3d29d6f6c8d7beca65fee2c89bd54e79e00a151ba6cea3fbe4b84bf14e99ef83edc1a805305ddeb998b93cb30c965abac057bd2dbfd73a00277638ec98da02b770c",
+                "afddb9cb9b636f176fd3e4d66ebf1d5e1b8feb0e43723e10fb4e4bc00bbbc3d29d6f6c8d7beca65fee2c89bd54e79e00",
+                "af121474a59ff060cb6b7862431cfc4ff6188c88120e0f686c790401d716ea6cd46a08201fcf88a0e96e324fcf08a25f",
+                "b7ce6b16cfed4d94e95478902e64920bf95e84848bc471b569c547a4d59265be3865f6f1de40720045446ad9cd15b5ba",
+                "a08b1043e38862e9442574d0afd1ed47c197d1dec2f0600edfedbb9e45cfac07095e15ddc8c6b91d0657272bb990d3e7",
+            ],
+            // Trailing zero in a Public Key Share
+            vec![
+                "8a4f064135d1a26d71b77f8d3f3a611e8f4de6489afb5b99e567aa6e93ee6a67f1e8fdde8105080382c822a52cf989ad833106149091a207a0e0fd3353e1a2c6dbe0147538a35b562e9b779252e8707c3cd98759a18a1c55cc7eb0f9f8440664",
+                "8a4f064135d1a26d71b77f8d3f3a611e8f4de6489afb5b99e567aa6e93ee6a67f1e8fdde8105080382c822a52cf989ad",
+                "907ec2454a752d18a172cb7c99d5f7952a558bdbd2675c107aeb84f0281f39cf72022e3ec26d05e86809ee0e2ebe352a",
+                "8bd292ce33c1bcec80ce6cf029aeac292d9563d6e718fdcd8573188f88364442f2a8d51f1124b69c48fe5adc77512800",
+                "aa4f3dbd12d6184bb5426187e46d20df9c160b4c5f9028b73fc904c988405e8655f1eaf979992a163d03d601f39efce1",
+            ]
+        ];
+        for vector in vectors {
+            // read PublicKeyShare from hex
+            let pks_bytes = hex::decode(vector[0]).unwrap();
+            let pks = PublicKeySet::from_bytes(pks_bytes).expect("Invalid public key set bytes");
+            // check public key
+            let pk = pks.public_key();
+            let pk_hex = &format!("{}", HexFmt(&pk.to_bytes()));
+            assert_eq!(pk_hex, vector[1]);
+            // check public key shares
+            let pk_share_0 = pks.public_key_share(0);
+            let pk_share_0_hex = &format!("{}", HexFmt(&pk_share_0.to_bytes()));
+            assert_eq!(pk_share_0_hex, vector[2]);
+            let pk_share_1 = pks.public_key_share(1);
+            let pk_share_1_hex = &format!("{}", HexFmt(&pk_share_1.to_bytes()));
+            assert_eq!(pk_share_1_hex, vector[3]);
+            let pk_share_2 = pks.public_key_share(2);
+            let pk_share_2_hex = &format!("{}", HexFmt(&pk_share_2.to_bytes()));
+            assert_eq!(pk_share_2_hex, vector[4]);
+        }
+    }
+
+    #[test]
+    fn test_secret_key_set_to_from_bytes_distictive_properties() {
+        let threshold = 3;
+        let mut rng = rand::thread_rng();
+        let poly = Poly::random(threshold, &mut rng);
+        let sk_set = SecretKeySet::from(poly);
+        // length is fixed to (threshold + 1) * 32
+        let sk_set_bytes = sk_set.to_bytes();
+        assert_eq!(sk_set_bytes.len(), (threshold + 1) * SK_SIZE);
+        // the first bytes of the secret key set match the secret key
+        let sk = sk_set.secret_key();
+        let sk_bytes = sk.to_bytes();
+        let sk_bytes_size = sk_bytes.len();
+        for i in 0..sk_bytes_size {
+            assert_eq!(sk_bytes[i], sk_set_bytes[i]);
+        }
+        // from bytes gives original sk set
+        let restored_sk_set =
+            SecretKeySet::from_bytes(sk_set_bytes).expect("invalid secret key set bytes");
+        // cannot assert_eq! for SecretKeySet so test the secret_key
+        // TODO decide if testing the secret key is adequate for testing the
+        // entire restored secret key set
+        let restored_sk = restored_sk_set.secret_key();
+        assert_eq!(sk, restored_sk);
+    }
+
+    #[test]
+    fn test_secret_key_set_to_from_bytes_threshold_0() {
+        // for threshold 0 the secret key set matches the secret key and all
+        // secret key shares
+        let threshold = 0;
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(threshold, &mut rng);
+        let sk_set_bytes = sk_set.to_bytes();
+        let sk = sk_set.secret_key();
+        let sk_bytes = sk.to_bytes();
+        assert_eq!(sk_set_bytes, sk_bytes);
+        let sk_share_0 = sk_set.secret_key_share(0);
+        let sk_share_0_bytes = sk_share_0.to_bytes();
+        assert_eq!(sk_set_bytes, sk_share_0_bytes);
+        let sk_share_1 = sk_set.secret_key_share(1);
+        let sk_share_1_bytes = sk_share_1.to_bytes();
+        assert_eq!(sk_set_bytes, sk_share_1_bytes);
+    }
+
+    #[test]
+    fn vectors_secret_key_set_to_from_bytes() {
+        let vectors = vec![
+            // Plain old Secret Key Set
+            // Sourced from Poly::reveal and SecretKey::reveal
+            vec![
+                // secret key set
+                "474da5f155b0580b6ffcd28b62973226883bfc75658a06c2592175448221f68f64681c46c8de0e28f0666b6a849463e07a8a353bbd4b01457c0aeeb6e7dd1fa6",
+                // secret key
+                "474da5f155b0580b6ffcd28b62973226883bfc75658a06c2592175448221f68f",
+                // secret key share 0
+                "37c81ae4f4f0e8ec2d2965eddd89be01af088dae22d6ac08d52c63fc69ff1634",
+                // secret key share 1
+                "28428fd8943179ccea55f950587c49dcd5d51ee6e023514f513752b451dc35d9",
+                // secret key share 2
+                "18bd04cc33720aada7828cb2d36ed5b7fca1b01f9d6ff695cd42416c39b9557e",
+            ],
+            // Leading byte of Secret Key Set is zero
+            // Also covers the Secret Key with a leading zero
+            // This will fail for implementations with incorrect padding
+            vec![
+                "004e7590e4a4a97685f4d9f2c10cd8b71c88fead21f701701ddb2ee9c2d2047f015ea5a4ffc5ae4830f5dae1d0b3fed09b9bbebb983c1fc7d79b351361ba075a",
+                "004e7590e4a4a97685f4d9f2c10cd8b71c88fead21f701701ddb2ee9c2d2047f",
+                "01ad1b35e46a57beb6eab4d491c0d787b824bd68ba332137f57663fd248c0bd9",
+                "030bc0dae4300606e7e08fb66274d65853c07c24526f40ffcd11991086461333",
+                "046a667fe3f5b44f18d66a983328d528ef5c3adfeaab60c7a4acce23e8001a8d",
+            ],
+            // Leading byte of Secret Key Share is zero
+            vec![
+                "1c838171bcbb0c20e3f259cadcba86e611eb4587f069a6dcd5ee46f186e37039579311c4b4d7d016c3cae22fad69c8b8f5ce17ac826c8fefd6b38b746dd83cf8",
+                "1c838171bcbb0c20e3f259cadcba86e611eb4587f069a6dcd5ee46f186e37039",
+                "0028ebe347f55eef748363f280827799b3fbb93172d7dacdaca1d266f4bbad30",
+                "57bbfda7fccd2f06384e46222dec4052a9c9d0ddf5446abd83555ddb6293ea28",
+                "3b616819880781d4c8df5049d1b431064bda448777b29eae5a08e950d06c271f",
+            ],
+        ];
+        for vector in vectors {
+            // read SecretKeyShare from hex
+            let sks_bytes = hex::decode(vector[0]).unwrap();
+            let sks = SecretKeySet::from_bytes(sks_bytes).expect("invalid secret key set bytes");
+            // check secret key
+            let sk = sks.secret_key();
+            let sk_hex = &format!("{}", HexFmt(&sk.to_bytes()));
+            assert_eq!(sk_hex, vector[1]);
+            // check secret key shares
+            let sk_share_0 = sks.secret_key_share(0);
+            let sk_share_0_hex = &format!("{}", HexFmt(&sk_share_0.to_bytes()));
+            assert_eq!(sk_share_0_hex, vector[2]);
+            let sk_share_1 = sks.secret_key_share(1);
+            let sk_share_1_hex = &format!("{}", HexFmt(&sk_share_1.to_bytes()));
+            assert_eq!(sk_share_1_hex, vector[3]);
+            let sk_share_2 = sks.secret_key_share(2);
+            let sk_share_2_hex = &format!("{}", HexFmt(&sk_share_2.to_bytes()));
+            assert_eq!(sk_share_2_hex, vector[4]);
+        }
+    }
+
+    #[test]
+    fn test_decryption_share_to_from_bytes() {
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(3, &mut rng);
+        let pk_set = sk_set.public_keys();
+        let msg = b"Totally real news";
+        let ciphertext = pk_set.public_key().encrypt(&msg[..]);
+        let dec_share = sk_set
+            .secret_key_share(8)
+            .decrypt_share(&ciphertext)
+            .expect("ciphertext is invalid");
+        let dec_share_bytes = dec_share.to_bytes();
+        let restored_dec_share =
+            DecryptionShare::from_bytes(dec_share_bytes).expect("invalid decryption share bytes");
+        assert_eq!(dec_share, restored_dec_share);
     }
 }
