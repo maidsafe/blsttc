@@ -561,6 +561,47 @@ impl Ciphertext {
         let hash = hash_g1_g2(*u, v);
         PEngine::pairing(G1Affine::one(), *w) == PEngine::pairing(*u, hash)
     }
+
+    /// Returns byte representation of Ciphertext
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let Ciphertext(ref u, ref v, ref w) = *self;
+        let mut result: Vec<u8> = Default::default();
+        result.extend(u.into_affine().into_compressed().as_ref());
+        result.extend(w.into_affine().into_compressed().as_ref());
+        result.extend(v);
+        result
+    }
+
+    /// Returns the Ciphertext with the given representation, if valid.
+    pub fn from_bytes(bytes: &[u8]) -> FromBytesResult<Self> {
+        if bytes.len() < PK_SIZE + SIG_SIZE + 1 {
+            return Err(FromBytesError::Invalid);
+        }
+
+        let mut u_compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
+        u_compressed.as_mut().copy_from_slice(&bytes[0..PK_SIZE]);
+
+        let mut w_compressed: <G2Affine as CurveAffine>::Compressed = EncodedPoint::empty();
+        w_compressed
+            .as_mut()
+            .copy_from_slice(&bytes[PK_SIZE..PK_SIZE + SIG_SIZE]);
+
+        let v: Vec<u8> = (&bytes[PK_SIZE + SIG_SIZE..]).to_vec();
+
+        Ok(Self(
+            u_compressed
+                .into_affine()
+                .ok()
+                .ok_or(FromBytesError::Invalid)?
+                .into_projective(),
+            v,
+            w_compressed
+                .into_affine()
+                .ok()
+                .ok_or(FromBytesError::Invalid)?
+                .into_projective(),
+        ))
+    }
 }
 
 /// A decryption share. A threshold of decryption shares can be used to decrypt a message.
@@ -1050,6 +1091,10 @@ mod tests {
         assert_eq!(pk, pk2);
         let sig2 = Signature::from_bytes(sig.to_bytes()).expect("invalid sig representation");
         assert_eq!(sig, sig2);
+        let cipher = sk.public_key().encrypt(b"secret msg");
+        let cipher2 =
+            Ciphertext::from_bytes(&cipher.to_bytes()).expect("invalid cipher representation");
+        assert_eq!(cipher, cipher2);
     }
 
     #[test]
