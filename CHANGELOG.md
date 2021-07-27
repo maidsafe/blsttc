@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/maidsafe/blsttc/compare/v2.1.0...v2.2.0) (2021-07-27)
+
+
+### Features
+
+* make SecretKeySet::secret_key() public ([d20a879](https://github.com/maidsafe/blsttc/commit/d20a87949537f2f7b0a813e4a83f6d6ff7ba4629))
+
 ## [2.1.0](https://github.com/maidsafe/blsttc/compare/v2.0.2...v2.1.0) (2021-07-26)
 
 
