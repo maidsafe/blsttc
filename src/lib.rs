@@ -781,8 +781,7 @@ impl SecretKeySet {
     }
 
     /// Returns the secret master key.
-    #[cfg(test)]
-    fn secret_key(&self) -> SecretKey {
+    pub fn secret_key(&self) -> SecretKey {
         let mut fr = self.poly.evaluate(0);
         SecretKey::from_mut(&mut fr)
     }
