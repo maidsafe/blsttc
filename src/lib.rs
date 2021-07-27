@@ -780,6 +780,11 @@ impl SecretKeySet {
         }
     }
 
+    /// Returns a reference to the polynomial
+    pub fn poly(&self) -> &Poly {
+        &self.poly
+    }
+
     /// Returns the secret master key.
     pub fn secret_key(&self) -> SecretKey {
         let mut fr = self.poly.evaluate(0);
