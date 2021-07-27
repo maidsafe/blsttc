@@ -3,12 +3,6 @@
 // Clippy warns that it's dangerous to derive `PartialEq` and explicitly implement `Hash`, but the
 // `pairing::bls12_381` types don't implement `Hash`, so we can't derive it.
 #![allow(clippy::derive_hash_xor_eq)]
-// When using the mocktography, the resulting field elements become wrapped `u32`s, suddenly
-// triggering pass-by-reference warnings. They are conditionally disabled for this reason:
-#![cfg_attr(
-    feature = "use-insecure-test-only-mock-crypto",
-    allow(clippy::trivially_copy_pass_by_ref)
-)]
 #![warn(missing_docs)]
 
 pub use ff;
@@ -59,24 +53,12 @@ use blst::min_pk::{
 };
 use blst::BLST_ERROR;
 
-#[cfg(feature = "use-insecure-test-only-mock-crypto")]
-mod mock;
-
-#[cfg(feature = "use-insecure-test-only-mock-crypto")]
-pub use crate::mock::{
-    Mersenne8 as Fr, Mersenne8 as FrRepr, Mocktography as PEngine, Ms8Affine as G1Affine,
-    Ms8Affine as G2Affine, Ms8Projective as G1, Ms8Projective as G2, PK_SIZE, SIG_SIZE,
-};
-
-#[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
 pub use pairing::bls12_381::{Bls12 as PEngine, Fr, FrRepr, G1Affine, G2Affine, G1, G2};
 
 /// The size of a key's representation in bytes.
-#[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
 pub const PK_SIZE: usize = 48;
 
 /// The size of a signature's representation in bytes.
-#[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
 pub const SIG_SIZE: usize = 96;
 
 /// The domain separator tag

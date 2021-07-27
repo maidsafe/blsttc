@@ -367,7 +367,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
     fn serde_secret_key() {
         use crate::serde_impl::SerdeSecret;
         use crate::SecretKey;
@@ -411,7 +410,6 @@ mod tests {
             let ser_val = bincode::serialize(&SerdeSecret(sk)).expect("serialize secret key");
             assert_eq!(ser_ref, ser_val);
 
-            #[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
             assert_eq!(ser_val.len(), 32);
         }
     }

@@ -62,5 +62,4 @@ name = "bench"
 harness = false
 
 [features]
-use-insecure-test-only-mock-crypto = [ ]
 codec-support = [ "codec", "bincode" ]
