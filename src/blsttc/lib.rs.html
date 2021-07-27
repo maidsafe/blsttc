@@ -1237,7 +1237,6 @@
 <span id="1234">1234</span>
 <span id="1235">1235</span>
 <span id="1236">1236</span>
-<span id="1237">1237</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.</span>
 
@@ -2022,8 +2021,7 @@
     }
 
     <span class="doccomment">/// Returns the secret master key.</span>
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">secret_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SecretKey</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">secret_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SecretKey</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">poly</span>.<span class="ident">evaluate</span>(<span class="number">0</span>);
         <span class="ident">SecretKey::from_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fr</span>)
     }
