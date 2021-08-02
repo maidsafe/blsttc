@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.4.0](https://github.com/maidsafe/blsttc/compare/v2.3.0...v2.4.0) (2021-08-02)
+
+
+### Features
+
+* remove mock ([9919f98](https://github.com/maidsafe/blsttc/commit/9919f987b42720f5fd3636c8cd5c162f748eed98))
+
 ## [2.3.0](https://github.com/maidsafe/blsttc/compare/v2.2.0...v2.3.0) (2021-07-27)
 
 
