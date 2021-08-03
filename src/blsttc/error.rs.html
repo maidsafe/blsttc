@@ -44,8 +44,16 @@
 <span id="42">42</span>
 <span id="43">43</span>
 <span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Crypto errors.</span>
+<span class="kw">use</span> <span class="ident">ff::PrimeFieldDecodingError</span>;
 
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 
@@ -89,5 +97,11 @@
 
 <span class="doccomment">/// The result of attempting to read a structure from an array of bytes.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FromBytesResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">::std::result::Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">FromBytesError</span><span class="op">&gt;</span>;
+
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PrimeFieldDecodingError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FromBytesError</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="kw">_</span>: <span class="ident">PrimeFieldDecodingError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">FromBytesError::Invalid</span>
+    }
+}
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
