@@ -92,7 +92,7 @@ impl<'de> Deserialize<'de> for crate::SecretKey {
             Ok(x) => x,
             Err(ff::PrimeFieldDecodingError::NotInField(_)) => {
                 return Err(de::Error::invalid_value(
-                    de::Unexpected::Other(&"Number outside of prime field."),
+                    de::Unexpected::Other("Number outside of prime field."),
                     &"Valid prime field element.",
                 ));
             }
