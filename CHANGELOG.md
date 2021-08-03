@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.5.0](https://github.com/maidsafe/blsttc/compare/v2.4.0...v2.5.0) (2021-08-03)
+
+
+### Features
+
+* add to_bytes and from_bytes ([a1b9efa](https://github.com/maidsafe/blsttc/commit/a1b9efa049a68d6db1e2ef8b5bb27f6cce650502))
+
 ## [2.4.0](https://github.com/maidsafe/blsttc/compare/v2.3.0...v2.4.0) (2021-08-02)
 
 
