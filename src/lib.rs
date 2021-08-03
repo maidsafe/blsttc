@@ -86,7 +86,7 @@ impl fmt::Debug for PublicKey {
 
 impl PartialOrd for PublicKey {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -201,7 +201,7 @@ pub struct Signature(#[serde(with = "serde_impl::projective")] G2);
 
 impl PartialOrd for Signature {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -520,7 +520,7 @@ impl Hash for Ciphertext {
 
 impl PartialOrd for Ciphertext {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
