@@ -350,8 +350,9 @@ impl SecretKey {
         sk
     }
 
-    /// Creates a new random instance of `SecretKey`. If you want to use/define your own random
-    /// number generator, you should use the constructor:
+    /// Creates a new random instance of `SecretKey`.
+    ///
+    /// If you want to use/define your own random number generator, you should use the constructor:
     /// [`SecretKey::sample()`](struct.SecretKey.html#impl-Distribution<SecretKey>). If you do not
     /// need to specify your own RNG, you should use the
     /// [`SecretKey::random()`](struct.SecretKey.html#method.random) constructor, which uses
