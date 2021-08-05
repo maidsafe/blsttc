@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0](https://github.com/maidsafe/blsttc/compare/v2.5.0...v3.0.0) (2021-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* `PublicKey::from_bytes`, `PublicKeyShare::from_bytes`,
+`Signature::from_bytes` and `SignatureShare::from_bytes` can no longer
+take `&[u8; N]`, and must be called with `[u8; N]` instead. This may
+require additional copying/cloning.
+
+* Force a breaking change ([b4b22e5](https://github.com/maidsafe/blsttc/commit/b4b22e59cc96ea47ef910669d674f3b09f9a9d24)), closes [#11](https://github.com/maidsafe/blsttc/issues/11)
+
 ## [2.5.0](https://github.com/maidsafe/blsttc/compare/v2.4.0...v2.5.0) (2021-08-03)
 
 
