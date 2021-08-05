@@ -1499,6 +1499,7 @@
 <span id="1497">1497</span>
 <span id="1498">1498</span>
 <span id="1499">1499</span>
+<span id="1500">1500</span>
 </pre><pre class="rust">
 <span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.</span>
 
@@ -1852,8 +1853,9 @@
         <span class="ident">sk</span>
     }
 
-    <span class="doccomment">/// Creates a new random instance of `SecretKey`. If you want to use/define your own random</span>
-    <span class="doccomment">/// number generator, you should use the constructor:</span>
+    <span class="doccomment">/// Creates a new random instance of `SecretKey`.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// If you want to use/define your own random number generator, you should use the constructor:</span>
     <span class="doccomment">/// [`SecretKey::sample()`](struct.SecretKey.html#impl-Distribution&lt;SecretKey&gt;). If you do not</span>
     <span class="doccomment">/// need to specify your own RNG, you should use the</span>
     <span class="doccomment">/// [`SecretKey::random()`](struct.SecretKey.html#method.random) constructor, which uses</span>
