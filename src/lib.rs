@@ -46,7 +46,10 @@ use crate::secret::clear_fr;
 pub use crate::into_fr::IntoFr;
 
 mod util;
-use util::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes, sha3_256};
+use util::{
+    derivation_index_into_fr, fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes,
+    sha3_256,
+};
 
 use blst::{
     min_pk::{PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature},
@@ -132,6 +135,14 @@ impl PublicKey {
         };
         let w = hash_g1_g2(u, &v).into_affine().mul(r);
         Ciphertext(u, v, w)
+    }
+
+    /// Derives a child public key for a given index.
+    pub fn derive_child(&self, index: &[u8]) -> Self {
+        let index_fr = derivation_index_into_fr(index);
+        let mut child_g1 = self.0;
+        child_g1.mul_assign(index_fr);
+        PublicKey(child_g1)
     }
 
     /// Returns the key with the given representation, if valid.
@@ -418,6 +429,13 @@ impl SecretKey {
     /// field element.
     pub fn reveal(&self) -> String {
         format!("SecretKey({:?})", self.0)
+    }
+
+    /// Derives a child secret key for a given index.
+    pub fn derive_child(&self, index: &[u8]) -> Self {
+        let mut index_fr = derivation_index_into_fr(index);
+        index_fr.mul_assign(&self.0);
+        SecretKey(index_fr)
     }
 }
 
@@ -1496,5 +1514,183 @@ mod tests {
         let restored_dec_share =
             DecryptionShare::from_bytes(dec_share_bytes).expect("invalid decryption share bytes");
         assert_eq!(dec_share, restored_dec_share);
+    }
+
+    #[test]
+    fn test_derive_child_secret_key() {
+        let sk = SecretKey::random();
+        // derivation index 0
+        let child0 = sk.derive_child(&[0]);
+        assert!(child0 != sk);
+        // derivation index 00
+        let child00 = sk.derive_child(&[0, 0]);
+        assert!(child00 != sk);
+        assert!(child00 != child0);
+        // derivation index 1
+        let child1 = sk.derive_child(&[1]);
+        assert!(child1 != sk);
+        assert!(child1 != child0);
+        // derivation index 2
+        let child2 = sk.derive_child(&[2]);
+        assert!(child2 != sk);
+        assert!(child2 != child0);
+        assert!(child2 != child1);
+        // derivation index 3
+        let child3 = sk.derive_child(&[3]);
+        assert!(child3 != sk);
+        assert!(child3 != child0);
+        assert!(child3 != child0);
+        assert!(child3 != child1);
+        assert!(child3 != child2);
+        // very large derivation index can be used, eg 100 bytes
+        let index100b = [3u8; 100];
+        let child100b = sk.derive_child(&index100b);
+        assert!(child100b != sk);
+    }
+
+    #[test]
+    fn test_derive_child_public_key() {
+        let sk = SecretKey::random();
+        let pk = sk.public_key();
+        // the derived keypair is a match
+        let child_sk = sk.derive_child(&[0]);
+        let child_pk = pk.derive_child(&[0]);
+        assert_eq!(child_pk, child_sk.public_key());
+    }
+
+    #[test]
+    fn test_derivation_index_into_fr() {
+        // index 0 does not give Fr::zero
+        let fr_from_0 = derivation_index_into_fr(&[0]);
+        assert!(fr_from_0 != Fr::zero());
+        // index 1 does not give Fr::one
+        let fr_from_1 = derivation_index_into_fr(&[1]);
+        assert!(fr_from_1 != Fr::one());
+        // index > q gives valid Fr that isn't Fr::MAX
+        // the check relies on the fact Fr::MAX + 1 = 0
+        let mut fr_from_2pow256 = derivation_index_into_fr(&[255u8; 32]);
+        fr_from_2pow256.add_assign(&Fr::one());
+        assert!(fr_from_2pow256 != Fr::zero());
+    }
+
+    #[test]
+    fn test_derive_child_key_vectors() {
+        let vectors = vec![
+            // Plain old derivation
+            vec![
+                // secret key
+                "474da5f155b0580b6ffcd28b62973226883bfc75658a06c2592175448221f68f",
+                // public key
+                "ac378101f72ddf89998b3b20f9498bec1443fb095bbdaa40ad8e0cbc1fe73a147e304a14cce88bc4bd23da1e45eb3742",
+                // random index
+                "57cb1459985906a9c00036f0b1d700b52a4dc25b3e0ff3808dd2c9fa6ca6ba87",
+                // child secret key at random index
+                "4039a5958f0a10baa1d1f0d5d7e06435a126744e8b656289e74d74241492df89",
+                // child public key at random index
+                "b46666bbe6f6315df6cacd8200566a977d1875a09b233b0ea60ecd8ee4ffda6f2e1d2cd28665b60f48682f8d14a95a04",
+            ],
+            vec![
+                // secret key
+                "0000000000000000000000000000000000000000000000000000000000000003",
+                // public key
+                "89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224",
+                // index 0
+                "00",
+                // child secret key at index 0
+                "46b9a6b0b09523de44c2df70650e93320ec9d252c89b7a9eedcebacc0b96ad7a",
+                // child public key at index 0
+                "813695785a144e84c48c2a5644772514b6a58503f675f9c77ddfb7513eeb44888031f3ffe6b907a7f3889817a0de3abe",
+                // index 1
+                "01",
+                // child secret key at index 1
+                "633a4afa473971245620d27dc5778102d000fff80fa15ce06e74e1f610a50493",
+                // child public key at index 1
+                "8fd67eac24b4673a00000f57d40e10852eef9fda2800dff003536e3042a6ac5973f0709776c6c93191df4f0d7daf7e46",
+                // index 2
+                "02",
+                // child secret key at index 2
+                "2cc4bf8dd81c619e41146c963e00a245c6cf00163c2932132908f76edf539c7f",
+                // child public key at index 2
+                "8ab99d21622d98ad8bea68c5db881298f317fac691db1ae1eef191407107978338383ef8408fca0743997d040dab27c1",
+                // index 1 with left padding
+                // different to single byte index "01"
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                // child secret key for 1 with left padding
+                "35f65c516e54a08e29f4f9996738dbfc33f5e1a22b023082ff9f01a4a507fc7c",
+                // child public key for 1 with left padding
+                "81a2a9a1b3c891701dba0bdbe975bb06ff20947a35519e7938da7a783b0d561694ae5a9c2ec0c0011fc899dae67e11aa",
+                // index 1 with right padding
+                // different to single byte index "01"
+                "0100000000000000000000000000000000000000000000000000000000000000",
+                // child secret key for 1 with right padding
+                "49df2b6e5b2d4310f8419d8ea651c790e502884c0b9e903c65d23c2f3d522f8b",
+                // child public key for 1 with right padding
+                "a2479d4554fbf8bc98f206bb09de80e2790f44fa3ea8f0cb02c44116111c60da2691683b17367cbb933c27836d721206",
+                // index with 17 bytes
+                "0000000000000000000000000000000101",
+                // child secret key for 17 bytes
+                "65a44b4096fb8948d42a762c27141f58b678de54b9cba554f13e8e144f1ed889",
+                // child public key for 17 bytes
+                "b2a88bac72330a081500b3b27698664812039b61d6929d3ed0a4fea28a4ae35ebc72a149a8d8b2534860672b4348e7ef",
+                // large index greater than q
+                "fedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedc",
+                // child secret key at large index
+                "3da527e935752a7924b8b244be2b6e4b6a8ef54865ef7e1dfeae5187d1cf414d",
+                // child public key at large index
+                "85954d86b7028b362d43e8d8319ef529a8d69c5a4b0a9352f6d3f10d9aa9a5d44b576f14087882d6d51fd10b70e228e9",
+                // index with more than 256 bits
+                // note different to single byte index "00"
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                // child secret key for index more than 256 bits
+                "50524fce1903b24900bd7ae12fce29d3e7cf0520f5fbaee08bc8efe9922458c0",
+                // child public key for index more than 256 bits
+                "a419c001ca4f8261388f0ca55a43ded57f741d2833c532450bded670dad3b0654f2c7ffa81ca9a1fa7b03639d1fd9171",
+                // index with many repeated hashes (34 rounds for this index)
+                "0000000028c0acd2",
+                // child secret key for index with main repeated hashes
+                "319e0ac479cff5cb4261e465de3736d634c583bcb5a1ac33fb0dcb1d77908268",
+                // child public key for index with many repeated hashes
+                "86037c3f7fbd88572bd56025444bb2a49375d2e146f9a52d8a35689fd93d04ebc62559a1441cdc7edbf39189247b9620",
+                // index with child secret key leading zero
+                "0000000000000017",
+                // child secret key for sk leading zero
+                "00dc1689706a2de1f9b84b647776f200c61de5ba2699ab4be6890d96e7870ef8",
+                // child public key for sk leading zero
+                "825cb1914a0b5f006d529b081c06b04f334c8c97456e83a4e61917ce6b5256dab462575b1c03a9bed913bf1c070fda0d",
+                // index with child public key trailing zero
+                "0000000000000152",
+                // child secret key for child pk trailing zero
+                "4237e4e30390f33a329107edde05130ce84e403e0f78a0ba4e5dea79289ba200",
+                // child public key for child pk trailing zero
+                "adb936c7a97c9c98c80b92635ce6ffaceba6620d133ddc7252bd5d11cf7c7a3aa3bbda9428f860987655820a9e940fd8",
+            ],
+        ];
+        for vector in vectors {
+            // get parent keypair
+            let sk_vec = hex::decode(vector[0]).unwrap();
+            let mut sk_bytes = [0u8; SK_SIZE];
+            sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
+            let sk = SecretKey::from_bytes(sk_bytes).expect("invalid secret key bytes");
+            let pk = sk.public_key();
+            let pk_hex = &format!("{}", HexFmt(&pk.to_bytes()));
+            assert_eq!(pk_hex, vector[1]);
+            // test derivation for all the indexes
+            let children = (vector.len() - 2) / 3;
+            for i in 0..children {
+                let v = 2 + i * 3;
+                // get index
+                let index = hex::decode(vector[v]).unwrap();
+                // derive child secret key at this index
+                let sk_child = sk.derive_child(&index);
+                let sk_child_hex = &format!("{}", HexFmt(&sk_child.to_bytes()));
+                assert_eq!(sk_child_hex, vector[v + 1]);
+                // derive child public key at this index
+                let pk_child = pk.derive_child(&index);
+                let pk_child_hex = &format!("{}", HexFmt(&pk_child.to_bytes()));
+                assert_eq!(pk_child_hex, vector[v + 2]);
+                // confirm these keys are a pair
+                assert_eq!(sk_child.public_key(), pk_child);
+            }
+        }
     }
 }
