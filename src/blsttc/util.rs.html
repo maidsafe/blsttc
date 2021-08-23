@@ -61,6 +61,39 @@
 <span id="59">59</span>
 <span id="60">60</span>
 <span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
 </pre><pre class="rust">
 <span class="comment">// Hashing</span>
 
@@ -80,7 +113,7 @@
 <span class="kw">use</span> <span class="ident">group</span>::{<span class="ident">CurveAffine</span>, <span class="ident">CurveProjective</span>, <span class="ident">EncodedPoint</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">PK_SIZE</span>, <span class="ident">SK_SIZE</span>};
-<span class="kw">use</span> <span class="ident">ff::PrimeField</span>;
+<span class="kw">use</span> <span class="ident">ff</span>::{<span class="ident">Field</span>, <span class="ident">PrimeField</span>};
 <span class="kw">use</span> <span class="ident">pairing::bls12_381</span>::{<span class="ident">Fr</span>, <span class="ident">FrRepr</span>, <span class="ident">G1Affine</span>, <span class="ident">G1</span>};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">fr_from_be_bytes</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="ident">SK_SIZE</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FromBytesResult</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
@@ -122,6 +155,39 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">PK_SIZE</span>];
     <span class="ident">bytes</span>.<span class="ident">copy_from_slice</span>(<span class="ident">g1</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>());
     <span class="ident">bytes</span>
+}
+
+<span class="comment">// derivation index conversions</span>
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">derivation_index_into_fr</span>(<span class="ident">v</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fr</span> {
+    <span class="comment">// use number of rounds as a salt to avoid</span>
+    <span class="comment">// any child hash giving the same sequence</span>
+    <span class="ident">index_and_rounds_into_fr</span>(<span class="ident">v</span>, <span class="number">0</span>)
+}
+
+<span class="kw">fn</span> <span class="ident">index_and_rounds_into_fr</span>(<span class="ident">v</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">rounds</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fr</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sha3</span> <span class="op">=</span> <span class="ident">Sha3::v256</span>();
+    <span class="ident">sha3</span>.<span class="ident">update</span>(<span class="ident">v</span>);
+    <span class="ident">sha3</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span>[<span class="ident">rounds</span>]);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">h</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
+    <span class="ident">sha3</span>.<span class="ident">finalize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">h</span>);
+    <span class="comment">// If the hash bytes is larger than Fr::MAX, ie h &gt; 0x73eda753... the</span>
+    <span class="comment">// deserialization into Fr will throw an error. If that happens we need to</span>
+    <span class="comment">// do repeated rounds of hashing until we find a hash less than Fr::MAX.</span>
+    <span class="kw">match</span> <span class="ident">fr_from_be_bytes</span>(<span class="ident">h</span>) {
+        <span class="prelude-val">Ok</span>(<span class="ident">fr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="comment">// if fr is 0 or 1 do another round of hashing</span>
+            <span class="comment">// x * 0 = 0 which is a constant</span>
+            <span class="comment">// x * 1 = x which gives the same key</span>
+            <span class="comment">// it&#39;s extremely unlikely to find hash(vr) == 0 or 1</span>
+            <span class="comment">// so we could probably go without this check</span>
+            <span class="kw">if</span> <span class="ident">fr</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fr::zero</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">fr</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fr::one</span>() {
+                <span class="kw">return</span> <span class="ident">index_and_rounds_into_fr</span>(<span class="kw-2">&amp;</span><span class="ident">h</span>, <span class="ident">rounds</span> <span class="op">+</span> <span class="number">1</span>);
+            }
+            <span class="ident">fr</span>
+        }
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">index_and_rounds_into_fr</span>(<span class="kw-2">&amp;</span><span class="ident">h</span>, <span class="ident">rounds</span> <span class="op">+</span> <span class="number">1</span>),
+    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>
