@@ -19,7 +19,7 @@ use crate::{PK_SIZE, SK_SIZE};
 use ff::{Field, PrimeField};
 use pairing::bls12_381::{Fr, FrRepr, G1Affine, G1};
 
-pub(crate) fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Fr> {
+pub fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Fr> {
     let mut le_bytes = bytes;
     le_bytes.reverse();
     let mut fr_u64s = [0u64; 4];
@@ -33,7 +33,7 @@ pub(crate) fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Fr> {
     Ok(Fr::from_repr(FrRepr(fr_u64s))?)
 }
 
-pub(crate) fn fr_to_be_bytes(fr: Fr) -> [u8; SK_SIZE] {
+pub fn fr_to_be_bytes(fr: Fr) -> [u8; SK_SIZE] {
     let mut bytes = [0u8; SK_SIZE];
     // iterating 4 u64s which are in order suiting little endian bytes
     // and must be reversed to get big endian bytes
@@ -46,7 +46,7 @@ pub(crate) fn fr_to_be_bytes(fr: Fr) -> [u8; SK_SIZE] {
     bytes
 }
 
-pub(crate) fn g1_from_be_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<G1> {
+pub fn g1_from_be_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<G1> {
     let mut compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
     compressed.as_mut().copy_from_slice(&bytes);
     let opt_affine = compressed.into_affine().ok();
@@ -54,7 +54,7 @@ pub(crate) fn g1_from_be_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<G1> {
     Ok(projective)
 }
 
-pub(crate) fn g1_to_be_bytes(g1: G1) -> [u8; PK_SIZE] {
+pub fn g1_to_be_bytes(g1: G1) -> [u8; PK_SIZE] {
     let mut bytes = [0u8; PK_SIZE];
     bytes.copy_from_slice(g1.into_affine().into_compressed().as_ref());
     bytes
