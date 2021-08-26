@@ -1688,4 +1688,44 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_ciphertext_vectors() {
+        let vectors = vec![
+            // Plain old ciphertext
+            vec![
+                // secret key
+                "09f82926174f2fb52fc3674822497362df34186b4cac60ab531d81ac36144b63",
+                // plain text hex
+                "0102030405",
+                // ciphertext
+                "96f6ab7884f1d1627439df210ce0c192071612a2fe212ec4bf3c70a885be007c7514dc15b769ef02f92558e862d2894e95f892f1eb4a8cfb6f05ac83adcb5b429261bc8b195830d92a59859135157b1f3394156dba1e905f29158d0eeea49faa0238bc51704cfcffdab35fb0d4ca9311bbb5b80d616be2d505d8f82a2ff4e69e756cc835b19e622f5b94457ad9c084e91de6b13d27",
+            ],
+            // Leading zeros and trailing
+            vec![
+                // secret key
+                "0055555555555555555555555555555555555555555555555555555555555500",
+                // plain text hex
+                "00bdc600",
+                // ciphertext with u and w having trailing zeros
+                "b01724be1ed730f0b1713c24aa5963bff7845a56892b78b1a24152dfe48848223ea54a358c27946323ec013ee46af80088f508ef7ce6abf174f51dbfa5692adc975fa99a569860cff555b3e7f68d06dfe6dd2621643ec859a64e61cee1f9aced1569b695253936197585696cfab0b38dfd159051ec569e0d3ba1bb0d2a3dec008467810621111fb2dd92c44ef251280038164cb6",
+            ],
+        ];
+        for vector in vectors {
+            // get secret key
+            let sk_vec = hex::decode(vector[0]).unwrap();
+            let mut sk_bytes = [0u8; SK_SIZE];
+            sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
+            let sk = SecretKey::from_bytes(sk_bytes).expect("invalid secret key bytes");
+            // get ciphertext
+            let ct_vec = hex::decode(vector[2]).unwrap();
+            let ct = Ciphertext::from_bytes(&ct_vec).expect("invalid ciphertext bytes");
+            // check the ciphertext is valid
+            assert!(ct.verify());
+            // check the decrypted ciphertext matches the original message
+            let msg_vec = hex::decode(vector[1]).unwrap();
+            let plaintext = sk.decrypt(&ct).expect("decryption failed");
+            assert_eq!(plaintext, msg_vec);
+        }
+    }
 }
