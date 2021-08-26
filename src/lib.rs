@@ -48,7 +48,7 @@ pub use crate::into_fr::IntoFr;
 mod util;
 use util::{
     derivation_index_into_fr, fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes,
-    sha3_256,
+    g2_from_be_bytes, g2_to_be_bytes, sha3_256,
 };
 
 use blst::{
@@ -253,18 +253,13 @@ impl Signature {
 
     /// Returns the signature with the given representation, if valid.
     pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
-        let mut compressed: <G2Affine as CurveAffine>::Compressed = EncodedPoint::empty();
-        compressed.as_mut().copy_from_slice(bytes.borrow());
-        let opt_affine = compressed.into_affine().ok();
-        let projective = opt_affine.ok_or(FromBytesError::Invalid)?.into_projective();
-        Ok(Signature(projective))
+        let g2 = g2_from_be_bytes(bytes)?;
+        Ok(Signature(g2))
     }
 
     /// Returns a byte string representation of the signature.
     pub fn to_bytes(&self) -> [u8; SIG_SIZE] {
-        let mut bytes = [0u8; SIG_SIZE];
-        bytes.copy_from_slice(self.0.into_affine().into_compressed().as_ref());
-        bytes
+        g2_to_be_bytes(self.0)
     }
 }
 
