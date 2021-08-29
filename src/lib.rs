@@ -12,11 +12,13 @@ pub use pairing;
 mod cmp_pairing;
 mod into_fr;
 mod secret;
+mod util;
 
 #[cfg(feature = "codec-support")]
 #[macro_use]
 mod codec_impl;
 
+pub mod convert;
 pub mod error;
 pub mod poly;
 pub mod serde_impl;
@@ -45,11 +47,11 @@ use crate::secret::clear_fr;
 
 pub use crate::into_fr::IntoFr;
 
-mod util;
-use util::{
-    derivation_index_into_fr, fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes,
-    g2_from_be_bytes, g2_to_be_bytes, sha3_256,
+use convert::{
+    fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes, g2_from_be_bytes,
+    g2_to_be_bytes,
 };
+use util::{derivation_index_into_fr, sha3_256};
 
 use blst::{
     min_pk::{PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature},

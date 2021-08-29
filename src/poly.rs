@@ -30,10 +30,10 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
+use crate::convert::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes};
 use crate::error::{Error, FromBytesResult, Result};
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
-use crate::util::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes};
 use crate::{Fr, G1Affine, G1, PK_SIZE, SK_SIZE};
 
 /// A univariate polynomial in the prime field.
