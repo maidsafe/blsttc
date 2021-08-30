@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.2.0](https://github.com/maidsafe/blsttc/compare/v3.1.0...v3.2.0) (2021-08-30)
+
+
+### Features
+
+* add g2_from_be_bytes and g2_to_be_bytes ([47f0102](https://github.com/maidsafe/blsttc/commit/47f01025271ef6acb6fd18884d8e279f3618505b))
+* allow utils to be used publicly ([ce8e969](https://github.com/maidsafe/blsttc/commit/ce8e96953a38a6ee83ce9eafec004df89fd1b91c))
+
 ## [3.1.0](https://github.com/maidsafe/blsttc/compare/v3.0.0...v3.1.0) (2021-08-23)
 
 
