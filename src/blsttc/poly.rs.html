@@ -1256,10 +1256,10 @@
 <span class="kw">use</span> <span class="ident">zeroize::Zeroize</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::cmp_pairing::cmp_projective</span>;
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::convert</span>::{<span class="ident">fr_from_be_bytes</span>, <span class="ident">fr_to_be_bytes</span>, <span class="ident">g1_from_be_bytes</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::error</span>::{<span class="ident">Error</span>, <span class="ident">FromBytesResult</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::into_fr::IntoFr</span>;
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::secret::clear_fr</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::util</span>::{<span class="ident">fr_from_be_bytes</span>, <span class="ident">fr_to_be_bytes</span>, <span class="ident">g1_from_be_bytes</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Fr</span>, <span class="ident">G1Affine</span>, <span class="ident">G1</span>, <span class="ident">PK_SIZE</span>, <span class="ident">SK_SIZE</span>};
 
 <span class="doccomment">/// A univariate polynomial in the prime field.</span>
