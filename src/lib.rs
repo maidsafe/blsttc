@@ -54,6 +54,7 @@ use convert::{
 use util::{derivation_index_into_fr, sha3_256};
 
 use blst::{
+    blst_hash_to_g2, blst_p2, blst_p2_compress,
     min_pk::{PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature},
     BLST_ERROR,
 };
@@ -869,8 +870,22 @@ impl SecretKeySet {
 
 /// Returns a hash of the given message in `G2`.
 pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2 {
-    let digest = sha3_256(msg.as_ref());
-    G2::random(&mut ChaChaRng::from_seed(digest))
+    let mut msg_hash: blst_p2 = Default::default();
+    let aug = b"";
+    unsafe {
+        blst_hash_to_g2(
+            &mut msg_hash,
+            msg.as_ref().as_ptr(),
+            msg.as_ref().len(),
+            DST.as_ptr(),
+            DST.len(),
+            aug.as_ptr(),
+            aug.len(),
+        )
+    };
+    let mut msg_g2_bytes = [0u8; 96];
+    unsafe { blst_p2_compress(&mut msg_g2_bytes[0], &msg_hash) }
+    g2_from_be_bytes(msg_g2_bytes).unwrap()
 }
 
 /// Returns a hash of the group element and message, in the second group.
@@ -1756,7 +1771,7 @@ mod tests {
                 // plain text hex
                 "0102030405",
                 // ciphertext
-                "96f6ab7884f1d1627439df210ce0c192071612a2fe212ec4bf3c70a885be007c7514dc15b769ef02f92558e862d2894e95f892f1eb4a8cfb6f05ac83adcb5b429261bc8b195830d92a59859135157b1f3394156dba1e905f29158d0eeea49faa0238bc51704cfcffdab35fb0d4ca9311bbb5b80d616be2d505d8f82a2ff4e69e756cc835b19e622f5b94457ad9c084e91de6b13d27",
+                "9369436c4f3b930aebeb1458b5478a393c90c51de74ebe0ad53b178f25ea0ab51b8acae9847ca3ec9d85bea816e174ca81a7160b714ed5a2a2b6d473473e02345bdeabddad35f13127259b905a8b01ea8225a9449ead9922d8d388959d712bc719889f12f8f273c530e1a7b38a0c2bda9a568453e011c41bb3c66e6dc6c313451802bade49a97e2315507e9a68f1f8794cda1b5420",
             ],
             // Leading zeros and trailing
             vec![
@@ -1765,7 +1780,7 @@ mod tests {
                 // plain text hex
                 "00bdc600",
                 // ciphertext with u and w having trailing zeros
-                "b01724be1ed730f0b1713c24aa5963bff7845a56892b78b1a24152dfe48848223ea54a358c27946323ec013ee46af80088f508ef7ce6abf174f51dbfa5692adc975fa99a569860cff555b3e7f68d06dfe6dd2621643ec859a64e61cee1f9aced1569b695253936197585696cfab0b38dfd159051ec569e0d3ba1bb0d2a3dec008467810621111fb2dd92c44ef251280038164cb6",
+                "8d86c6a960cf15f0170b855f5b8d7eca52885fa63ba9c242e54f9cdd5a91f0e42c5b16d39108457613eff00e50b21357af578a279b048d4334434402c129c7754b6461bf653bf57b4b09eb06f53b9360b52438cb9c32c580d9b58981dbf1671519f413245fc288f973d7a47ceca5a21d3e69de7561f70c1c4296f40cdcc0043f20b13e6953fbb1b3363af011350e315fed74a849",
             ],
         ];
         for vector in vectors {
