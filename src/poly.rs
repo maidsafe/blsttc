@@ -464,6 +464,13 @@ pub struct Commitment {
     pub(super) coeff: Vec<G1>,
 }
 
+/// Creates a new `Commitment` instance
+impl From<Vec<G1>> for Commitment {
+    fn from(coeff: Vec<G1>) -> Self {
+        Commitment { coeff }
+    }
+}
+
 impl PartialOrd for Commitment {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
