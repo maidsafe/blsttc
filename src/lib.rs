@@ -196,6 +196,11 @@ impl PublicKeyShare {
         PEngine::pairing(share.0, hash) == PEngine::pairing((self.0).0, *w)
     }
 
+    /// Derives a child public key share for a given index.
+    pub fn derive_child(&self, index: &[u8]) -> Self {
+        PublicKeyShare(self.0.derive_child(index))
+    }
+
     /// Returns the key share with the given representation, if valid.
     pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
         Ok(PublicKeyShare(PublicKey::from_bytes(bytes)?))
@@ -506,6 +511,11 @@ impl SecretKeyShare {
         format!("SecretKeyShare({:?})", (self.0).0)
     }
 
+    /// Derives a child secret key share for a given index.
+    pub fn derive_child(&self, index: &[u8]) -> Self {
+        SecretKeyShare(self.0.derive_child(index))
+    }
+
     /// Serializes to big endian bytes
     pub fn to_bytes(&self) -> [u8; SK_SIZE] {
         self.0.to_bytes()
@@ -736,6 +746,22 @@ impl PublicKeySet {
         Ok(xor_with_hash(g, &ct.1))
     }
 
+    /// Derives a child public key set for a given index.
+    pub fn derive_child(&self, index: &[u8]) -> Self {
+        let index_fr = derivation_index_into_fr(index);
+        let child_coeffs: Vec<G1> = self
+            .commit
+            .coeff
+            .iter()
+            .map(|coeff| {
+                let mut child_coeff = *coeff;
+                child_coeff.mul_assign(index_fr);
+                child_coeff
+            })
+            .collect();
+        PublicKeySet::from(Commitment::from(child_coeffs))
+    }
+
     /// Serializes to big endian bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         self.commit.to_bytes()
@@ -810,6 +836,26 @@ impl SecretKeySet {
     pub fn secret_key(&self) -> SecretKey {
         let mut fr = self.poly.evaluate(0);
         SecretKey::from_mut(&mut fr)
+    }
+
+    /// Derives a child secret key set for a given index.
+    pub fn derive_child(&self, index: &[u8]) -> Self {
+        // Equivalent to self.poly.clone() * index_fr;
+        // The code here follows the same structure as in PublicKeySet for
+        // similarity / symmetry / aesthetics, since Commitment can't be
+        // multiplied by Fr the same way Poly can.
+        let index_fr = derivation_index_into_fr(index);
+        let child_coeffs: Vec<Fr> = self
+            .poly
+            .coeff
+            .iter()
+            .map(|coeff| {
+                let mut child_coeff = *coeff;
+                child_coeff.mul_assign(&index_fr);
+                child_coeff
+            })
+            .collect();
+        SecretKeySet::from(Poly::from(child_coeffs))
     }
 
     /// Serializes to big endian bytes
@@ -1729,5 +1775,100 @@ mod tests {
             let plaintext = sk.decrypt(&ct).expect("decryption failed");
             assert_eq!(plaintext, msg_vec);
         }
+    }
+
+    #[test]
+    fn test_sk_set_derive_child() {
+        let mut rng = rand::thread_rng();
+        let sks = SecretKeySet::random(3, &mut rng);
+        // Deriving from master is the same as deriving a set
+        // and getting the master from the derived set
+        let mut index = [0u8; 32];
+        rng.fill_bytes(&mut index);
+        let msk = sks.secret_key();
+        let msk_child = msk.derive_child(&index);
+        assert_ne!(msk, msk_child);
+        let sks_child = sks.derive_child(&index);
+        assert_ne!(sks.to_bytes(), sks_child.to_bytes());
+        let sks_child_master = sks_child.secret_key();
+        assert_eq!(msk_child, sks_child_master);
+        // secret key shares are matching
+        // sks.child(x).share(y) == sks.share(y).child(x)
+        let sks_share0 = sks.secret_key_share(0);
+        let sks_share0_child = sks_share0.derive_child(&index);
+        let sks_child_share0 = sks_child.secret_key_share(0);
+        assert_eq!(sks_share0_child, sks_child_share0);
+    }
+
+    #[test]
+    fn test_pk_set_derive_child() {
+        let mut rng = rand::thread_rng();
+        let sks = SecretKeySet::random(3, &mut rng);
+        let pks = sks.public_keys();
+        // Deriving from master is the same as deriving a set
+        // and getting the master from the derived set
+        let mut index = [0u8; 32];
+        rng.fill_bytes(&mut index);
+        let mpk = pks.public_key();
+        let mpk_child = mpk.derive_child(&index);
+        assert_ne!(mpk, mpk_child);
+        let pks_child = pks.derive_child(&index);
+        assert_ne!(pks.to_bytes(), pks_child.to_bytes());
+        let pks_child_master = pks_child.public_key();
+        assert_eq!(mpk_child, pks_child_master);
+        // public key shares are matching
+        // pks.child(x).share(y) == pks.share(y).child(x)
+        let pks_share0 = pks.public_key_share(0);
+        let pks_share0_child = pks_share0.derive_child(&index);
+        let pks_child_share0 = pks_child.public_key_share(0);
+        assert_eq!(pks_share0_child, pks_child_share0);
+        // derived master public key is a pair for derived master secret key
+        let sks_child = sks.derive_child(&index);
+        assert_eq!(sks_child.secret_key().public_key(), pks_child.public_key());
+    }
+
+    #[test]
+    fn test_sk_set_child_sig() {
+        // combining signatures from child keyshares produces
+        // a valid signature for the child public key set
+        let mut rng = rand::thread_rng();
+        // The threshold is 3, so 4 signature shares will suffice to decrypt.
+        let sks = SecretKeySet::random(3, &mut rng);
+        let share_indexes = vec![5, 8, 7, 10];
+        // all participants have the public key set and their key share.
+        let pks = sks.public_keys();
+        let key_shares: BTreeMap<_, _> = share_indexes
+            .iter()
+            .map(|&i| {
+                let key_share = sks.secret_key_share(i);
+                (i, key_share)
+            })
+            .collect();
+        // all participants use the same index to derive a child keyshare
+        let mut index = [0u8; 32];
+        rng.fill_bytes(&mut index);
+        let child_key_shares: BTreeMap<_, _> = key_shares
+            .iter()
+            .map(|(i, key_share)| {
+                let child_key_share = key_share.derive_child(&index);
+                (i, child_key_share)
+            })
+            .collect();
+        // all participants sign a message with their child keyshare
+        let msg = "Totally real news";
+        let child_sig_shares: BTreeMap<_, _> = child_key_shares
+            .iter()
+            .map(|(i, child_key_share)| {
+                let child_sig_share = child_key_share.sign(&msg);
+                (i, child_sig_share)
+            })
+            .collect();
+        // Combining the child shares creates a valid signature for the child
+        // public key set.
+        let pks_child = pks.derive_child(&index);
+        let sig = pks_child
+            .combine_signatures(&child_sig_shares)
+            .expect("signatures match");
+        assert!(pks_child.public_key().verify(&sig, msg));
     }
 }
