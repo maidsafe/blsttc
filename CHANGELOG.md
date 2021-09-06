@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.3.0](https://github.com/maidsafe/blsttc/compare/v3.2.0...v3.3.0) (2021-09-06)
+
+
+### Features
+
+* SecretKeySet and PublicKeySet derive_child ([fcd174f](https://github.com/maidsafe/blsttc/commit/fcd174f9bf92baec153f85c5765d51a358bfca31))
+
 ## [3.2.0](https://github.com/maidsafe/blsttc/compare/v3.1.0...v3.2.0) (2021-08-30)
 
 
