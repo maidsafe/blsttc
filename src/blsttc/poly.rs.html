@@ -1223,6 +1223,13 @@
 <span id="1221">1221</span>
 <span id="1222">1222</span>
 <span id="1223">1223</span>
+<span id="1224">1224</span>
+<span id="1225">1225</span>
+<span id="1226">1226</span>
+<span id="1227">1227</span>
+<span id="1228">1228</span>
+<span id="1229">1229</span>
+<span id="1230">1230</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Utilities for distributed key generation: uni- and bivariate polynomials and commitments.</span>
 <span class="doccomment">//!</span>
@@ -1688,6 +1695,13 @@
     <span class="doccomment">/// The coefficients of the polynomial.</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;super::serde_impl::projective_vec&quot;</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span>,
+}
+
+<span class="doccomment">/// Creates a new `Commitment` instance</span>
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">Commitment</span> { <span class="ident">coeff</span> }
+    }
 }
 
 <span class="kw">impl</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
