@@ -1628,9 +1628,9 @@ mod tests {
                 // random index
                 "57cb1459985906a9c00036f0b1d700b52a4dc25b3e0ff3808dd2c9fa6ca6ba87",
                 // child secret key at random index
-                "4039a5958f0a10baa1d1f0d5d7e06435a126744e8b656289e74d74241492df89",
+                "70fd8ad66945fcbf180f3bae8dcf62b7272583d470a76c8fdfd38554670e2d12",
                 // child public key at random index
-                "b46666bbe6f6315df6cacd8200566a977d1875a09b233b0ea60ecd8ee4ffda6f2e1d2cd28665b60f48682f8d14a95a04",
+                "b63d2ff11f2f516c939b588a91a929ffff1736b908ea8e2399331c2674b54dfe7d30291ee80abe5a9f8e0ca3696bf3d4",
             ],
             vec![
                 // secret key
@@ -1640,72 +1640,72 @@ mod tests {
                 // index 0
                 "00",
                 // child secret key at index 0
-                "46b9a6b0b09523de44c2df70650e93320ec9d252c89b7a9eedcebacc0b96ad7a",
+                "59e901e516098852a4e499c06dc5b19a233d900c8cd1f94aa4de292027fd44f3",
                 // child public key at index 0
-                "813695785a144e84c48c2a5644772514b6a58503f675f9c77ddfb7513eeb44888031f3ffe6b907a7f3889817a0de3abe",
+                "b16fde3827cf4339de48a04f8a7cab66a5fb36c766e52500d9ab1349e00ae188e3bbe57ffe149846a41700233a6dc633",
                 // index 1
                 "01",
                 // child secret key at index 1
-                "633a4afa473971245620d27dc5778102d000fff80fa15ce06e74e1f610a50493",
+                "3fa6c81c6c03858809297f08f2b4b5351097159d0e6f6cb390380b8e672f1647",
                 // child public key at index 1
-                "8fd67eac24b4673a00000f57d40e10852eef9fda2800dff003536e3042a6ac5973f0709776c6c93191df4f0d7daf7e46",
+                "b1e2267fc6984f99900ad8bb966cac8ead085ce725190e2651c4cab9f2c27ee562a0385314d128b146b51b9215d4c7c6",
                 // index 2
                 "02",
                 // child secret key at index 2
-                "2cc4bf8dd81c619e41146c963e00a245c6cf00163c2932132908f76edf539c7f",
+                "726151ffbc91fbc61012694b8165eac52a9730701e0c60610c54421e06e8f487",
                 // child public key at index 2
-                "8ab99d21622d98ad8bea68c5db881298f317fac691db1ae1eef191407107978338383ef8408fca0743997d040dab27c1",
+                "884f977113c0d3704f7b4d4321aed679060fa223160ccb01bc8776ec28de3537b0c1c2fd19470d63871d82868c51af70",
                 // index 1 with left padding
                 // different to single byte index "01"
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 // child secret key for 1 with left padding
-                "35f65c516e54a08e29f4f9996738dbfc33f5e1a22b023082ff9f01a4a507fc7c",
+                "5dd1bf5410d594f79541be6c417ba45a0c255bcca5d07518c0b5425f4070bbd6",
                 // child public key for 1 with left padding
-                "81a2a9a1b3c891701dba0bdbe975bb06ff20947a35519e7938da7a783b0d561694ae5a9c2ec0c0011fc899dae67e11aa",
+                "b4534bec031361d9c71c147bd9998e51f75dea710f82449f2803b7ea76cc2d9ce65f89c8b0cc3cc445e3a53ac96f23ee",
                 // index 1 with right padding
                 // different to single byte index "01"
                 "0100000000000000000000000000000000000000000000000000000000000000",
                 // child secret key for 1 with right padding
-                "49df2b6e5b2d4310f8419d8ea651c790e502884c0b9e903c65d23c2f3d522f8b",
+                "49d209ec62fea0772bdd4a38532a4c9f3f88b477fd98df82d596c0a3ea9f5550",
                 // child public key for 1 with right padding
-                "a2479d4554fbf8bc98f206bb09de80e2790f44fa3ea8f0cb02c44116111c60da2691683b17367cbb933c27836d721206",
+                "8566e71e388ca4e05009a9dd6b8e0558d1552183e4bb8dcc3954dbdd305ec0b55e4b2f6f7df1d35a7bcecba44a339915",
                 // index with 17 bytes
                 "0000000000000000000000000000000101",
                 // child secret key for 17 bytes
-                "65a44b4096fb8948d42a762c27141f58b678de54b9cba554f13e8e144f1ed889",
+                "126a45de73674f09ef9d5479cae6ea952b9d0e7de63acb82e1cab8386bba48b4",
                 // child public key for 17 bytes
-                "b2a88bac72330a081500b3b27698664812039b61d6929d3ed0a4fea28a4ae35ebc72a149a8d8b2534860672b4348e7ef",
+                "9823ad5b80c770b97b7a48c09381b6adfa5f4135ba8171959bd3d9e98221654afdaf2b4e35a858da5809d05fa29d326f",
                 // large index greater than q
                 "fedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedc",
                 // child secret key at large index
-                "3da527e935752a7924b8b244be2b6e4b6a8ef54865ef7e1dfeae5187d1cf414d",
+                "2ed3a46066e7c5ef34e86eabb8b134b1a9cea80fdd50cb15d21279ff293b24bc",
                 // child public key at large index
-                "85954d86b7028b362d43e8d8319ef529a8d69c5a4b0a9352f6d3f10d9aa9a5d44b576f14087882d6d51fd10b70e228e9",
+                "b02010643f8c674a3a4c92fbc93a1107e6665aa379b5537006c257de8d49efb2ec61897b408ddcfb27e79145d6feec38",
                 // index with more than 256 bits
                 // note different to single byte index "00"
                 "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 // child secret key for index more than 256 bits
-                "50524fce1903b24900bd7ae12fce29d3e7cf0520f5fbaee08bc8efe9922458c0",
+                "620d0d50145b9d7a82b5544191c86cfc315d221b8c34e2a31a86d90c91a6ba80",
                 // child public key for index more than 256 bits
-                "a419c001ca4f8261388f0ca55a43ded57f741d2833c532450bded670dad3b0654f2c7ffa81ca9a1fa7b03639d1fd9171",
+                "8ec8f9985e3390cc46039b05944eb8fa9d67331d30c51b95ff6a1fb1d8bf6d5f90b09d977c1953b9e6bb8bf66ff82391",
                 // index with many repeated hashes (34 rounds for this index)
                 "0000000028c0acd2",
                 // child secret key for index with main repeated hashes
-                "319e0ac479cff5cb4261e465de3736d634c583bcb5a1ac33fb0dcb1d77908268",
+                "0e098e9c55aa82a6d9e9ff9a977e342713ff0141602597992f449258bebf2b9f",
                 // child public key for index with many repeated hashes
-                "86037c3f7fbd88572bd56025444bb2a49375d2e146f9a52d8a35689fd93d04ebc62559a1441cdc7edbf39189247b9620",
+                "abac4c688bc9e7067729aa6db521c7eee81b1e3c3051c81f24163137a323743e84e2afc484a0b06bc2e165734c259558",
                 // index with child secret key leading zero
                 "0000000000000017",
                 // child secret key for sk leading zero
-                "00dc1689706a2de1f9b84b647776f200c61de5ba2699ab4be6890d96e7870ef8",
+                "30487aa3fbda6666674dac49bad6cb8d4dbaa6d303af129e91afa43845bcf8f3",
                 // child public key for sk leading zero
-                "825cb1914a0b5f006d529b081c06b04f334c8c97456e83a4e61917ce6b5256dab462575b1c03a9bed913bf1c070fda0d",
+                "b2bdd0b00a36b679cd1dc0ad92017db6017fcbb3b72c33574448f2df34be34010be9ce9819c30813cd3952222d4c1ef4",
                 // index with child public key trailing zero
                 "0000000000000152",
                 // child secret key for child pk trailing zero
-                "4237e4e30390f33a329107edde05130ce84e403e0f78a0ba4e5dea79289ba200",
+                "61851456efad80f5add5951881cbea5e6d9046371bd02b7a68544d776ffe7917",
                 // child public key for child pk trailing zero
-                "adb936c7a97c9c98c80b92635ce6ffaceba6620d133ddc7252bd5d11cf7c7a3aa3bbda9428f860987655820a9e940fd8",
+                "b9dd6df9030bc91ef78f78947836f34407f9e8571305d0c8a1c791c2464cbf71ce131a94c288b25d4ee4947ff238efd1",
             ],
         ];
         for vector in vectors {
