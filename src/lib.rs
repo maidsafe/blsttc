@@ -726,12 +726,17 @@ impl PublicKeySet {
     /// // Validate the main signature. If the shares were valid, this can't fail.
     /// assert!(pk_set.public_key().verify(&sig, msg));
     /// ```
-    pub fn combine_signatures<'a, T, I>(&self, shares: I) -> Result<Signature>
+    pub fn combine_signatures<T, I, S: Borrow<SignatureShare>>(
+        &self,
+        shares: I,
+    ) -> Result<Signature>
     where
-        I: IntoIterator<Item = (T, &'a SignatureShare)>,
+        I: IntoIterator<Item = (T, S)>,
         T: IntoFr,
     {
-        let samples = shares.into_iter().map(|(i, share)| (i, &(share.0).0));
+        let samples = shares
+            .into_iter()
+            .map(|(i, share)| (i, (share.borrow().0).0));
         Ok(Signature(interpolate(self.commit.degree(), samples)?))
     }
 
@@ -1026,7 +1031,8 @@ mod tests {
         let msg = "Totally real news";
 
         // The threshold is 3, so 4 signature shares will suffice to recreate the share.
-        let sigs: BTreeMap<_, _> = [5, 8, 7, 10]
+        // note: this tests passing a Vec to ::combine_signatures (instead of BTreeMap)
+        let sigs: Vec<(_, _)> = [5, 8, 7, 10]
             .iter()
             .map(|&i| {
                 let sig = sk_set.secret_key_share(i).sign(msg);
@@ -1040,7 +1046,7 @@ mod tests {
         }
 
         // Combined, they produce a signature matching the main public key.
-        let sig = pk_set.combine_signatures(&sigs).expect("signatures match");
+        let sig = pk_set.combine_signatures(sigs).expect("signatures match");
         assert!(pk_set.public_key().verify(&sig, msg));
 
         // A different set of signatories produces the same signature.
