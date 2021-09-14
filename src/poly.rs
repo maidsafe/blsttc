@@ -26,7 +26,6 @@ use std::{cmp, iter, ops};
 use ff::Field;
 use group::{CurveAffine, CurveProjective};
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
@@ -37,10 +36,9 @@ use crate::secret::clear_fr;
 use crate::{Fr, G1Affine, G1, PK_SIZE, SK_SIZE};
 
 /// A univariate polynomial in the prime field.
-#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct Poly {
     /// The coefficients of a polynomial.
-    #[serde(with = "super::serde_impl::field_vec")]
     pub(super) coeff: Vec<Fr>,
 }
 
@@ -457,10 +455,9 @@ impl Poly {
 }
 
 /// A commitment to a univariate polynomial.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Commitment {
     /// The coefficients of the polynomial.
-    #[serde(with = "super::serde_impl::projective_vec")]
     pub(super) coeff: Vec<G1>,
 }
 

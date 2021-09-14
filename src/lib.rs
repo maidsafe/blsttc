@@ -14,14 +14,9 @@ mod into_fr;
 mod secret;
 mod util;
 
-#[cfg(feature = "codec-support")]
-#[macro_use]
-mod codec_impl;
-
 pub mod convert;
 pub mod error;
 pub mod poly;
-pub mod serde_impl;
 
 use std::borrow::Borrow;
 use std::cmp::Ordering;
@@ -37,7 +32,6 @@ use pairing::Engine;
 use rand::distributions::{Distribution, Standard};
 use rand::{rngs::OsRng, Rng, RngCore, SeedableRng};
 use rand_chacha::ChaChaRng;
-use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
@@ -74,8 +68,8 @@ pub const SIG_SIZE: usize = 96;
 pub const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 /// A public key.
-#[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
-pub struct PublicKey(#[serde(with = "serde_impl::projective")] G1);
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct PublicKey(G1);
 
 impl Hash for PublicKey {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -162,8 +156,7 @@ impl PublicKey {
 }
 
 /// A public key share.
-#[cfg_attr(feature = "codec-support", derive(codec::Encode, codec::Decode))]
-#[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct PublicKeyShare(PublicKey);
 
 impl fmt::Debug for PublicKeyShare {
@@ -217,8 +210,8 @@ impl PublicKeyShare {
 
 /// A signature.
 // Note: Random signatures can be generated for testing.
-#[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
-pub struct Signature(#[serde(with = "serde_impl::projective")] G2);
+#[derive(Clone, PartialEq, Eq)]
+pub struct Signature(G2);
 
 impl PartialOrd for Signature {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -275,8 +268,7 @@ impl Signature {
 
 /// A signature share.
 // Note: Random signature shares can be generated for testing.
-#[cfg_attr(feature = "codec-support", derive(codec::Encode, codec::Decode))]
-#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct SignatureShare(pub Signature);
 
 impl Distribution<SignatureShare> for Standard {
@@ -521,12 +513,8 @@ impl SecretKeyShare {
 }
 
 /// An encrypted message.
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
-pub struct Ciphertext(
-    #[serde(with = "serde_impl::projective")] G1,
-    Vec<u8>,
-    #[serde(with = "serde_impl::projective")] G2,
-);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ciphertext(G1, Vec<u8>, G2);
 
 impl Hash for Ciphertext {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -605,8 +593,8 @@ impl Ciphertext {
 }
 
 /// A decryption share. A threshold of decryption shares can be used to decrypt a message.
-#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct DecryptionShare(#[serde(with = "serde_impl::projective")] G1);
+#[derive(Clone, PartialEq, Eq)]
+pub struct DecryptionShare(G1);
 
 impl Distribution<DecryptionShare> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> DecryptionShare {
@@ -640,7 +628,7 @@ impl DecryptionShare {
 }
 
 /// A public key and an associated set of public key shares.
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct PublicKeySet {
     /// The coefficients of a polynomial whose value at `0` is the "master key", and value at
     /// `i + 1` is key share number `i`.
@@ -1195,61 +1183,6 @@ mod tests {
     }
 
     #[test]
-    fn test_serde() -> Result<()> {
-        let sk = SecretKey::random();
-        let sig = sk.sign("Please sign here: ______")?;
-        let pk = sk.public_key();
-        let ser_pk = bincode::serialize(&pk).expect("serialize public key");
-        let deser_pk = bincode::deserialize(&ser_pk).expect("deserialize public key");
-        assert_eq!(ser_pk.len(), PK_SIZE);
-        assert_eq!(pk, deser_pk);
-        let ser_sig = bincode::serialize(&sig).expect("serialize signature");
-        let deser_sig = bincode::deserialize(&ser_sig).expect("deserialize signature");
-        assert_eq!(ser_sig.len(), SIG_SIZE);
-        assert_eq!(sig, deser_sig);
-        Ok(())
-    }
-
-    #[cfg(feature = "codec-support")]
-    #[test]
-    fn test_codec() {
-        use codec::{Decode, Encode};
-        use rand::distributions::{Distribution, Standard};
-        use rand::thread_rng;
-
-        macro_rules! assert_codec {
-            ($obj:expr, $type:ty) => {
-                let encoded: Vec<u8> = $obj.encode();
-                let decoded: $type = <$type>::decode(&mut &encoded[..])?;
-                assert_eq!(decoded, $obj.clone());
-            };
-        }
-
-        let sk = SecretKey::random();
-        let pk = sk.public_key();
-        assert_codec!(pk, PublicKey);
-
-        let pk_share = PublicKeyShare(pk);
-        assert_codec!(pk_share, PublicKeyShare);
-
-        let sig = sk.sign(b"this is a test");
-        assert_codec!(sig, Signature);
-
-        let sig_share = SignatureShare(sig);
-        assert_codec!(sig_share, SignatureShare);
-
-        let cipher_text = pk.encrypt(b"cipher text");
-        assert_codec!(cipher_text, Ciphertext);
-
-        let dec_share: DecryptionShare = Standard.sample(&mut thread_rng());
-        assert_codec!(dec_share, DecryptionShare);
-
-        let sk_set = SecretKeySet::random(3, &mut thread_rng());
-        let pk_set = sk_set.public_keys();
-        assert_codec!(pk_set, PublicKeySet);
-    }
-
-    #[test]
     fn test_size() {
         assert_eq!(<G1Affine as CurveAffine>::Compressed::size(), PK_SIZE);
         assert_eq!(<G2Affine as CurveAffine>::Compressed::size(), SIG_SIZE);
@@ -1305,11 +1238,7 @@ mod tests {
             41, 147, 127, 112, 220, 23, 106, 31, 1, 67, 33, 41, 187, 43, 148, 211, 213, 3, 31, 128,
             101, 161,
         ];
-        // no SecretKey::from_bytes method, so use bincode which requires
-        // little endian bytes.
-        let mut leskbytes = skbytes;
-        leskbytes.reverse();
-        let sk: SecretKey = bincode::deserialize(&leskbytes)?;
+        let sk = SecretKey::from_bytes(skbytes).expect("invalid sk bytes");
         let pk = sk.public_key();
         // secret key gives same public key
         assert_eq!(pkbytes, pk.to_bytes());
@@ -1323,15 +1252,8 @@ mod tests {
 
     #[test]
     fn test_sk_to_from_bytes() -> Result<()> {
-        use crate::serde_impl::SerdeSecret;
         let sk = SecretKey::random();
-        // bincode is little endian, so must reverse to get big endian
-        let mut bincode_bytes = bincode::serialize(&SerdeSecret(&sk))?;
-        bincode_bytes.reverse();
-        // sk.to_bytes() is big endian
         let sk_be_bytes = sk.to_bytes();
-        assert_eq!(bincode_bytes, sk_be_bytes);
-        // from bytes gives original secret key
         let restored_sk = SecretKey::from_bytes(sk_be_bytes).expect("invalid sk bytes");
         assert_eq!(sk, restored_sk);
         Ok(())
