@@ -18,13 +18,6 @@ An [official security audit](https://github.com/poanetwork/wiki/wiki/Threshold-C
 
 ## Usage
 
-`Cargo.toml`:
-
-```toml
-[dependencies]
-blsttc = "0.4.1"
-```
-
 `main.rs`:
 
 ```rust
