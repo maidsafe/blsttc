@@ -5,55 +5,61 @@
 #![allow(clippy::derive_hash_xor_eq)]
 #![warn(missing_docs)]
 
-pub use ff;
-pub use group;
-pub use pairing;
-
-mod cmp_pairing;
 mod into_fr;
 mod secret;
 mod util;
 
-pub mod convert;
+pub mod blst_ops;
 pub mod error;
 pub mod poly;
 
 use std::borrow::Borrow;
-use std::cmp::Ordering;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 
-use ff::Field;
-use group::{CurveAffine, CurveProjective, EncodedPoint};
 use hex_fmt::HexFmt;
-use log::debug;
-use pairing::Engine;
 use rand::distributions::{Distribution, Standard};
 use rand::{rngs::OsRng, Rng, RngCore, SeedableRng};
 use rand_chacha::ChaChaRng;
 use zeroize::Zeroize;
 
-use crate::cmp_pairing::cmp_projective;
 use crate::poly::{Commitment, Poly};
 use crate::secret::clear_fr;
 
 pub use self::error::{Error, Result};
 pub use crate::into_fr::IntoFr;
 
-use convert::{
-    fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes, g2_from_be_bytes,
-    g2_to_be_bytes,
+use blst_ops::{
+    equal_pairs,
+    fr_add_assign,
+    fr_from_be_bytes,
+    fr_inverse,
+    fr_mul_fr,
+    fr_mul_assign,
+    fr_random,
+    fr_sub_fr,
+    fr_sub_assign,
+    fr_to_be_bytes,
+    p1_add_assign,
+    p1_from_be_bytes,
+    p1_mul_fr,
+    p1_to_be_bytes,
+    p2_add_assign,
+    p2_mul_fr,
+    p2_from_be_bytes,
+    p2_to_be_bytes,
+    FR_ONE,
+    FR_ZERO,
+    P1_ONE,
 };
 use util::{derivation_index_into_fr, sha3_256};
 
 use blst::{
-    blst_hash_to_g2, blst_p2, blst_p2_compress,
-    min_pk::{PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature},
-    BLST_ERROR,
+    blst_fr,
+    blst_hash_to_g2,
+    blst_p1,
+    blst_p2,
 };
-
-pub use pairing::bls12_381::{Bls12 as PEngine, Fr, FrRepr, G1Affine, G2Affine, G1, G2};
 
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
@@ -69,50 +75,24 @@ pub const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 /// A public key.
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct PublicKey(G1);
-
-impl Hash for PublicKey {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.into_affine().into_compressed().as_ref().hash(state);
-    }
-}
+pub struct PublicKey(blst_p1);
 
 impl fmt::Debug for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = self.0.into_affine().into_uncompressed();
-        write!(f, "PublicKey({:0.10})", HexFmt(uncomp))
-    }
-}
-
-impl PartialOrd for PublicKey {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for PublicKey {
-    fn cmp(&self, other: &Self) -> Ordering {
-        cmp_projective(&self.0, &other.0)
+        let l0 = (self.0).x.l[0]; // TODO IC check this
+        write!(f, "PublicKey({:0.10})", HexFmt(l0.to_be_bytes()))
     }
 }
 
 impl PublicKey {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &Signature, hash: H) -> bool {
-        PEngine::pairing(self.0, hash) == PEngine::pairing(G1Affine::one(), sig.0)
+    pub fn verify_g2(&self, sig: &Signature, hash: blst_p2) -> bool {
+        equal_pairs(&self.0, &hash, &P1_ONE, &sig.0)
     }
 
     /// Returns `true` if the signature matches the message.
-    pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> Result<()> {
-        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes())?;
-        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes())?;
-
-        let result = blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false);
-        if result == BLST_ERROR::BLST_SUCCESS {
-            Ok(())
-        } else {
-            Err(result.into())
-        }
+    pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
+        self.verify_g2(sig, hash_g2(msg))
     }
 
     /// Encrypts the message using the OS random number generator.
@@ -125,71 +105,63 @@ impl PublicKey {
 
     /// Encrypts the message.
     pub fn encrypt_with_rng<R: RngCore, M: AsRef<[u8]>>(&self, rng: &mut R, msg: M) -> Ciphertext {
-        let r: Fr = Fr::random(rng);
-        let u = G1Affine::one().mul(r);
+        let r = fr_random(rng);
+        let u = p1_mul_fr(&P1_ONE, &r);
         let v: Vec<u8> = {
-            let g = self.0.into_affine().mul(r);
+            let g = p1_mul_fr(&self.0, &r);
             xor_with_hash(g, msg.as_ref())
         };
-        let w = hash_g1_g2(u, &v).into_affine().mul(r);
+        let hash = hash_g1_g2(u, &v);
+        let w = p2_mul_fr(&hash, &r);
         Ciphertext(u, v, w)
     }
 
     /// Derives a child public key for a given index.
     pub fn derive_child(&self, index: &[u8]) -> Self {
         let index_fr = derivation_index_into_fr(index);
-        let mut child_g1 = self.0;
-        child_g1.mul_assign(index_fr);
-        PublicKey(child_g1)
+        let child_p1 = p1_mul_fr(&self.0, &index_fr);
+        PublicKey(child_p1)
     }
 
     /// Returns the key with the given representation, if valid.
     pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
-        let g1 = g1_from_be_bytes(bytes)?;
-        Ok(PublicKey(g1))
+        let p1 = p1_from_be_bytes(bytes)?;
+        Ok(PublicKey(p1))
     }
 
     /// Returns a byte string representation of the public key.
     pub fn to_bytes(self) -> [u8; PK_SIZE] {
-        g1_to_be_bytes(self.0)
+        p1_to_be_bytes(&self.0)
     }
 }
 
 /// A public key share.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PublicKeyShare(PublicKey);
 
 impl fmt::Debug for PublicKeyShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = (self.0).0.into_affine().into_uncompressed();
-        write!(f, "PublicKeyShare({:0.10})", HexFmt(uncomp))
+        let l0 = (self.0).0.x.l[0]; // TODO IC check this
+        write!(f, "PublicKeyShare({:0.10})", HexFmt(l0.to_be_bytes()))
     }
 }
 
 impl PublicKeyShare {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &SignatureShare, hash: H) -> bool {
+    pub fn verify_g2(&self, sig: &SignatureShare, hash: blst_p2) -> bool {
         self.0.verify_g2(&sig.0, hash)
     }
 
     /// Returns `true` if the signature matches the message.
-    pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> Result<()> {
-        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes())?;
-        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes())?;
-
-        let result = blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false);
-        if result == BLST_ERROR::BLST_SUCCESS {
-            Ok(())
-        } else {
-            Err(result.into())
-        }
+    pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {
+        self.verify_g2(sig, hash_g2(msg))
     }
 
     /// Returns `true` if the decryption share matches the ciphertext.
     pub fn verify_decryption_share(&self, share: &DecryptionShare, ct: &Ciphertext) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *ct;
         let hash = hash_g1_g2(*u, v);
-        PEngine::pairing(share.0, hash) == PEngine::pairing((self.0).0, *w)
+        equal_pairs(&share.0, &hash, &(self.0).0, w)
     }
 
     /// Derives a child public key share for a given index.
@@ -209,78 +181,38 @@ impl PublicKeyShare {
 }
 
 /// A signature.
-// Note: Random signatures can be generated for testing.
 #[derive(Clone, PartialEq, Eq)]
-pub struct Signature(G2);
-
-impl PartialOrd for Signature {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Signature {
-    fn cmp(&self, other: &Self) -> Ordering {
-        cmp_projective(&self.0, &other.0)
-    }
-}
-
-impl Distribution<Signature> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Signature {
-        Signature(G2::random(rng))
-    }
-}
+pub struct Signature(blst_p2);
 
 impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = self.0.into_affine().into_uncompressed();
-        write!(f, "Signature({:0.10})", HexFmt(uncomp))
-    }
-}
-
-impl Hash for Signature {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.into_affine().into_compressed().as_ref().hash(state);
+        let l0 = (self.0).x.fp[0].l[0]; // TODO IC check this
+        write!(f, "Signature({:0.10})", HexFmt(l0.to_be_bytes()))
     }
 }
 
 impl Signature {
-    /// Returns `true` if the signature contains an odd number of ones.
-    pub fn parity(&self) -> bool {
-        let uncomp = self.0.into_affine().into_uncompressed();
-        let xor_bytes: u8 = uncomp.as_ref().iter().fold(0, |result, byte| result ^ byte);
-        let parity = 0 != xor_bytes.count_ones() % 2;
-        debug!("Signature: {:0.10}, parity: {}", HexFmt(uncomp), parity);
-        parity
-    }
 
     /// Returns the signature with the given representation, if valid.
     pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
-        let g2 = g2_from_be_bytes(bytes)?;
-        Ok(Signature(g2))
+        let p2 = p2_from_be_bytes(bytes)?;
+        Ok(Signature(p2))
     }
 
     /// Returns a byte string representation of the signature.
     pub fn to_bytes(&self) -> [u8; SIG_SIZE] {
-        g2_to_be_bytes(self.0)
+        p2_to_be_bytes(&self.0)
     }
 }
 
 /// A signature share.
-// Note: Random signature shares can be generated for testing.
-#[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SignatureShare(pub Signature);
-
-impl Distribution<SignatureShare> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> SignatureShare {
-        SignatureShare(rng.gen())
-    }
-}
 
 impl fmt::Debug for SignatureShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = (self.0).0.into_affine().into_uncompressed();
-        write!(f, "SignatureShare({:0.10})", HexFmt(uncomp))
+        let l0 = ((self.0).0).x.fp[0].l[0]; // TODO IC check this
+        write!(f, "SignatureShare({:0.10})", HexFmt(l0.to_be_bytes()))
     }
 }
 
@@ -305,7 +237,7 @@ impl SignatureShare {
 /// serialization in insecure contexts. To enable both use the `::serde_impl::SerdeSecret`
 /// wrapper which implements both `Deserialize` and `Serialize`.
 #[derive(PartialEq, Eq, Clone)]
-pub struct SecretKey(Fr);
+pub struct SecretKey(blst_fr);
 
 impl Zeroize for SecretKey {
     fn zeroize(&mut self) {
@@ -322,7 +254,7 @@ impl Drop for SecretKey {
 /// Creates a `SecretKey` containing the zero prime field element.
 impl Default for SecretKey {
     fn default() -> Self {
-        let mut fr = Fr::zero();
+        let mut fr = FR_ZERO;
         SecretKey::from_mut(&mut fr)
     }
 }
@@ -333,7 +265,7 @@ impl Distribution<SecretKey> for Standard {
     /// which uses [`rand::thread_rng()`](https://docs.rs/rand/0.7.2/rand/fn.thread_rng.html)
     /// internally as its RNG.
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> SecretKey {
-        SecretKey(Fr::random(rng))
+        SecretKey(fr_random(rng))
     }
 }
 
@@ -352,7 +284,7 @@ impl SecretKey {
     ///
     /// *WARNING* this constructor will overwrite the referenced `Fr` element with zeros after it
     /// has been copied onto the heap.
-    pub fn from_mut(fr: &mut Fr) -> Self {
+    pub fn from_mut(fr: &mut blst_fr) -> Self {
         let sk = SecretKey(*fr);
         clear_fr(fr);
         sk
@@ -372,21 +304,19 @@ impl SecretKey {
 
     /// Returns the matching public key.
     pub fn public_key(&self) -> PublicKey {
-        PublicKey(G1Affine::one().mul(self.0))
+        let p1 = p1_mul_fr(&P1_ONE, &self.0);
+        PublicKey(p1)
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2<H: Into<G2Affine>>(&self, hash: H) -> Signature {
-        Signature(hash.into().mul(self.0))
+    pub fn sign_g2(&self, hash: blst_p2) -> Signature {
+        let sig = p2_mul_fr(&hash, &self.0);
+        Signature(sig)
     }
 
     /// Signs the given message.
-    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Result<Signature> {
-        let blst_sk = BlstSecretKey::from_bytes(&self.to_bytes())?;
-        let blst_sig = blst_sk.sign(msg.as_ref(), DST, &[]);
-
-        let signature = Signature::from_bytes(blst_sig.to_bytes())?;
-        Ok(signature)
+    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
+        self.sign_g2(hash_g2(msg))
     }
 
     /// Converts the secret key to big endian bytes
@@ -406,7 +336,7 @@ impl SecretKey {
             return None;
         }
         let Ciphertext(ref u, ref v, _) = *ct;
-        let g = u.into_affine().mul(self.0);
+        let g = p1_mul_fr(&u, &self.0);
         Some(xor_with_hash(g, v))
     }
 
@@ -419,9 +349,9 @@ impl SecretKey {
 
     /// Derives a child secret key for a given index.
     pub fn derive_child(&self, index: &[u8]) -> Self {
-        let mut index_fr = derivation_index_into_fr(index);
-        index_fr.mul_assign(&self.0);
-        SecretKey(index_fr)
+        let index_fr = derivation_index_into_fr(index);
+        let child = fr_mul_fr(&self.0, &index_fr);
+        SecretKey(child)
     }
 }
 
@@ -456,7 +386,7 @@ impl SecretKeyShare {
     ///
     /// *WARNING* this constructor will overwrite the pointed to `Fr` element with zeros once it
     /// has been copied into a new `SecretKeyShare`.
-    pub fn from_mut(fr: &mut Fr) -> Self {
+    pub fn from_mut(fr: &mut blst_fr) -> Self {
         SecretKeyShare(SecretKey::from_mut(fr))
     }
 
@@ -466,14 +396,14 @@ impl SecretKeyShare {
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2<H: Into<G2Affine>>(&self, hash: H) -> SignatureShare {
+    pub fn sign_g2(&self, hash: blst_p2) -> SignatureShare {
         SignatureShare(self.0.sign_g2(hash))
     }
 
     /// Signs the given message.
-    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Result<SignatureShare> {
-        let signature = self.0.sign(msg)?;
-        Ok(SignatureShare(signature))
+    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> SignatureShare {
+        let signature = self.0.sign(msg);
+        SignatureShare(signature)
     }
 
     /// Returns a decryption share, or `None`, if the ciphertext isn't valid.
@@ -486,7 +416,9 @@ impl SecretKeyShare {
 
     /// Returns a decryption share, without validating the ciphertext.
     pub fn decrypt_share_no_verify(&self, ct: &Ciphertext) -> DecryptionShare {
-        DecryptionShare(ct.0.into_affine().mul((self.0).0))
+        let u = ct.0;
+        let u_mul_r = p1_mul_fr(&u, &(self.0).0);
+        DecryptionShare(u_mul_r)
     }
 
     /// Generates a non-redacted debug string. This method differs from
@@ -514,32 +446,7 @@ impl SecretKeyShare {
 
 /// An encrypted message.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ciphertext(G1, Vec<u8>, G2);
-
-impl Hash for Ciphertext {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let Ciphertext(ref u, ref v, ref w) = *self;
-        u.into_affine().into_compressed().as_ref().hash(state);
-        v.hash(state);
-        w.into_affine().into_compressed().as_ref().hash(state);
-    }
-}
-
-impl PartialOrd for Ciphertext {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Ciphertext {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let Ciphertext(ref u0, ref v0, ref w0) = self;
-        let Ciphertext(ref u1, ref v1, ref w1) = other;
-        cmp_projective(u0, u1)
-            .then(v0.cmp(v1))
-            .then(cmp_projective(w0, w1))
-    }
-}
+pub struct Ciphertext(blst_p1, Vec<u8>, blst_p2);
 
 impl Ciphertext {
     /// Returns `true` if this is a valid ciphertext. This check is necessary to prevent
@@ -547,15 +454,15 @@ impl Ciphertext {
     pub fn verify(&self) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *self;
         let hash = hash_g1_g2(*u, v);
-        PEngine::pairing(G1Affine::one(), *w) == PEngine::pairing(*u, hash)
+        equal_pairs(&P1_ONE, w, u, &hash)
     }
 
     /// Returns byte representation of Ciphertext
     pub fn to_bytes(&self) -> Vec<u8> {
         let Ciphertext(ref u, ref v, ref w) = *self;
         let mut result: Vec<u8> = Default::default();
-        result.extend(u.into_affine().into_compressed().as_ref());
-        result.extend(w.into_affine().into_compressed().as_ref());
+        result.extend(p1_to_be_bytes(u));
+        result.extend(p2_to_be_bytes(w));
         result.extend(v);
         result
     }
@@ -566,47 +473,27 @@ impl Ciphertext {
             return Err(Error::InvalidBytes);
         }
 
-        let mut u_compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
-        u_compressed.as_mut().copy_from_slice(&bytes[0..PK_SIZE]);
+        let mut u_bytes = [0u8; PK_SIZE];
+        u_bytes.copy_from_slice(&bytes[0..PK_SIZE]);
+        let u = p1_from_be_bytes(u_bytes)?;
 
-        let mut w_compressed: <G2Affine as CurveAffine>::Compressed = EncodedPoint::empty();
-        w_compressed
-            .as_mut()
-            .copy_from_slice(&bytes[PK_SIZE..PK_SIZE + SIG_SIZE]);
+        let mut w_bytes = [0u8; SIG_SIZE];
+        w_bytes.copy_from_slice(&bytes[PK_SIZE..PK_SIZE + SIG_SIZE]);
+        let w = p2_from_be_bytes(w_bytes)?;
 
         let v: Vec<u8> = (&bytes[PK_SIZE + SIG_SIZE..]).to_vec();
 
         Ok(Self(
-            u_compressed
-                .into_affine()
-                .ok()
-                .ok_or(Error::InvalidBytes)?
-                .into_projective(),
+            u,
             v,
-            w_compressed
-                .into_affine()
-                .ok()
-                .ok_or(Error::InvalidBytes)?
-                .into_projective(),
+            w,
         ))
     }
 }
 
 /// A decryption share. A threshold of decryption shares can be used to decrypt a message.
 #[derive(Clone, PartialEq, Eq)]
-pub struct DecryptionShare(G1);
-
-impl Distribution<DecryptionShare> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> DecryptionShare {
-        DecryptionShare(G1::random(rng))
-    }
-}
-
-impl Hash for DecryptionShare {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.into_affine().into_compressed().as_ref().hash(state);
-    }
-}
+pub struct DecryptionShare(blst_p1);
 
 impl fmt::Debug for DecryptionShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -617,28 +504,22 @@ impl fmt::Debug for DecryptionShare {
 impl DecryptionShare {
     /// Deserializes the share from big endian bytes
     pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
-        let g1 = g1_from_be_bytes(bytes)?;
-        Ok(DecryptionShare(g1))
+        let p1 = p1_from_be_bytes(bytes)?;
+        Ok(DecryptionShare(p1))
     }
 
     /// Serializes the share as big endian bytes
     pub fn to_bytes(&self) -> [u8; PK_SIZE] {
-        g1_to_be_bytes(self.0)
+        p1_to_be_bytes(&self.0)
     }
 }
 
 /// A public key and an associated set of public key shares.
-#[derive(Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PublicKeySet {
     /// The coefficients of a polynomial whose value at `0` is the "master key", and value at
     /// `i + 1` is key share number `i`.
     commit: Commitment,
-}
-
-impl Hash for PublicKeySet {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.commit.hash(state);
-    }
 }
 
 impl fmt::Debug for PublicKeySet {
@@ -715,10 +596,8 @@ impl PublicKeySet {
         I: IntoIterator<Item = (T, S)>,
         T: IntoFr,
     {
-        let samples = shares
-            .into_iter()
-            .map(|(i, share)| (i, (share.borrow().0).0));
-        Ok(Signature(interpolate(self.commit.degree(), samples)?))
+        let samples = shares.into_iter().map(|(i, share)| (i, (share.borrow().0).0));
+        Ok(Signature(interpolate_g2(self.commit.degree(), samples)?))
     }
 
     /// Combines the shares to decrypt the ciphertext.
@@ -727,22 +606,20 @@ impl PublicKeySet {
         I: IntoIterator<Item = (T, &'a DecryptionShare)>,
         T: IntoFr,
     {
-        let samples = shares.into_iter().map(|(i, share)| (i, &share.0));
-        let g = interpolate(self.commit.degree(), samples)?;
+        let samples = shares.into_iter().map(|(i, share)| (i, share.0));
+        let g = interpolate_g1(self.commit.degree(), samples)?;
         Ok(xor_with_hash(g, &ct.1))
     }
 
     /// Derives a child public key set for a given index.
     pub fn derive_child(&self, index: &[u8]) -> Self {
         let index_fr = derivation_index_into_fr(index);
-        let child_coeffs: Vec<G1> = self
+        let child_coeffs: Vec<blst_p1> = self
             .commit
             .coeff
             .iter()
             .map(|coeff| {
-                let mut child_coeff = *coeff;
-                child_coeff.mul_assign(index_fr);
-                child_coeff
+                p1_mul_fr(&coeff, &index_fr)
             })
             .collect();
         PublicKeySet::from(Commitment::from(child_coeffs))
@@ -831,14 +708,12 @@ impl SecretKeySet {
         // similarity / symmetry / aesthetics, since Commitment can't be
         // multiplied by Fr the same way Poly can.
         let index_fr = derivation_index_into_fr(index);
-        let child_coeffs: Vec<Fr> = self
+        let child_coeffs: Vec<blst_fr> = self
             .poly
             .coeff
             .iter()
             .map(|coeff| {
-                let mut child_coeff = *coeff;
-                child_coeff.mul_assign(&index_fr);
-                child_coeff
+                fr_mul_fr(&coeff, &index_fr)
             })
             .collect();
         SecretKeySet::from(Poly::from(child_coeffs))
@@ -857,12 +732,12 @@ impl SecretKeySet {
 }
 
 /// Returns a hash of the given message in `G2`.
-pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2 {
-    let mut msg_hash: blst_p2 = Default::default();
+pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> blst_p2 {
+    let mut p2 = blst_p2::default();
     let aug = b"";
     unsafe {
         blst_hash_to_g2(
-            &mut msg_hash,
+            &mut p2,
             msg.as_ref().as_ptr(),
             msg.as_ref().len(),
             DST.as_ptr(),
@@ -871,13 +746,11 @@ pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2 {
             aug.len(),
         )
     };
-    let mut msg_g2_bytes = [0u8; 96];
-    unsafe { blst_p2_compress(&mut msg_g2_bytes[0], &msg_hash) }
-    g2_from_be_bytes(msg_g2_bytes).unwrap()
+    p2
 }
 
 /// Returns a hash of the group element and message, in the second group.
-fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> G2 {
+fn hash_g1_g2<M: AsRef<[u8]>>(g1: blst_p1, msg: M) -> blst_p2 {
     // If the message is large, hash it, otherwise copy it.
     // TODO: Benchmark and optimize the threshold.
     let mut msg = if msg.as_ref().len() > 64 {
@@ -885,13 +758,15 @@ fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> G2 {
     } else {
         msg.as_ref().to_vec()
     };
-    msg.extend(g1.into_affine().into_compressed().as_ref());
+    let p1_bytes = p1_to_be_bytes(&g1);
+    msg.extend(p1_bytes);
     hash_g2(&msg)
 }
 
 /// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.
-fn xor_with_hash(g1: G1, bytes: &[u8]) -> Vec<u8> {
-    let digest = sha3_256(g1.into_affine().into_compressed().as_ref());
+fn xor_with_hash(g1: blst_p1, bytes: &[u8]) -> Vec<u8> {
+    let p1_bytes = p1_to_be_bytes(&g1);
+    let digest = sha3_256(&p1_bytes);
     let rng = ChaChaRng::from_seed(digest);
     let xor = |(a, b): (u8, &u8)| a ^ b;
     rng.sample_iter(&Standard).zip(bytes).map(xor).collect()
@@ -899,12 +774,10 @@ fn xor_with_hash(g1: G1, bytes: &[u8]) -> Vec<u8> {
 
 /// Given a list of `t + 1` samples `(i - 1, f(i) * g)` for a polynomial `f` of degree `t`, and a
 /// group generator `g`, returns `f(0) * g`.
-fn interpolate<C, B, T, I>(t: usize, items: I) -> Result<C>
+fn interpolate_g1<T, I>(t: usize, items: I) -> Result<blst_p1>
 where
-    C: CurveProjective<Scalar = Fr>,
-    I: IntoIterator<Item = (T, B)>,
+    I: IntoIterator<Item = (T, blst_p1)>,
     T: IntoFr,
-    B: Borrow<C>,
 {
     let samples: Vec<_> = items
         .into_iter()
@@ -920,39 +793,92 @@ where
     }
 
     // Compute the products `x_prod[i]` of all but the `i`-th entry.
-    let mut x_prod: Vec<C::Scalar> = Vec::with_capacity(t);
-    let mut tmp = C::Scalar::one();
+    let mut x_prod: Vec<blst_fr> = Vec::with_capacity(t);
+    let mut tmp = FR_ONE;
     x_prod.push(tmp);
     for (x, _) in samples.iter().take(t) {
-        tmp.mul_assign(x);
+        fr_mul_assign(&mut tmp, &x);
         x_prod.push(tmp);
     }
-    tmp = C::Scalar::one();
+    tmp = FR_ONE;
     for (i, (x, _)) in samples[1..].iter().enumerate().rev() {
-        tmp.mul_assign(x);
-        x_prod[i].mul_assign(&tmp);
+        fr_mul_assign(&mut tmp, &x);
+        fr_mul_assign(&mut x_prod[i], &tmp);
     }
 
-    let mut result = C::zero();
+    let mut result = blst_p1::default();
     for (mut l0, (x, sample)) in x_prod.into_iter().zip(&samples) {
         // Compute the value at 0 of the Lagrange polynomial that is `0` at the other data
         // points but `1` at `x`.
-        let mut denom = C::Scalar::one();
+        let mut denom = FR_ONE;
         for (x0, _) in samples.iter().filter(|(x0, _)| x0 != x) {
             let mut diff = *x0;
-            diff.sub_assign(x);
-            denom.mul_assign(&diff);
+            fr_sub_assign(&mut diff, &x);
+            fr_mul_assign(&mut denom, &diff);
         }
-        l0.mul_assign(&denom.inverse().ok_or(Error::DuplicateEntry)?);
-        result.add_assign(&sample.borrow().into_affine().mul(l0));
+        fr_inverse(&mut denom); //.ok_or(Error::DuplicateEntry)?;
+        fr_mul_assign(&mut l0, &denom);
+        let sample_mul = p1_mul_fr(&sample, &l0);
+        p1_add_assign(&mut result, &sample_mul);
     }
     Ok(result)
 }
 
-fn into_fr_plus_1<I: IntoFr>(x: I) -> Fr {
-    let mut result = Fr::one();
-    result.add_assign(&x.into_fr());
-    result
+/// Given a list of `t + 1` samples `(i - 1, f(i) * g)` for a polynomial `f` of degree `t`, and a
+/// group generator `g`, returns `f(0) * g`.
+fn interpolate_g2<T, I>(t: usize, items: I) -> Result<blst_p2>
+where
+    I: IntoIterator<Item = (T, blst_p2)>,
+    T: IntoFr,
+{
+    let samples: Vec<_> = items
+        .into_iter()
+        .take(t + 1)
+        .map(|(i, sample)| (into_fr_plus_1(i), sample))
+        .collect();
+    if samples.len() <= t {
+        return Err(Error::NotEnoughShares);
+    }
+
+    if t == 0 {
+        return Ok(*samples[0].1.borrow());
+    }
+
+    // Compute the products `x_prod[i]` of all but the `i`-th entry.
+    let mut x_prod: Vec<blst_fr> = Vec::with_capacity(t);
+    let mut tmp = FR_ONE;
+    x_prod.push(tmp);
+    for (x, _) in samples.iter().take(t) {
+        fr_mul_assign(&mut tmp, &x);
+        x_prod.push(tmp);
+    }
+    tmp = FR_ONE;
+    for (i, (x, _)) in samples[1..].iter().enumerate().rev() {
+        fr_mul_assign(&mut tmp, &x);
+        fr_mul_assign(&mut x_prod[i], &tmp);
+    }
+
+    let mut result = blst_p2::default();
+    for (mut l0, (x, sample)) in x_prod.into_iter().zip(&samples) {
+        // Compute the value at 0 of the Lagrange polynomial that is `0` at the other data
+        // points but `1` at `x`.
+        let mut denom = FR_ONE;
+        for (x0, _) in samples.iter().filter(|(x0, _)| x0 != x) {
+            let diff = fr_sub_fr(x0, &x);
+            fr_mul_assign(&mut denom, &diff);
+        }
+        fr_inverse(&mut denom); //.ok_or(Error::DuplicateEntry)?
+        fr_mul_assign(&mut l0, &denom);
+        let sample_mul = p2_mul_fr(&sample, &l0);
+        p2_add_assign(&mut result, &sample_mul);
+    }
+    Ok(result)
+}
+
+fn into_fr_plus_1<I: IntoFr>(x: I) -> blst_fr {
+    let mut xfr = x.into_fr();
+    fr_add_assign(&mut xfr, &FR_ONE);
+    xfr
 }
 
 /// Type that implements `Debug` printing three dots. This can be used to hide the contents of a
@@ -974,6 +900,10 @@ mod tests {
 
     use rand::{self, distributions::Standard, random, Rng};
 
+    use blst_ops::{
+        fr_add_assign,
+    };
+
     #[test]
     fn test_interpolate() {
         let mut rng = rand::thread_rng();
@@ -986,7 +916,7 @@ mod tests {
                 x += rng.gen_range(1, 5);
                 values.push((x - 1, comm.evaluate(x)));
             }
-            let actual = interpolate(deg, values).expect("wrong number of values");
+            let actual = interpolate_g1(deg, values).expect("wrong number of values");
             assert_eq!(comm.evaluate(0), actual);
         }
     }
@@ -998,9 +928,9 @@ mod tests {
         let pk0 = sk0.public_key();
         let msg0 = b"Real news";
         let msg1 = b"Fake news";
-        pk0.verify(&sk0.sign(msg0)?, msg0)?;
-        assert!(pk0.verify(&sk1.sign(msg0)?, msg0).is_err()); // Wrong key.
-        assert!(pk0.verify(&sk0.sign(msg1)?, msg0).is_err()); // Wrong message.
+        assert!(pk0.verify(&sk0.sign(msg0), msg0));
+        assert!(!pk0.verify(&sk1.sign(msg0), msg0)); // Wrong key.
+        assert!(!pk0.verify(&sk0.sign(msg1), msg0)); // Wrong message.
         Ok(())
     }
 
@@ -1012,15 +942,15 @@ mod tests {
         let pk_master = pk_set.public_key();
 
         // Make sure the keys are different, and the first coefficient is the main key.
-        assert_ne!(pk_master, pk_set.public_key_share(0).0);
-        assert_ne!(pk_master, pk_set.public_key_share(1).0);
-        assert_ne!(pk_master, pk_set.public_key_share(2).0);
+        assert_ne!(pk_master, pk_set.public_key_share(0u64).0);
+        assert_ne!(pk_master, pk_set.public_key_share(1u64).0);
+        assert_ne!(pk_master, pk_set.public_key_share(2u64).0);
 
         // Make sure we don't hand out the main secret key to anyone.
         let sk_master = sk_set.secret_key();
-        let sk_share_0 = sk_set.secret_key_share(0).0;
-        let sk_share_1 = sk_set.secret_key_share(1).0;
-        let sk_share_2 = sk_set.secret_key_share(2).0;
+        let sk_share_0 = sk_set.secret_key_share(0u64).0;
+        let sk_share_1 = sk_set.secret_key_share(1u64).0;
+        let sk_share_2 = sk_set.secret_key_share(2u64).0;
         assert_ne!(sk_master, sk_share_0);
         assert_ne!(sk_master, sk_share_1);
         assert_ne!(sk_master, sk_share_2);
@@ -1031,23 +961,23 @@ mod tests {
         // note: this tests passing a Vec to ::combine_signatures (instead of BTreeMap)
         let mut sigs: Vec<(_, _)> = vec![];
         for i in [5, 8, 7, 10] {
-            let sig = sk_set.secret_key_share(i).sign(msg)?;
+            let sig = sk_set.secret_key_share(i).sign(msg);
             sigs.push((i, sig));
         }
 
         // Each of the shares is a valid signature matching its public key share.
         for (i, sig) in &sigs {
-            pk_set.public_key_share(*i).verify(sig, msg)?;
+            assert!(pk_set.public_key_share(*i).verify(sig, msg));
         }
 
         // Combined, they produce a signature matching the main public key.
         let sig = pk_set.combine_signatures(sigs).expect("signatures match");
-        pk_set.public_key().verify(&sig, msg)?;
+        assert!(pk_set.public_key().verify(&sig, msg));
 
         // A different set of signatories produces the same signature.
         let mut sigs2 = BTreeMap::default();
         for i in [42, 43, 44, 45] {
-            let sig = sk_set.secret_key_share(i).sign(msg)?;
+            let sig = sk_set.secret_key_share(i).sign(msg);
             sigs2.insert(i, sig);
         }
 
@@ -1139,12 +1069,12 @@ mod tests {
     /// Some basic sanity checks for the `hash_g1_g2` function.
     #[test]
     fn test_hash_g1_g2() {
-        let mut rng = rand::thread_rng();
+        let rng = rand::thread_rng();
         let msg: Vec<u8> = rng.sample_iter(&Standard).take(1000).collect();
         let msg_end0: Vec<u8> = msg.iter().chain(b"end0").cloned().collect();
         let msg_end1: Vec<u8> = msg.iter().chain(b"end1").cloned().collect();
-        let g0 = G1::random(&mut rng);
-        let g1 = G1::random(&mut rng);
+        let g0 = SecretKey::random().public_key().0;
+        let g1 = SecretKey::random().public_key().0;
 
         assert_eq!(hash_g1_g2(g0, &msg), hash_g1_g2(g0, &msg));
         assert_ne!(hash_g1_g2(g0, &msg), hash_g1_g2(g0, &msg_end0));
@@ -1155,9 +1085,8 @@ mod tests {
     /// Some basic sanity checks for the `hash_bytes` function.
     #[test]
     fn test_xor_with_hash() {
-        let mut rng = rand::thread_rng();
-        let g0 = G1::random(&mut rng);
-        let g1 = G1::random(&mut rng);
+        let g0 = SecretKey::random().public_key().0;
+        let g1 = SecretKey::random().public_key().0;
         let xwh = xor_with_hash;
         assert_eq!(xwh(g0, &[0; 5]), xwh(g0, &[0; 5]));
         assert_ne!(xwh(g0, &[0; 5]), xwh(g1, &[0; 5]));
@@ -1169,7 +1098,7 @@ mod tests {
     #[test]
     fn test_from_to_bytes() -> Result<()> {
         let sk: SecretKey = random();
-        let sig = sk.sign("Please sign here: ______")?;
+        let sig = sk.sign("Please sign here: ______");
         let pk = sk.public_key();
         let pk2 = PublicKey::from_bytes(pk.to_bytes()).expect("invalid pk representation");
         assert_eq!(pk, pk2);
@@ -1183,14 +1112,8 @@ mod tests {
     }
 
     #[test]
-    fn test_size() {
-        assert_eq!(<G1Affine as CurveAffine>::Compressed::size(), PK_SIZE);
-        assert_eq!(<G2Affine as CurveAffine>::Compressed::size(), SIG_SIZE);
-    }
-
-    #[test]
     fn test_zeroize() {
-        let zero_sk = SecretKey::from_mut(&mut Fr::zero());
+        let zero_sk = SecretKey(FR_ZERO);
 
         let mut sk = SecretKey::random();
         assert_ne!(zero_sk, sk);
@@ -1243,10 +1166,10 @@ mod tests {
         // secret key gives same public key
         assert_eq!(pkbytes, pk.to_bytes());
         // signature matches test vector
-        let sig = sk.sign(&msgbytes)?;
+        let sig = sk.sign(&msgbytes);
         assert_eq!(sigbytes, sig.to_bytes());
         // signature can be verified
-        pk.verify(&sig, msgbytes)?;
+        assert!(pk.verify(&sig, msgbytes));
         Ok(())
     }
 
@@ -1549,15 +1472,15 @@ mod tests {
     fn test_derivation_index_into_fr() {
         // index 0 does not give Fr::zero
         let fr_from_0 = derivation_index_into_fr(&[0]);
-        assert!(fr_from_0 != Fr::zero());
+        assert!(fr_from_0 != FR_ZERO);
         // index 1 does not give Fr::one
         let fr_from_1 = derivation_index_into_fr(&[1]);
-        assert!(fr_from_1 != Fr::one());
+        assert!(fr_from_1 != FR_ONE);
         // index > q gives valid Fr that isn't Fr::MAX
         // the check relies on the fact Fr::MAX + 1 = 0
-        let mut fr_from_2pow256 = derivation_index_into_fr(&[255u8; 32]);
-        fr_from_2pow256.add_assign(&Fr::one());
-        assert!(fr_from_2pow256 != Fr::zero());
+        let mut big_fr = derivation_index_into_fr(&[255u8; 32]);
+        fr_add_assign(&mut big_fr, &FR_ONE);
+        assert!(big_fr != FR_ZERO);
     }
 
     #[test]
@@ -1787,7 +1710,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         // The threshold is 3, so 4 signature shares will suffice to decrypt.
         let sks = SecretKeySet::random(3, &mut rng);
-        let share_indexes = vec![5, 8, 7, 10];
+        let share_indexes = vec![5u64, 8, 7, 10];
         // all participants have the public key set and their key share.
         let pks = sks.public_keys();
         let key_shares: BTreeMap<_, _> = share_indexes
@@ -1811,7 +1734,7 @@ mod tests {
         let msg = "Totally real news";
         let mut child_sig_shares = BTreeMap::default();
         for (i, child_key_share) in child_key_shares.iter() {
-            let child_sig_share = child_key_share.sign(&msg)?;
+            let child_sig_share = child_key_share.sign(&msg);
             child_sig_shares.insert(i, child_sig_share);
         }
         // Combining the child shares creates a valid signature for the child
@@ -1820,8 +1743,21 @@ mod tests {
         let sig = pks_child
             .combine_signatures(&child_sig_shares)
             .map_err(|err| eyre!("signatures match: {}", err))?;
-        pks_child.public_key().verify(&sig, msg)?;
+        assert!(pks_child.public_key().verify(&sig, msg));
 
         Ok(())
+    }
+
+    #[test]
+    fn test_sign_g2_verify_g2() {
+        let mut skb = [0u8; 32];
+        skb[0] = 0x73;
+        let sk = SecretKey::from_bytes(skb).expect("Invalid secret key bytes");
+        let msg = b"my message";
+        let g2 = hash_g2(msg);
+        let sig = sk.sign_g2(g2);
+        let pk = sk.public_key();
+        assert!(pk.verify(&sig, msg));
+        assert!(pk.verify_g2(&sig, g2));
     }
 }

@@ -27,13 +27,13 @@ fn main() -> Result<()> {
     // Bob wants to send Alice a message. He signs the plaintext message with his secret key. He
     // then encrypts the signed message with Alice's public key.
     let msg = b"let's get pizza";
-    let signature = bob.sk.sign(msg)?;
+    let signature = bob.sk.sign(msg);
     let ciphertext = alice.pk.encrypt(&msg);
 
     // Alice receives Bob's encrypted message. She decrypts the message using her secret key. She
     // then verifies that the signature of the plaintext is valid using Bob's public key.
     let decrypted = alice.sk.decrypt(&ciphertext).expect("Invalid ciphertext");
-    bob.pk.verify(&signature, &decrypted)?;
+    assert!(bob.pk.verify(&signature, &decrypted));
 
     // We assert that the message that Alice received is the same message that Bob sent.
     assert_eq!(msg, &decrypted[..]);

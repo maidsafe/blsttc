@@ -19,18 +19,15 @@ edition = "2018"
 
 [dependencies]
 byteorder = "1.3.4"
-ff = "0.6.0"
-group = "0.6.0"
 hex_fmt = "0.3.0"
 log = "0.4.8"
-pairing = "0.16.0"
 rand = "0.7.3"
 rand_chacha = "0.2.2"
 thiserror = "1.0.22"
 zeroize = "1.1.0"
 
   [dependencies.blst]
-  version = "0.3.3"
+  version = "0.3.5"
   features = [ "portable" ]
 
   [dependencies.serde]

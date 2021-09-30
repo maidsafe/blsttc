@@ -1,7 +1,6 @@
 use blsttc::poly::Poly;
-use blsttc::Fr;
+use blsttc::blst_ops::fr_random;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use ff::Field;
 
 const TEST_DEGREES: [usize; 4] = [5, 10, 20, 40];
 const TEST_THRESHOLDS: [usize; 4] = [5, 10, 20, 40];
@@ -89,7 +88,7 @@ mod poly_benches {
                     b.iter_with_setup(
                         || {
                             (0..=*deg)
-                                .map(|i| (i, Fr::random(&mut rng)))
+                                .map(|i| (i, fr_random(&mut rng)))
                                 .collect::<Vec<_>>()
                         },
                         Poly::interpolate,

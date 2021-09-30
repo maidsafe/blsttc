@@ -1,7 +1,5 @@
 //! Crypto errors.
 use blst::BLST_ERROR as BlstError;
-use ff::PrimeFieldDecodingError;
-
 use thiserror::Error;
 
 /// A crypto result.
@@ -25,12 +23,6 @@ pub enum Error {
     /// BLST error
     #[error("BLST error: {0}")]
     BlstError(String),
-}
-
-impl From<PrimeFieldDecodingError> for Error {
-    fn from(_: PrimeFieldDecodingError) -> Self {
-        Error::InvalidBytes
-    }
 }
 
 impl From<BlstError> for Error {

@@ -116,11 +116,11 @@ impl ChatNetwork {
         for (user_id, signed_msgs) in &all_pending {
             for (msg, sigs) in signed_msgs.iter() {
                 let sigs = sigs.iter().filter_map(|node_sig| {
-                    if let Ok(()) = self
+                    let node_sig_is_valid = self
                         .get_node(node_sig.node_id)
                         .pk_share
-                        .verify(&node_sig.sig, msg.as_bytes())
-                    {
+                        .verify(&node_sig.sig, msg.as_bytes());
+                    if node_sig_is_valid {
                         Some((node_sig.node_id, &node_sig.sig))
                     } else {
                         None
@@ -160,7 +160,7 @@ impl Node {
     fn recv(&mut self, user_id: UserId, msg: Msg) -> Result<()> {
         let sig = NodeSignature {
             node_id: self.id,
-            sig: self.sk_share.sign(msg.as_bytes())?,
+            sig: self.sk_share.sign(msg.as_bytes()),
         };
         self.pending
             .entry(user_id)

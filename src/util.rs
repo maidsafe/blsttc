@@ -1,6 +1,9 @@
-use crate::convert::fr_from_be_bytes;
-use ff::Field;
-use pairing::bls12_381::Fr;
+use blst::blst_fr;
+use crate::blst_ops::{
+    fr_from_be_bytes,
+    FR_ONE,
+    FR_ZERO,
+};
 use tiny_keccak::{Hasher, Sha3};
 
 pub(crate) fn sha3_256(data: &[u8]) -> [u8; 32] {
@@ -11,13 +14,13 @@ pub(crate) fn sha3_256(data: &[u8]) -> [u8; 32] {
     output
 }
 
-pub(crate) fn derivation_index_into_fr(v: &[u8]) -> Fr {
+pub(crate) fn derivation_index_into_fr(v: &[u8]) -> blst_fr {
     // use number of rounds as a salt to avoid
     // any child hash giving the same sequence
     index_and_rounds_into_fr(v, 0)
 }
 
-fn index_and_rounds_into_fr(v: &[u8], rounds: u8) -> Fr {
+fn index_and_rounds_into_fr(v: &[u8], rounds: u8) -> blst_fr {
     let mut sha3 = Sha3::v256();
     sha3.update(v);
     sha3.update(&[rounds]);
@@ -33,7 +36,7 @@ fn index_and_rounds_into_fr(v: &[u8], rounds: u8) -> Fr {
             // x * 1 = x which gives the same key
             // it's extremely unlikely to find hash(vr) == 0 or 1
             // so we could probably go without this check
-            if fr == Fr::zero() || fr == Fr::one() {
+            if fr == FR_ZERO || fr == FR_ONE {
                 return index_and_rounds_into_fr(&h, rounds + 1);
             }
             fr

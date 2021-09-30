@@ -1,31 +1,28 @@
 //! Utilities for working with secret values. This module includes functionality for overwriting
 //! memory with zeros.
 
-use zeroize::Zeroize;
-
-use crate::{Fr, FrRepr};
+use crate::blst_ops::FR_ZERO;
+use blst::blst_fr;
 
 /// Overwrites a single field element with zeros.
-pub(crate) fn clear_fr(fr: &mut Fr) {
-    // TODO: Remove this after pairing support `Zeroize`
-    let fr_repr = unsafe { &mut *(fr as *mut Fr as *mut FrRepr) };
-    fr_repr.0.zeroize();
+pub(crate) fn clear_fr(fr: &mut blst_fr) {
+    *fr = FR_ZERO
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ff::Field;
+    use crate::blst_ops::{fr_random, FR_ZERO};
     use rand::thread_rng;
 
     #[test]
     fn test_clear() {
         let mut rng = thread_rng();
 
-        let mut fr: Fr = Fr::random(&mut rng);
-        assert_ne!(fr, Fr::zero());
+        let mut fr = fr_random(&mut rng);
+        assert_ne!(fr, FR_ZERO);
 
         clear_fr(&mut fr);
-        assert_eq!(fr, Fr::zero());
+        assert_eq!(fr, FR_ZERO);
     }
 }

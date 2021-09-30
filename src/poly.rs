@@ -17,29 +17,45 @@
 //! polynomials (in two variables) over a field `Fr`, as well as their _commitments_ in `G`.
 
 use std::borrow::Borrow;
-use std::cmp::Ordering;
 use std::fmt::{self, Debug, Formatter};
-use std::hash::{Hash, Hasher};
 use std::iter::repeat_with;
 use std::{cmp, iter, ops};
+use std::ops::AddAssign;
 
-use ff::Field;
-use group::{CurveAffine, CurveProjective};
 use rand::Rng;
 use zeroize::Zeroize;
 
-use crate::cmp_pairing::cmp_projective;
-use crate::convert::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes};
 use crate::error::{Error, Result};
+use crate::blst_ops::{
+    fr_add_assign,
+    fr_from_be_bytes,
+    fr_inverse,
+    fr_mul_assign,
+    fr_negate,
+    fr_random,
+    fr_sub_assign,
+    fr_to_be_bytes,
+    fr_to_scalar,
+    p1_add_assign,
+    p1_from_be_bytes,
+    p1_mul_assign_scalar,
+    p1_mul_fr,
+    p1_to_be_bytes,
+    FR_ONE,
+    FR_ZERO,
+    P1_ONE,
+    P1_ZERO,
+};
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
-use crate::{Fr, G1Affine, G1, PK_SIZE, SK_SIZE};
+use crate::{blst_fr, blst_p1, PK_SIZE, SK_SIZE};
+use blst::blst_scalar;
 
 /// A univariate polynomial in the prime field.
 #[derive(PartialEq, Eq, Clone)]
 pub struct Poly {
     /// The coefficients of a polynomial.
-    pub(super) coeff: Vec<Fr>,
+    pub(super) coeff: Vec<blst_fr>,
 }
 
 impl Zeroize for Poly {
@@ -69,10 +85,10 @@ impl<B: Borrow<Poly>> ops::AddAssign<B> for Poly {
         let len = self.coeff.len();
         let rhs_len = rhs.borrow().coeff.len();
         if rhs_len > len {
-            self.coeff.resize(rhs_len, Fr::zero());
+            self.coeff.resize(rhs_len, FR_ZERO);
         }
         for (self_c, rhs_c) in self.coeff.iter_mut().zip(&rhs.borrow().coeff) {
-            Field::add_assign(self_c, rhs_c);
+            fr_add_assign(self_c, rhs_c);
         }
         self.remove_zeros();
     }
@@ -95,14 +111,14 @@ impl<B: Borrow<Poly>> ops::Add<B> for Poly {
     }
 }
 
-impl<'a> ops::Add<Fr> for Poly {
+impl<'a> ops::Add<blst_fr> for Poly {
     type Output = Poly;
 
-    fn add(mut self, rhs: Fr) -> Self::Output {
-        if self.is_zero() && !rhs.is_zero() {
+    fn add(mut self, rhs: blst_fr) -> Self::Output {
+        if self.is_zero() && rhs != FR_ZERO {
             self.coeff.push(rhs);
         } else {
-            self.coeff[0].add_assign(&rhs);
+            fr_add_assign(&mut self.coeff[0], &rhs);
             self.remove_zeros();
         }
         self
@@ -122,10 +138,10 @@ impl<B: Borrow<Poly>> ops::SubAssign<B> for Poly {
         let len = self.coeff.len();
         let rhs_len = rhs.borrow().coeff.len();
         if rhs_len > len {
-            self.coeff.resize(rhs_len, Fr::zero());
+            self.coeff.resize(rhs_len, FR_ZERO);
         }
-        for (self_c, rhs_c) in self.coeff.iter_mut().zip(&rhs.borrow().coeff) {
-            Field::sub_assign(self_c, rhs_c);
+        for i in 0..self.coeff.len() {
+            fr_sub_assign(&mut self.coeff[i], &rhs.borrow().coeff[i]);
         }
         self.remove_zeros();
     }
@@ -150,11 +166,11 @@ impl<B: Borrow<Poly>> ops::Sub<B> for Poly {
 
 // Clippy thinks using `+` in a `Sub` implementation is suspicious.
 #[allow(clippy::suspicious_arithmetic_impl)]
-impl<'a> ops::Sub<Fr> for Poly {
+impl<'a> ops::Sub<blst_fr> for Poly {
     type Output = Poly;
 
-    fn sub(self, mut rhs: Fr) -> Self::Output {
-        rhs.negate();
+    fn sub(self, mut rhs: blst_fr) -> Self::Output {
+        fr_negate(&mut rhs);
         self + rhs
     }
 }
@@ -178,13 +194,13 @@ impl<'a, B: Borrow<Poly>> ops::Mul<B> for &'a Poly {
             return Poly::zero();
         }
         let n_coeffs = self.coeff.len() + rhs.coeff.len() - 1;
-        let mut coeffs = vec![Fr::zero(); n_coeffs];
-        let mut tmp = Fr::zero();
+        let mut coeffs = vec![FR_ZERO; n_coeffs];
+        let mut tmp = FR_ZERO;
         for (i, ca) in self.coeff.iter().enumerate() {
             for (j, cb) in rhs.coeff.iter().enumerate() {
                 tmp = *ca;
-                tmp.mul_assign(cb);
-                coeffs[i + j].add_assign(&tmp);
+                fr_mul_assign(&mut tmp, &cb);
+                fr_add_assign(&mut coeffs[i + j], &tmp);
             }
         }
         clear_fr(&mut tmp);
@@ -206,54 +222,56 @@ impl<B: Borrow<Self>> ops::MulAssign<B> for Poly {
     }
 }
 
-impl ops::MulAssign<Fr> for Poly {
-    fn mul_assign(&mut self, rhs: Fr) {
-        if rhs.is_zero() {
+impl ops::MulAssign<blst_fr> for Poly {
+    fn mul_assign(&mut self, rhs: blst_fr) {
+        if rhs == FR_ZERO {
             self.zeroize();
             self.coeff.clear();
         } else {
-            for c in &mut self.coeff {
-                Field::mul_assign(c, &rhs);
+            for i in 0..self.coeff.len() {
+                fr_mul_assign(&mut self.coeff[i], &rhs);
             }
         }
     }
 }
 
-impl<'a> ops::Mul<&'a Fr> for Poly {
+impl<'a> ops::Mul<&'a blst_fr> for Poly {
     type Output = Poly;
 
-    fn mul(mut self, rhs: &Fr) -> Self::Output {
-        if rhs.is_zero() {
+    fn mul(mut self, rhs: &blst_fr) -> Self::Output {
+        if *rhs == FR_ZERO {
             self.zeroize();
             self.coeff.clear();
         } else {
-            self.coeff.iter_mut().for_each(|c| c.mul_assign(rhs));
+            for i in 0..self.coeff.len() {
+                fr_mul_assign(&mut self.coeff[i], rhs);
+            }
         }
         self
     }
 }
 
-impl ops::Mul<Fr> for Poly {
+impl ops::Mul<blst_fr> for Poly {
     type Output = Poly;
 
-    fn mul(self, rhs: Fr) -> Self::Output {
+    fn mul(self, rhs: blst_fr) -> Self::Output {
         let rhs = &rhs;
         self * rhs
     }
 }
 
-impl<'a> ops::Mul<&'a Fr> for &'a Poly {
+impl<'a> ops::Mul<&'a blst_fr> for &'a Poly {
     type Output = Poly;
 
-    fn mul(self, rhs: &Fr) -> Self::Output {
+    fn mul(self, rhs: &blst_fr) -> Self::Output {
         (*self).clone() * rhs
     }
 }
 
-impl<'a> ops::Mul<Fr> for &'a Poly {
+impl<'a> ops::Mul<blst_fr> for &'a Poly {
     type Output = Poly;
 
-    fn mul(self, rhs: Fr) -> Self::Output {
+    fn mul(self, rhs: blst_fr) -> Self::Output {
         (*self).clone() * rhs
     }
 }
@@ -268,8 +286,8 @@ impl ops::Mul<u64> for Poly {
 
 /// Creates a new `Poly` instance from a vector of prime field elements representing the
 /// coefficients of the polynomial.
-impl From<Vec<Fr>> for Poly {
-    fn from(coeff: Vec<Fr>) -> Self {
+impl From<Vec<blst_fr>> for Poly {
+    fn from(coeff: Vec<blst_fr>) -> Self {
         Poly { coeff }
     }
 }
@@ -288,11 +306,11 @@ impl Poly {
     /// Creates a random polynomial. This constructor is identical to the `Poly::random()`
     /// constructor in every way except that this constructor will return an `Err` where
     /// `try_random` would return an error.
-    pub fn try_random<R: Rng>(degree: usize, rng: &mut R) -> Result<Self> {
+    pub fn try_random<R: Rng>(degree: usize, mut rng: R) -> Result<Self> {
         if degree == usize::max_value() {
             return Err(Error::DegreeTooHigh);
         }
-        let coeff: Vec<Fr> = repeat_with(|| Fr::random(rng)).take(degree + 1).collect();
+        let coeff: Vec<blst_fr> = repeat_with(|| fr_random(&mut rng)).take(degree + 1).collect();
         Ok(Poly::from(coeff))
     }
 
@@ -303,16 +321,16 @@ impl Poly {
 
     /// Returns `true` if the polynomial is the constant value `0`.
     pub fn is_zero(&self) -> bool {
-        self.coeff.iter().all(|coeff| coeff.is_zero())
+        self.coeff.iter().all(|coeff| *coeff == FR_ZERO)
     }
 
     /// Returns the polynomial with constant value `1`.
     pub fn one() -> Self {
-        Poly::constant(Fr::one())
+        Poly::constant(FR_ONE)
     }
 
     /// Returns the polynomial with constant value `c`.
-    pub fn constant(mut c: Fr) -> Self {
+    pub fn constant(mut c: blst_fr) -> Self {
         // We create a raw pointer to the field element within this method's stack frame so we can
         // overwrite that portion of memory with zeros once we have copied the element onto the
         // heap as part of the vector of polynomial coefficients.
@@ -328,9 +346,9 @@ impl Poly {
 
     /// Returns the (monic) monomial: `x.pow(degree)`.
     pub fn monomial(degree: usize) -> Self {
-        let coeff: Vec<Fr> = iter::repeat(Fr::zero())
+        let coeff: Vec<blst_fr> = iter::repeat(FR_ZERO)
             .take(degree)
-            .chain(iter::once(Fr::one()))
+            .chain(iter::once(FR_ONE))
             .collect();
         Poly::from(coeff)
     }
@@ -344,7 +362,7 @@ impl Poly {
         U: IntoFr,
     {
         let convert = |(x, y): (T, U)| (x.into_fr(), y.into_fr());
-        let samples: Vec<(Fr, Fr)> = samples_repr.into_iter().map(convert).collect();
+        let samples: Vec<(blst_fr, blst_fr)> = samples_repr.into_iter().map(convert).collect();
         Poly::compute_interpolation(&samples)
     }
 
@@ -354,24 +372,24 @@ impl Poly {
     }
 
     /// Returns the value at the point `i`.
-    pub fn evaluate<T: IntoFr>(&self, i: T) -> Fr {
+    pub fn evaluate<T: IntoFr>(&self, i: T) -> blst_fr {
         let mut result = match self.coeff.last() {
-            None => return Fr::zero(),
+            None => return FR_ZERO,
             Some(c) => *c,
         };
         let x = i.into_fr();
         for c in self.coeff.iter().rev().skip(1) {
-            result.mul_assign(&x);
-            result.add_assign(c);
+            fr_mul_assign(&mut result, &x);
+            fr_add_assign(&mut result, &c);
         }
         result
     }
 
     /// Returns the corresponding commitment.
     pub fn commitment(&self) -> Commitment {
-        let to_g1 = |c: &Fr| G1Affine::one().mul(*c);
+        let to_p1 = |c: &blst_fr| p1_mul_fr(&P1_ONE, c);
         Commitment {
-            coeff: self.coeff.iter().map(to_g1).collect(),
+            coeff: self.coeff.iter().map(to_p1).collect(),
         }
     }
 
@@ -383,8 +401,7 @@ impl Poly {
         for i in 0..coeff_size {
             let fr = self.coeff[i];
             let fr_bytes = fr_to_be_bytes(fr);
-            let fr_size = fr_bytes.len();
-            for j in 0..fr_size {
+            for j in 0..SK_SIZE {
                 poly_bytes[i * SK_SIZE + j] = fr_bytes[j];
             }
         }
@@ -393,7 +410,7 @@ impl Poly {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<Fr> = vec![];
+        let mut c: Vec<blst_fr> = vec![];
         let coeff_size = bytes.len() / SK_SIZE;
         for i in 0..coeff_size {
             let mut fr_bytes = [0u8; SK_SIZE];
@@ -408,40 +425,41 @@ impl Poly {
 
     /// Removes all trailing zero coefficients.
     fn remove_zeros(&mut self) {
-        let zeros = self.coeff.iter().rev().take_while(|c| c.is_zero()).count();
+        let zeros = self.coeff.iter().rev().take_while(|c| **c == FR_ZERO).count();
         let len = self.coeff.len() - zeros;
         self.coeff.truncate(len);
     }
 
     /// Returns the unique polynomial `f` of degree `samples.len() - 1` with the given values
     /// `(x, f(x))`.
-    fn compute_interpolation(samples: &[(Fr, Fr)]) -> Self {
+    fn compute_interpolation(samples: &[(blst_fr, blst_fr)]) -> Self {
         if samples.is_empty() {
             return Poly::zero();
         }
         // Interpolates on the first `i` samples.
         let mut poly = Poly::constant(samples[0].1);
         let mut minus_s0 = samples[0].0;
-        minus_s0.negate();
+        fr_negate(&mut minus_s0);
         // Is zero on the first `i` samples.
-        let mut base = Poly::from(vec![minus_s0, Fr::one()]);
+        let mut base = Poly::from(vec![minus_s0, FR_ONE]);
 
         // We update `base` so that it is always zero on all previous samples, and `poly` so that
         // it has the correct values on the previous samples.
         for (ref x, ref y) in &samples[1..] {
             // Scale `base` so that its value at `x` is the difference between `y` and `poly`'s
             // current value at `x`: Adding it to `poly` will then make it correct for `x`.
-            let mut diff = *y;
-            diff.sub_assign(&poly.evaluate(x));
-            let base_val = base.evaluate(x);
-            diff.mul_assign(&base_val.inverse().expect("sample points must be distinct"));
+            let mut diff = y.clone();
+            fr_sub_assign(&mut diff, &poly.evaluate(x));
+            let mut base_val = base.evaluate(x);
+            fr_inverse(&mut base_val); //.expect("sample points must be distinct")
+            fr_mul_assign(&mut diff, &base_val);
             base *= diff;
             poly += &base;
 
             // Finally, multiply `base` by X - x, so that it is zero at `x`, too, now.
             let mut minus_x = *x;
-            minus_x.negate();
-            base *= Poly::from(vec![minus_x, Fr::one()]);
+            fr_negate(&mut minus_x);
+            base *= Poly::from(vec![minus_x, FR_ONE]);
         }
         poly
     }
@@ -458,49 +476,22 @@ impl Poly {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Commitment {
     /// The coefficients of the polynomial.
-    pub(super) coeff: Vec<G1>,
+    pub(super) coeff: Vec<blst_p1>,
 }
 
 /// Creates a new `Commitment` instance
-impl From<Vec<G1>> for Commitment {
-    fn from(coeff: Vec<G1>) -> Self {
+impl From<Vec<blst_p1>> for Commitment {
+    fn from(coeff: Vec<blst_p1>) -> Self {
         Commitment { coeff }
-    }
-}
-
-impl PartialOrd for Commitment {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Commitment {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.coeff.len().cmp(&other.coeff.len()).then_with(|| {
-            self.coeff
-                .iter()
-                .zip(&other.coeff)
-                .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_projective(x, y))
-        })
-    }
-}
-
-impl Hash for Commitment {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.coeff.len().hash(state);
-        for c in &self.coeff {
-            c.into_affine().into_compressed().as_ref().hash(state);
-        }
     }
 }
 
 impl<B: Borrow<Commitment>> ops::AddAssign<B> for Commitment {
     fn add_assign(&mut self, rhs: B) {
         let len = cmp::max(self.coeff.len(), rhs.borrow().coeff.len());
-        self.coeff.resize(len, G1::zero());
+        self.coeff.resize(len, P1_ZERO);
         for (self_c, rhs_c) in self.coeff.iter_mut().zip(&rhs.borrow().coeff) {
-            self_c.add_assign(rhs_c);
+            p1_add_assign(self_c, rhs_c);
         }
         self.remove_zeros();
     }
@@ -510,7 +501,9 @@ impl<'a, B: Borrow<Commitment>> ops::Add<B> for &'a Commitment {
     type Output = Commitment;
 
     fn add(self, rhs: B) -> Commitment {
-        (*self).clone() + rhs
+        let mut c = (*self).clone();
+        c.add_assign(rhs);
+        c
     }
 }
 
@@ -530,15 +523,16 @@ impl Commitment {
     }
 
     /// Returns the `i`-th public key share.
-    pub fn evaluate<T: IntoFr>(&self, i: T) -> G1 {
+    pub fn evaluate<T: IntoFr>(&self, i: T) -> blst_p1 {
         let mut result = match self.coeff.last() {
-            None => return G1::zero(),
+            None => return P1_ZERO,
             Some(c) => *c,
         };
         let x = i.into_fr();
+        let x_scalar = fr_to_scalar(&x);
         for c in self.coeff.iter().rev().skip(1) {
-            result.mul_assign(x);
-            result.add_assign(c);
+            p1_mul_assign_scalar(&mut result, &x_scalar);
+            p1_add_assign(&mut result, &c);
         }
         result
     }
@@ -549,11 +543,11 @@ impl Commitment {
         let bytes_size = coeff_size * PK_SIZE;
         let mut commit_bytes = vec![0; bytes_size];
         for i in 0..coeff_size {
-            let g1 = self.coeff[i];
-            let g1_bytes = g1.into_affine().into_compressed().as_ref().to_vec();
-            let g1_size = g1_bytes.len();
-            for j in 0..g1_size {
-                commit_bytes[i * PK_SIZE + j] = g1_bytes[j];
+            let p1 = self.coeff[i];
+            let p1_bytes = p1_to_be_bytes(&p1);
+            let p1_size = p1_bytes.len();
+            for j in 0..p1_size {
+                commit_bytes[i * PK_SIZE + j] = p1_bytes[j];
             }
         }
         commit_bytes
@@ -561,22 +555,23 @@ impl Commitment {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<G1> = vec![];
+        let mut c: Vec<blst_p1> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
-            let mut g1_bytes = [0; PK_SIZE];
+            let mut p1_bytes = [0; PK_SIZE];
             for j in 0..PK_SIZE {
-                g1_bytes[j] = bytes[i * PK_SIZE + j];
+                p1_bytes[j] = bytes[i * PK_SIZE + j];
             }
-            let g1 = g1_from_be_bytes(g1_bytes)?;
-            c.push(g1);
+            let p1 = p1_from_be_bytes(p1_bytes)?;
+            c.push(p1);
         }
         Ok(Commitment { coeff: c })
     }
 
     /// Removes all trailing zero coefficients.
     fn remove_zeros(&mut self) {
-        let zeros = self.coeff.iter().rev().take_while(|c| c.is_zero()).count();
+        let zero = P1_ZERO;
+        let zeros = self.coeff.iter().rev().take_while(|c| **c == zero).count();
         let len = self.coeff.len() - zeros;
         self.coeff.truncate(len)
     }
@@ -592,7 +587,7 @@ pub struct BivarPoly {
     degree: usize,
     /// The coefficients of the polynomial. Coefficient `(i, j)` for `i <= j` is in position
     /// `j * (j + 1) / 2 + i`.
-    coeff: Vec<Fr>,
+    coeff: Vec<blst_fr>,
 }
 
 impl Zeroize for BivarPoly {
@@ -636,13 +631,13 @@ impl BivarPoly {
     }
 
     /// Creates a random polynomial.
-    pub fn try_random<R: Rng>(degree: usize, rng: &mut R) -> Result<Self> {
+    pub fn try_random<R: Rng>(degree: usize, mut rng: R) -> Result<Self> {
         let len = coeff_pos(degree, degree)
             .and_then(|l| l.checked_add(1))
             .ok_or(Error::DegreeTooHigh)?;
         let poly = BivarPoly {
             degree,
-            coeff: repeat_with(|| Fr::random(rng)).take(len).collect(),
+            coeff: repeat_with(|| fr_random(&mut rng)).take(len).collect(),
         };
         Ok(poly)
     }
@@ -653,18 +648,18 @@ impl BivarPoly {
     }
 
     /// Returns the polynomial's value at the point `(x, y)`.
-    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> Fr {
+    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> blst_fr {
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
-        let mut result = Fr::zero();
+        let mut result = FR_ZERO;
         for (i, x_pow_i) in x_pow.into_iter().enumerate() {
             for (j, y_pow_j) in y_pow.iter().enumerate() {
                 let index = coeff_pos(i, j).expect("polynomial degree too high");
                 let mut summand = self.coeff[index];
-                summand.mul_assign(&x_pow_i);
-                summand.mul_assign(y_pow_j);
-                result.add_assign(&summand);
+                fr_mul_assign(&mut summand, &x_pow_i);
+                fr_mul_assign(&mut summand, &y_pow_j);
+                fr_add_assign(&mut result, &summand);
             }
         }
         result
@@ -673,15 +668,15 @@ impl BivarPoly {
     /// Returns the `x`-th row, as a univariate polynomial.
     pub fn row<T: IntoFr>(&self, x: T) -> Poly {
         let x_pow = self.powers(x);
-        let coeff: Vec<Fr> = (0..=self.degree)
+        let coeff: Vec<blst_fr> = (0..=self.degree)
             .map(|i| {
                 // TODO: clear these secrets from the stack.
-                let mut result = Fr::zero();
+                let mut result = FR_ZERO;
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
                     let index = coeff_pos(i, j).expect("polynomial degree too high");
                     let mut summand = self.coeff[index];
-                    summand.mul_assign(x_pow_j);
-                    result.add_assign(&summand);
+                    fr_mul_assign(&mut summand, &x_pow_j);
+                    fr_add_assign(&mut result, &summand);
                 }
                 result
             })
@@ -691,7 +686,7 @@ impl BivarPoly {
 
     /// Returns the corresponding commitment. That information can be shared publicly.
     pub fn commitment(&self) -> BivarCommitment {
-        let to_pub = |c: &Fr| G1Affine::one().mul(*c);
+        let to_pub = |c: &blst_fr| p1_mul_fr(&P1_ONE, c);
         BivarCommitment {
             degree: self.degree,
             coeff: self.coeff.iter().map(to_pub).collect(),
@@ -699,8 +694,8 @@ impl BivarPoly {
     }
 
     /// Returns the `0`-th to `degree`-th power of `x`.
-    fn powers<T: IntoFr>(&self, x: T) -> Vec<Fr> {
-        powers(x, self.degree)
+    fn powers<T: IntoFr>(&self, x: T) -> Vec<blst_fr> {
+        powers_fr(x, self.degree)
     }
 
     /// Generates a non-redacted debug string. This method differs from the
@@ -719,10 +714,8 @@ impl BivarPoly {
         let bytes_size = coeff_size * SK_SIZE;
         let mut poly_bytes = vec![0; bytes_size];
         for i in 0..coeff_size {
-            let fr = self.coeff[i];
-            let fr_bytes = fr_to_be_bytes(fr);
-            let fr_size = fr_bytes.len();
-            for j in 0..fr_size {
+            let fr_bytes = fr_to_be_bytes(self.coeff[i]);
+            for j in 0..SK_SIZE {
                 poly_bytes[i * SK_SIZE + j] = fr_bytes[j];
             }
         }
@@ -731,7 +724,7 @@ impl BivarPoly {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<Fr> = vec![];
+        let mut c: Vec<blst_fr> = vec![];
         let coeff_size = bytes.len() / SK_SIZE;
         for coeff_index in 0..coeff_size {
             // get the Fr for this coeff
@@ -756,34 +749,7 @@ pub struct BivarCommitment {
     /// The polynomial's degree in each of the two variables.
     pub(crate) degree: usize,
     /// The commitments to the coefficients.
-    pub(crate) coeff: Vec<G1>,
-}
-
-impl Hash for BivarCommitment {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.degree.hash(state);
-        for c in &self.coeff {
-            c.into_affine().into_compressed().as_ref().hash(state);
-        }
-    }
-}
-
-impl PartialOrd for BivarCommitment {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for BivarCommitment {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.degree.cmp(&other.degree).then_with(|| {
-            self.coeff
-                .iter()
-                .zip(&other.coeff)
-                .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_projective(x, y))
-        })
-    }
+    pub(crate) coeff: Vec<blst_p1>,
 }
 
 impl BivarCommitment {
@@ -793,18 +759,18 @@ impl BivarCommitment {
     }
 
     /// Returns the commitment's value at the point `(x, y)`.
-    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> G1 {
+    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> blst_p1 {
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
-        let mut result = G1::zero();
+        let mut result = P1_ZERO;
         for (i, x_pow_i) in x_pow.into_iter().enumerate() {
             for (j, y_pow_j) in y_pow.iter().enumerate() {
                 let index = coeff_pos(i, j).expect("polynomial degree too high");
                 let mut summand = self.coeff[index];
-                summand.mul_assign(x_pow_i);
-                summand.mul_assign(*y_pow_j);
-                result.add_assign(&summand);
+                p1_mul_assign_scalar(&mut summand, &x_pow_i);
+                p1_mul_assign_scalar(&mut summand, &y_pow_j);
+                p1_add_assign(&mut result, &summand);
             }
         }
         result
@@ -813,14 +779,14 @@ impl BivarCommitment {
     /// Returns the `x`-th row, as a commitment to a univariate polynomial.
     pub fn row<T: IntoFr>(&self, x: T) -> Commitment {
         let x_pow = self.powers(x);
-        let coeff: Vec<G1> = (0..=self.degree)
+        let coeff: Vec<blst_p1> = (0..=self.degree)
             .map(|i| {
-                let mut result = G1::zero();
+                let mut result = P1_ZERO;
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
                     let index = coeff_pos(i, j).expect("polynomial degree too high");
                     let mut summand = self.coeff[index];
-                    summand.mul_assign(*x_pow_j);
-                    result.add_assign(&summand);
+                    p1_mul_assign_scalar(&mut summand, &x_pow_j);
+                    p1_add_assign(&mut result, &summand);
                 }
                 result
             })
@@ -829,8 +795,8 @@ impl BivarCommitment {
     }
 
     /// Returns the `0`-th to `degree`-th power of `x`.
-    fn powers<T: IntoFr>(&self, x: T) -> Vec<Fr> {
-        powers(x, self.degree)
+    fn powers<T: IntoFr>(&self, x: T) -> Vec<blst_scalar> {
+        powers_scalar(x, self.degree)
     }
 
     /// Serializes to big endian bytes
@@ -839,13 +805,13 @@ impl BivarCommitment {
         let bytes_size = coeff_size * PK_SIZE;
         let mut commit_bytes = vec![0; bytes_size];
         for i in 0..coeff_size {
-            let g1 = self.coeff[i];
-            let g1_bytes = g1.into_affine().into_compressed().as_ref().to_vec();
-            let g1_size = g1_bytes.len();
+            let p1 = self.coeff[i];
+            let p1_bytes = p1_to_be_bytes(&p1);
+            let p1_size = p1_bytes.len();
             // TODO if not equal then should do padding instead of fail?
-            assert_eq!(g1_size, PK_SIZE);
-            for j in 0..g1_size {
-                commit_bytes[i * PK_SIZE + j] = g1_bytes[j];
+            assert_eq!(p1_size, PK_SIZE);
+            for j in 0..p1_size {
+                commit_bytes[i * PK_SIZE + j] = p1_bytes[j];
             }
         }
         commit_bytes
@@ -853,15 +819,15 @@ impl BivarCommitment {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<G1> = vec![];
+        let mut c: Vec<blst_p1> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
-            let mut g1_bytes = [0; PK_SIZE];
+            let mut p1_bytes = [0; PK_SIZE];
             for j in 0..PK_SIZE {
-                g1_bytes[j] = bytes[i * PK_SIZE + j];
+                p1_bytes[j] = bytes[i * PK_SIZE + j];
             }
-            let g1 = g1_from_be_bytes(g1_bytes)?;
-            c.push(g1);
+            let p1 = p1_from_be_bytes(p1_bytes)?;
+            c.push(p1);
         }
         let d = ((2 * coeff_size) as f64).sqrt() as usize - 1;
         Ok(BivarCommitment {
@@ -872,13 +838,27 @@ impl BivarCommitment {
 }
 
 /// Returns the `0`-th to `degree`-th power of `x`.
-fn powers<T: IntoFr>(into_x: T, degree: usize) -> Vec<Fr> {
+fn powers_fr<T: IntoFr>(into_x: T, degree: usize) -> Vec<blst_fr> {
     let x = into_x.into_fr();
-    let mut x_pow_i = Fr::one();
+    let mut x_pow_i = FR_ONE;
     iter::once(x_pow_i)
         .chain((0..degree).map(|_| {
-            x_pow_i.mul_assign(&x);
+            fr_mul_assign(&mut x_pow_i, &x);
             x_pow_i
+        }))
+        .collect()
+}
+
+/// Returns the `0`-th to `degree`-th power of `x`.
+/// Scalar multiply can be much faster than Fr multiply if value is small,
+/// ie has many leading zeros
+fn powers_scalar<T: IntoFr>(into_x: T, degree: usize) -> Vec<blst_scalar> {
+    let x = into_x.into_fr();
+    let mut x_pow_i = FR_ONE;
+    iter::once(fr_to_scalar(&x_pow_i))
+        .chain((0..degree).map(|_| {
+            fr_mul_assign(&mut x_pow_i, &x);
+            fr_to_scalar(&x_pow_i)
         }))
         .collect()
 }
@@ -896,13 +876,20 @@ pub(crate) fn coeff_pos(i: usize, j: usize) -> Option<usize> {
 mod tests {
     use eyre::{eyre, Result};
     use std::collections::BTreeMap;
+    use std::ops::AddAssign;
 
     use super::fr_to_be_bytes;
     use super::{coeff_pos, BivarCommitment, BivarPoly, Commitment, IntoFr, Poly};
-    use super::{Fr, G1Affine, G1};
     use super::{PK_SIZE, SK_SIZE};
-    use ff::Field;
-    use group::{CurveAffine, CurveProjective};
+    use super::{
+        fr_add_assign,
+        fr_random,
+        p1_mul_fr,
+        p1_to_be_bytes,
+        FR_ZERO,
+        P1_ONE,
+        P1_ZERO,
+    };
     use hex_fmt::HexFmt;
     use zeroize::Zeroize;
 
@@ -928,7 +915,9 @@ mod tests {
         // The polynomial 5 X³ + X - 2.
         let x_pow_3 = Poly::monomial(3);
         let x_pow_1 = Poly::monomial(1);
-        let poly = x_pow_3 * 5 + x_pow_1 - 2;
+        let mut poly = x_pow_3.clone() * 5;
+        poly.add_assign(x_pow_1);
+        poly.add_assign(Poly::constant((-2).into_fr()));
 
         let coeff: Vec<_> = [-2, 1, 0, 5].iter().map(IntoFr::into_fr).collect();
         assert_eq!(Poly { coeff }, poly);
@@ -942,7 +931,9 @@ mod tests {
 
     #[test]
     fn test_zeroize() {
-        let mut poly = Poly::monomial(3) + Poly::monomial(2) - 1;
+        let mut poly = Poly::monomial(3);
+        poly.add_assign(Poly::monomial(2));
+        poly.add_assign(Poly::constant((-1).into_fr()));
         poly.zeroize();
         assert!(poly.is_zero());
 
@@ -955,8 +946,9 @@ mod tests {
         assert_ne!(random_commitment, zero_commitment);
 
         let mut rng = rand::thread_rng();
-        let (x, y): (Fr, Fr) = (Fr::random(&mut rng), Fr::random(&mut rng));
-        assert_eq!(zero_commitment.evaluate(x, y), G1::zero());
+        let x = fr_random(&mut rng);
+        let y = fr_random(&mut rng);
+        assert_eq!(zero_commitment.evaluate(x, y), P1_ZERO);
     }
 
     #[test]
@@ -974,7 +966,7 @@ mod tests {
             .collect();
         let pub_bi_commits: Vec<_> = bi_polys.iter().map(BivarPoly::commitment).collect();
 
-        let mut sec_keys = vec![Fr::zero(); node_num];
+        let mut sec_keys = vec![FR_ZERO; node_num];
 
         // Each dealer sends row `m` to node `m`, where the index starts at `1`. Don't send row `0`
         // to anyone! The nodes verify their rows, and send _value_ `s` on to node `s`. They again
@@ -988,8 +980,8 @@ mod tests {
                 // Node `s` receives the `s`-th value and verifies it.
                 for s in 1..=node_num {
                     let val = row_poly.evaluate(s);
-                    let val_g1 = G1Affine::one().mul(val);
-                    assert_eq!(bi_commit.evaluate(m, s), val_g1);
+                    let val_p1 = p1_mul_fr(&P1_ONE, &val);
+                    assert_eq!(bi_commit.evaluate(m, s), val_p1);
                     // The node can't verify this directly, but it should have the correct value:
                     assert_eq!(bi_poly.evaluate(m, s), val);
                 }
@@ -997,7 +989,9 @@ mod tests {
                 // A cheating dealer who modified the polynomial would be detected.
                 let x_pow_2 = Poly::monomial(2);
                 let five = Poly::constant(5.into_fr());
-                let wrong_poly = row_poly.clone() + x_pow_2 * five;
+                let mut wrong_poly = row_poly.clone();
+                let x5 = x_pow_2 * five;
+                wrong_poly.add_assign(x5);
                 assert_ne!(wrong_poly.commitment(), row_commit);
 
                 // If `2 * faulty_num + 1` nodes confirm that they received a valid row, then at
@@ -1017,7 +1011,7 @@ mod tests {
 
                 // The node sums up all values number `0` it received from the different dealer. No
                 // dealer and no other node knows the sum in the end.
-                sec_keys[m - 1].add_assign(&my_row.evaluate(Fr::zero()));
+                fr_add_assign(&mut sec_keys[m - 1], &my_row.evaluate(FR_ZERO));
             }
         }
 
@@ -1053,11 +1047,11 @@ mod tests {
         let commitment_bytes = commitment.to_bytes();
         assert_eq!(commitment_bytes.len(), (degree + 1) * 48);
         // the first bytes of the commitment match the first G1
-        let g1 = commitment.evaluate(0);
-        let g1_bytes = g1.into_affine().into_compressed().as_ref().to_vec();
-        let g1_bytes_size = g1_bytes.len();
-        for i in 0..g1_bytes_size {
-            assert_eq!(g1_bytes[i], commitment_bytes[i]);
+        let p1 = commitment.evaluate(0);
+        let p1_bytes = p1_to_be_bytes(&p1);
+        let p1_bytes_size = p1_bytes.len();
+        for i in 0..p1_bytes_size {
+            assert_eq!(p1_bytes[i], commitment_bytes[i]);
         }
         // from bytes gives original commitment
         let restored_commitment =
