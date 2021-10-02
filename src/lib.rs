@@ -86,13 +86,13 @@ impl fmt::Debug for PublicKey {
 
 impl PublicKey {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2(&self, sig: &Signature, hash: blst_p2) -> bool {
+    pub fn verify_g2(&self, sig: &Signature, hash: &blst_p2) -> bool {
         equal_pairs(&self.0, &hash, &P1_ONE, &sig.0)
     }
 
     /// Returns `true` if the signature matches the message.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
-        self.verify_g2(sig, hash_g2(msg))
+        self.verify_g2(sig, &hash_g2(msg))
     }
 
     /// Encrypts the message using the OS random number generator.
@@ -148,13 +148,13 @@ impl fmt::Debug for PublicKeyShare {
 
 impl PublicKeyShare {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2(&self, sig: &SignatureShare, hash: blst_p2) -> bool {
-        self.0.verify_g2(&sig.0, hash)
+    pub fn verify_g2(&self, sig: &SignatureShare, hash: &blst_p2) -> bool {
+        self.0.verify_g2(&sig.0, &hash)
     }
 
     /// Returns `true` if the signature matches the message.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {
-        self.verify_g2(sig, hash_g2(msg))
+        self.verify_g2(sig, &hash_g2(msg))
     }
 
     /// Returns `true` if the decryption share matches the ciphertext.
@@ -309,14 +309,14 @@ impl SecretKey {
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2(&self, hash: blst_p2) -> Signature {
-        let sig = p2_mul_fr(&hash, &self.0);
+    pub fn sign_g2(&self, hash: &blst_p2) -> Signature {
+        let sig = p2_mul_fr(hash, &self.0);
         Signature(sig)
     }
 
     /// Signs the given message.
     pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
-        self.sign_g2(hash_g2(msg))
+        self.sign_g2(&hash_g2(msg))
     }
 
     /// Converts the secret key to big endian bytes
@@ -396,7 +396,7 @@ impl SecretKeyShare {
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2(&self, hash: blst_p2) -> SignatureShare {
+    pub fn sign_g2(&self, hash: &blst_p2) -> SignatureShare {
         SignatureShare(self.0.sign_g2(hash))
     }
 
@@ -1755,9 +1755,9 @@ mod tests {
         let sk = SecretKey::from_bytes(skb).expect("Invalid secret key bytes");
         let msg = b"my message";
         let g2 = hash_g2(msg);
-        let sig = sk.sign_g2(g2);
+        let sig = sk.sign_g2(&g2);
         let pk = sk.public_key();
         assert!(pk.verify(&sig, msg));
-        assert!(pk.verify_g2(&sig, g2));
+        assert!(pk.verify_g2(&sig, &g2));
     }
 }
