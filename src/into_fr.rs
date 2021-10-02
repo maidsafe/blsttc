@@ -1,13 +1,5 @@
-use blst::{
-    blst_fr,
-    blst_fr_from_scalar,
-    blst_scalar,
-    blst_scalar_from_bendian,
-};
-use crate::blst_ops::{
-    fr_negate,
-    hash_to_fr,
-};
+use crate::blst_ops::{fr_negate, hash_to_fr};
+use blst::{blst_fr, blst_fr_from_scalar, blst_scalar, blst_scalar_from_bendian};
 
 /// A conversion into an element of the field `Fr`.
 pub trait IntoFr: Copy {
@@ -34,11 +26,8 @@ impl IntoFr for u64 {
         let mut bytes = [0u8; 32];
         // cannot use blst_fr_from_uint64 since it leaves junk in the most
         // significant 24 bytes
-        // TODO IC improve efficiency here if possible
         let u64bytes = self.to_be_bytes();
-        for i in 0..8 {
-            bytes[i+24] = u64bytes[i];
-        }
+        bytes[24..(8 + 24)].clone_from_slice(&u64bytes[..8]);
         unsafe {
             blst_scalar_from_bendian(&mut scalar, bytes.as_ptr());
             blst_fr_from_scalar(&mut fr, &scalar);

@@ -19,35 +19,21 @@
 use std::borrow::Borrow;
 use std::fmt::{self, Debug, Formatter};
 use std::iter::repeat_with;
-use std::{cmp, iter, ops};
 use std::ops::AddAssign;
+use std::{cmp, iter, ops};
 
 use rand::Rng;
 use zeroize::Zeroize;
 
 use crate::error::{Error, Result};
 use crate::blst_ops::{
-    fr_add_assign,
-    fr_from_be_bytes,
-    fr_inverse,
-    fr_mul_assign,
-    fr_negate,
-    fr_random,
-    fr_sub_assign,
-    fr_to_be_bytes,
-    fr_to_scalar,
-    p1_add_assign,
-    p1_from_be_bytes,
-    p1_mul_assign_scalar,
-    p1_mul_fr,
-    p1_to_be_bytes,
-    FR_ONE,
-    FR_ZERO,
-    P1_ONE,
-    P1_ZERO,
+    fr_add_assign, fr_from_be_bytes, fr_inverse, fr_mul_assign, fr_negate, fr_sub_assign,
+    fr_to_be_bytes, fr_to_scalar, p1_add_assign, p1_from_be_bytes, p1_mul_assign_scalar, p1_mul_fr,
+    p1_to_be_bytes, FR_ONE, FR_ZERO, P1_ONE, P1_ZERO,
 };
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
+use crate::util::fr_random;
 use crate::{blst_fr, blst_p1, PK_SIZE, SK_SIZE};
 use blst::blst_scalar;
 
@@ -199,7 +185,7 @@ impl<'a, B: Borrow<Poly>> ops::Mul<B> for &'a Poly {
         for (i, ca) in self.coeff.iter().enumerate() {
             for (j, cb) in rhs.coeff.iter().enumerate() {
                 tmp = *ca;
-                fr_mul_assign(&mut tmp, &cb);
+                fr_mul_assign(&mut tmp, cb);
                 fr_add_assign(&mut coeffs[i + j], &tmp);
             }
         }
@@ -310,7 +296,9 @@ impl Poly {
         if degree == usize::max_value() {
             return Err(Error::DegreeTooHigh);
         }
-        let coeff: Vec<blst_fr> = repeat_with(|| fr_random(&mut rng)).take(degree + 1).collect();
+        let coeff: Vec<blst_fr> = repeat_with(|| fr_random(&mut rng))
+            .take(degree + 1)
+            .collect();
         Ok(Poly::from(coeff))
     }
 
@@ -380,7 +368,7 @@ impl Poly {
         let x = i.into_fr();
         for c in self.coeff.iter().rev().skip(1) {
             fr_mul_assign(&mut result, &x);
-            fr_add_assign(&mut result, &c);
+            fr_add_assign(&mut result, c);
         }
         result
     }
@@ -425,7 +413,12 @@ impl Poly {
 
     /// Removes all trailing zero coefficients.
     fn remove_zeros(&mut self) {
-        let zeros = self.coeff.iter().rev().take_while(|c| **c == FR_ZERO).count();
+        let zeros = self
+            .coeff
+            .iter()
+            .rev()
+            .take_while(|c| **c == FR_ZERO)
+            .count();
         let len = self.coeff.len() - zeros;
         self.coeff.truncate(len);
     }
@@ -448,7 +441,7 @@ impl Poly {
         for (ref x, ref y) in &samples[1..] {
             // Scale `base` so that its value at `x` is the difference between `y` and `poly`'s
             // current value at `x`: Adding it to `poly` will then make it correct for `x`.
-            let mut diff = y.clone();
+            let mut diff = *y;
             fr_sub_assign(&mut diff, &poly.evaluate(x));
             let mut base_val = base.evaluate(x);
             fr_inverse(&mut base_val); //.expect("sample points must be distinct")
@@ -532,7 +525,7 @@ impl Commitment {
         let x_scalar = fr_to_scalar(&x);
         for c in self.coeff.iter().rev().skip(1) {
             p1_mul_assign_scalar(&mut result, &x_scalar);
-            p1_add_assign(&mut result, &c);
+            p1_add_assign(&mut result, c);
         }
         result
     }
@@ -658,7 +651,7 @@ impl BivarPoly {
                 let index = coeff_pos(i, j).expect("polynomial degree too high");
                 let mut summand = self.coeff[index];
                 fr_mul_assign(&mut summand, &x_pow_i);
-                fr_mul_assign(&mut summand, &y_pow_j);
+                fr_mul_assign(&mut summand, y_pow_j);
                 fr_add_assign(&mut result, &summand);
             }
         }
@@ -675,7 +668,7 @@ impl BivarPoly {
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
                     let index = coeff_pos(i, j).expect("polynomial degree too high");
                     let mut summand = self.coeff[index];
-                    fr_mul_assign(&mut summand, &x_pow_j);
+                    fr_mul_assign(&mut summand, x_pow_j);
                     fr_add_assign(&mut result, &summand);
                 }
                 result
@@ -769,7 +762,7 @@ impl BivarCommitment {
                 let index = coeff_pos(i, j).expect("polynomial degree too high");
                 let mut summand = self.coeff[index];
                 p1_mul_assign_scalar(&mut summand, &x_pow_i);
-                p1_mul_assign_scalar(&mut summand, &y_pow_j);
+                p1_mul_assign_scalar(&mut summand, y_pow_j);
                 p1_add_assign(&mut result, &summand);
             }
         }
@@ -785,7 +778,7 @@ impl BivarCommitment {
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
                     let index = coeff_pos(i, j).expect("polynomial degree too high");
                     let mut summand = self.coeff[index];
-                    p1_mul_assign_scalar(&mut summand, &x_pow_j);
+                    p1_mul_assign_scalar(&mut summand, x_pow_j);
                     p1_add_assign(&mut result, &summand);
                 }
                 result
@@ -880,16 +873,8 @@ mod tests {
 
     use super::fr_to_be_bytes;
     use super::{coeff_pos, BivarCommitment, BivarPoly, Commitment, IntoFr, Poly};
+    use super::{fr_add_assign, fr_random, p1_mul_fr, p1_to_be_bytes, FR_ZERO, P1_ONE, P1_ZERO};
     use super::{PK_SIZE, SK_SIZE};
-    use super::{
-        fr_add_assign,
-        fr_random,
-        p1_mul_fr,
-        p1_to_be_bytes,
-        FR_ZERO,
-        P1_ONE,
-        P1_ZERO,
-    };
     use hex_fmt::HexFmt;
     use zeroize::Zeroize;
 
@@ -915,7 +900,7 @@ mod tests {
         // The polynomial 5 X³ + X - 2.
         let x_pow_3 = Poly::monomial(3);
         let x_pow_1 = Poly::monomial(1);
-        let mut poly = x_pow_3.clone() * 5;
+        let mut poly = x_pow_3 * 5;
         poly.add_assign(x_pow_1);
         poly.add_assign(Poly::constant((-2).into_fr()));
 

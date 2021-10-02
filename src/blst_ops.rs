@@ -2,53 +2,23 @@
 
 use crate::{PK_SIZE, SIG_SIZE, SK_SIZE};
 use crate::error::{Error, Result};
-use rand::RngCore;
 
 use blst::{
+    blst_bendian_from_scalar, blst_expand_message_xmd, blst_final_exp, blst_fp, blst_fp12,
+    blst_fp12_is_one, blst_fp12_mul, blst_fp6, blst_fr, blst_fr_add, blst_fr_cneg,
+    blst_fr_from_scalar, blst_fr_inverse, blst_fr_mul, blst_fr_sub, blst_miller_loop_lines,
+    blst_p1, blst_p1_add, blst_p1_affine, blst_p1_affine_compress, blst_p1_cneg,
+    blst_p1_deserialize, blst_p1_from_affine, blst_p1_mult, blst_p1_to_affine, blst_p2,
+    blst_p2_add, blst_p2_affine, blst_p2_affine_compress, blst_p2_deserialize, blst_p2_from_affine,
+    blst_p2_to_affine, blst_precompute_lines, blst_scalar, blst_scalar_from_be_bytes,
+    blst_scalar_from_bendian, blst_scalar_from_fr, blst_sign_pk_in_g1, blst_sign_pk_in_g2,
     BLST_ERROR,
-    blst_bendian_from_scalar,
-    blst_expand_message_xmd,
-    blst_final_exp,
-    blst_fp,
-    blst_fp12,
-    blst_fp12_is_one,
-    blst_fp12_mul,
-    blst_fp6,
-    blst_fr,
-    blst_fr_add,
-    blst_fr_cneg,
-    blst_fr_from_scalar,
-    blst_fr_inverse,
-    blst_fr_mul,
-    blst_fr_sub,
-    blst_keygen,
-    blst_miller_loop_lines,
-    blst_p1,
-    blst_p1_add,
-    blst_p1_affine,
-    blst_p1_affine_compress,
-    blst_p1_cneg,
-    blst_p1_deserialize,
-    blst_p1_from_affine,
-    blst_p1_mult,
-    blst_p1_to_affine,
-    blst_p2,
-    blst_p2_add,
-    blst_p2_affine,
-    blst_p2_affine_compress,
-    blst_p2_deserialize,
-    blst_p2_from_affine,
-    blst_p2_to_affine,
-    blst_precompute_lines,
-    blst_scalar,
-    blst_scalar_from_be_bytes,
-    blst_scalar_from_fr,
-    blst_scalar_from_bendian,
-    blst_sign_pk_in_g1,
-    blst_sign_pk_in_g2,
 };
 
-const FR_MAX_BYTES: [u8; 32] = [115, 237, 167, 83, 41, 157, 125, 72, 51, 57, 216, 8, 9, 161, 216, 5, 83, 189, 164, 2, 255, 254, 91, 254, 255, 255, 255, 255, 0, 0, 0, 1];
+const FR_MAX_BYTES: [u8; 32] = [
+    115, 237, 167, 83, 41, 157, 125, 72, 51, 57, 216, 8, 9, 161, 216, 5, 83, 189, 164, 2, 255, 254,
+    91, 254, 255, 255, 255, 255, 0, 0, 0, 1,
+];
 
 const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
@@ -67,13 +37,61 @@ const HTS_L: usize = 48;
 // to extract the required 48 bytes.
 const HTS_UB_SIZE: usize = 64;
 
-pub(crate) const FR_ONE: blst_fr = blst_fr { l: [8589934590, 6378425256633387010, 11064306276430008309, 1739710354780652911] };
+pub(crate) const FR_ONE: blst_fr = blst_fr {
+    l: [
+        8589934590,
+        6378425256633387010,
+        11064306276430008309,
+        1739710354780652911,
+    ],
+};
 
 pub(crate) const FR_ZERO: blst_fr = blst_fr { l: [0, 0, 0, 0] };
 
-pub(crate) const P1_ZERO: blst_p1 = blst_p1 { x: blst_fp { l: [0, 0, 0, 0, 0, 0] }, y: blst_fp { l: [0, 0, 0, 0, 0, 0] }, z: blst_fp { l: [0, 0, 0, 0, 0, 0] } };
+pub(crate) const P1_ZERO: blst_p1 = blst_p1 {
+    x: blst_fp {
+        l: [0, 0, 0, 0, 0, 0],
+    },
+    y: blst_fp {
+        l: [0, 0, 0, 0, 0, 0],
+    },
+    z: blst_fp {
+        l: [0, 0, 0, 0, 0, 0],
+    },
+};
 
-pub(crate) const P1_ONE: blst_p1 = blst_p1 { x: blst_fp { l: [6679831729115696150, 8653662730902241269, 1535610680227111361, 17342916647841752903, 17135755455211762752, 1297449291367578485] }, y: blst_fp { l: [13451288730302620273, 10097742279870053774, 15949884091978425806, 5885175747529691540, 1016841820992199104, 845620083434234474] }, z: blst_fp { l: [8505329371266088957, 17002214543764226050, 6865905132761471162, 8632934651105793861, 6631298214892334189, 1582556514881692819] } };
+pub(crate) const P1_ONE: blst_p1 = blst_p1 {
+    x: blst_fp {
+        l: [
+            6679831729115696150,
+            8653662730902241269,
+            1535610680227111361,
+            17342916647841752903,
+            17135755455211762752,
+            1297449291367578485,
+        ],
+    },
+    y: blst_fp {
+        l: [
+            13451288730302620273,
+            10097742279870053774,
+            15949884091978425806,
+            5885175747529691540,
+            1016841820992199104,
+            845620083434234474,
+        ],
+    },
+    z: blst_fp {
+        l: [
+            8505329371266088957,
+            17002214543764226050,
+            6865905132761471162,
+            8632934651105793861,
+            6631298214892334189,
+            1582556514881692819,
+        ],
+    },
+};
 
 /// Convert big endian bytes to bls12_381::Fr
 pub fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> Result<blst_fr> {
@@ -90,7 +108,7 @@ pub fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> Result<blst_fr> {
 }
 
 /// Convert bls12_381::Fr to big endian bytes
-pub fn fr_to_be_bytes(fr: blst_fr) -> [u8; SK_SIZE] {
+pub(crate) fn fr_to_be_bytes(fr: blst_fr) -> [u8; SK_SIZE] {
     let mut scalar = blst_scalar::default();
     let mut bytes = [0u8; SK_SIZE];
     unsafe {
@@ -117,7 +135,7 @@ pub fn p1_from_be_bytes(bytes: [u8; PK_SIZE]) -> Result<blst_p1> {
 }
 
 /// Convert blst_p1_affine to big endian bytes
-pub fn p1_to_be_bytes(p1: &blst_p1) -> [u8; PK_SIZE] {
+pub(crate) fn p1_to_be_bytes(p1: &blst_p1) -> [u8; PK_SIZE] {
     let mut p1_affine = blst_p1_affine::default();
     let mut bytes = [0u8; PK_SIZE];
     unsafe {
@@ -146,7 +164,7 @@ pub fn p2_from_be_bytes(bytes: [u8; SIG_SIZE]) -> Result<blst_p2> {
 }
 
 /// Convert blst_p2 to big endian bytes
-pub fn p2_to_be_bytes(p2: &blst_p2) -> [u8; SIG_SIZE] {
+pub(crate) fn p2_to_be_bytes(p2: &blst_p2) -> [u8; SIG_SIZE] {
     let mut bytes = [0; SIG_SIZE];
     let mut p2_affine = blst_p2_affine::default();
     unsafe {
@@ -187,12 +205,11 @@ pub(crate) fn p1_mul_assign_scalar(p1: &mut blst_p1, scalar: &blst_scalar) {
 fn scalar_num_bits(scalar: &blst_scalar) -> usize {
     let mut size = 256;
     for i in 0..scalar.b.len() {
-        if scalar.b[31-i] > 0 {
-            size = size - scalar.b[31-i].leading_zeros() as usize;
+        if scalar.b[31 - i] > 0 {
+            size -= scalar.b[31 - i].leading_zeros() as usize;
             break;
-        }
-        else {
-            size = size - 8;
+        } else {
+            size -= 8;
         }
     }
     size
@@ -235,16 +252,15 @@ pub(crate) fn p1_add_assign(a: &mut blst_p1, b: &blst_p1) {
 pub(crate) fn equal_pairs(ap: &blst_p1, aq: &blst_p2, bp: &blst_p1, bq: &blst_p2) -> bool {
     let mut neg_bp = *bp;
     p1_mul_neg_one(&mut neg_bp);
-    let pair_a = p1_p2_to_fp12(&ap, aq);
+    let pair_a = p1_p2_to_fp12(ap, aq);
     let pair_b = p1_p2_to_fp12(&neg_bp, bq);
     let mut gt = blst_fp12::default();
     let mut gt_final = blst_fp12::default();
-    let equal = unsafe {
+    unsafe {
         blst_fp12_mul(&mut gt, &pair_a, &pair_b);
         blst_final_exp(&mut gt_final, &gt);
         blst_fp12_is_one(&gt_final)
-    };
-    equal
+    }
 }
 
 pub(crate) fn fr_add_assign(a: &mut blst_fr, b: &blst_fr) {
@@ -289,21 +305,6 @@ pub(crate) fn fr_to_scalar(a: &blst_fr) -> blst_scalar {
     out
 }
 
-/// Generate a random fr using bls-sig-keygen as described in
-/// https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-02#section-2.3
-pub fn fr_random(mut rng: impl RngCore) -> blst_fr {
-    let mut fr = blst_fr::default();
-    let mut scalar = blst_scalar::default();
-    let mut bytes = [0u8; SK_SIZE];
-    let key_info = vec![];
-    rng.fill_bytes(&mut bytes);
-    unsafe {
-        blst_keygen(&mut scalar, bytes.as_ptr(), SK_SIZE, key_info.as_ptr(), 0);
-        blst_fr_from_scalar(&mut fr, &scalar);
-    }
-    fr
-}
-
 pub(crate) fn fr_negate(a: &mut blst_fr) {
     unsafe {
         blst_fr_cneg(a, a, true);
@@ -323,7 +324,14 @@ pub(crate) fn hash_to_fr(a: &[u8]) -> blst_fr {
     let mut scalar = blst_scalar::default();
     let mut fr = blst_fr::default();
     unsafe {
-        blst_expand_message_xmd(expanded.as_mut_ptr(), HTS_L, a.as_ptr(), a.len(), DST.as_ptr(), DST.len());
+        blst_expand_message_xmd(
+            expanded.as_mut_ptr(),
+            HTS_L,
+            a.as_ptr(),
+            a.len(),
+            DST.as_ptr(),
+            DST.len(),
+        );
         blst_scalar_from_be_bytes(&mut scalar, expanded[0..HTS_L].as_ptr(), HTS_L);
         blst_fr_from_scalar(&mut fr, &scalar);
     }

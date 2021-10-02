@@ -5,13 +5,13 @@
 #![allow(clippy::derive_hash_xor_eq)]
 #![warn(missing_docs)]
 
+mod blst_ops;
 mod into_fr;
 mod secret;
-mod util;
 
-pub mod blst_ops;
 pub mod error;
 pub mod poly;
+pub mod util;
 
 use std::borrow::Borrow;
 use std::fmt;
@@ -30,36 +30,14 @@ pub use self::error::{Error, Result};
 pub use crate::into_fr::IntoFr;
 
 use blst_ops::{
-    equal_pairs,
-    fr_add_assign,
-    fr_from_be_bytes,
-    fr_inverse,
-    fr_mul_fr,
-    fr_mul_assign,
-    fr_random,
-    fr_sub_fr,
-    fr_sub_assign,
-    fr_to_be_bytes,
-    p1_add_assign,
-    p1_from_be_bytes,
-    p1_mul_fr,
-    p1_to_be_bytes,
-    p2_add_assign,
-    p2_mul_fr,
-    p2_from_be_bytes,
-    p2_to_be_bytes,
-    FR_ONE,
-    FR_ZERO,
+    equal_pairs, fr_add_assign, fr_from_be_bytes, fr_inverse, fr_mul_assign, fr_mul_fr,
+    fr_sub_assign, fr_sub_fr, fr_to_be_bytes, p1_add_assign, p1_from_be_bytes, p1_mul_fr,
+    p1_to_be_bytes, p2_add_assign, p2_from_be_bytes, p2_mul_fr, p2_to_be_bytes, FR_ONE, FR_ZERO,
     P1_ONE,
 };
-use util::sha3_256;
+use util::{fr_random, sha3_256};
 
-use blst::{
-    blst_fr,
-    blst_hash_to_g2,
-    blst_p1,
-    blst_p2,
-};
+use blst::{blst_fr, blst_hash_to_g2, blst_p1, blst_p2};
 
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
@@ -87,7 +65,7 @@ impl fmt::Debug for PublicKey {
 impl PublicKey {
     /// Returns `true` if the signature matches the element of `G2`.
     pub fn verify_g2(&self, sig: &Signature, hash: &blst_p2) -> bool {
-        equal_pairs(&self.0, &hash, &P1_ONE, &sig.0)
+        equal_pairs(&self.0, hash, &P1_ONE, &sig.0)
     }
 
     /// Returns `true` if the signature matches the message.
@@ -149,7 +127,7 @@ impl fmt::Debug for PublicKeyShare {
 impl PublicKeyShare {
     /// Returns `true` if the signature matches the element of `G2`.
     pub fn verify_g2(&self, sig: &SignatureShare, hash: &blst_p2) -> bool {
-        self.0.verify_g2(&sig.0, &hash)
+        self.0.verify_g2(&sig.0, hash)
     }
 
     /// Returns `true` if the signature matches the message.
@@ -192,7 +170,6 @@ impl fmt::Debug for Signature {
 }
 
 impl Signature {
-
     /// Returns the signature with the given representation, if valid.
     pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
         let p2 = p2_from_be_bytes(bytes)?;
@@ -336,7 +313,7 @@ impl SecretKey {
             return None;
         }
         let Ciphertext(ref u, ref v, _) = *ct;
-        let g = p1_mul_fr(&u, &self.0);
+        let g = p1_mul_fr(u, &self.0);
         Some(xor_with_hash(g, v))
     }
 
@@ -483,11 +460,7 @@ impl Ciphertext {
 
         let v: Vec<u8> = (&bytes[PK_SIZE + SIG_SIZE..]).to_vec();
 
-        Ok(Self(
-            u,
-            v,
-            w,
-        ))
+        Ok(Self(u, v, w))
     }
 }
 
@@ -596,7 +569,9 @@ impl PublicKeySet {
         I: IntoIterator<Item = (T, S)>,
         T: IntoFr,
     {
-        let samples = shares.into_iter().map(|(i, share)| (i, (share.borrow().0).0));
+        let samples = shares
+            .into_iter()
+            .map(|(i, share)| (i, (share.borrow().0).0));
         Ok(Signature(interpolate_g2(self.commit.degree(), samples)?))
     }
 
@@ -618,9 +593,7 @@ impl PublicKeySet {
             .commit
             .coeff
             .iter()
-            .map(|coeff| {
-                p1_mul_fr(&coeff, &index_fr)
-            })
+            .map(|coeff| p1_mul_fr(coeff, &index_fr))
             .collect();
         PublicKeySet::from(Commitment::from(child_coeffs))
     }
@@ -712,9 +685,7 @@ impl SecretKeySet {
             .poly
             .coeff
             .iter()
-            .map(|coeff| {
-                fr_mul_fr(&coeff, &index_fr)
-            })
+            .map(|coeff| fr_mul_fr(coeff, &index_fr))
             .collect();
         SecretKeySet::from(Poly::from(child_coeffs))
     }
@@ -743,9 +714,8 @@ impl fmt::Debug for BlindedMessage {
 }
 
 impl BlindedMessage {
-
     /// Returns the blinded message with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
         let p2 = p2_from_be_bytes(bytes)?;
         Ok(BlindedMessage(p2))
     }
@@ -783,7 +753,7 @@ pub fn blind_msg<M: AsRef<[u8]>>(msg: M, blinding_factor: &blst_fr) -> BlindedMe
 
 /// Unblinds a blind signature after being signed by an authority.
 pub fn unblind_signature(blinded_sig: &Signature, blinding_factor: &blst_fr) -> Signature {
-    let mut bf_inv = blinding_factor.clone();
+    let mut bf_inv = *blinding_factor;
     fr_inverse(&mut bf_inv);
     let unblinded_sig = p2_mul_fr(&blinded_sig.0, &bf_inv);
     Signature(unblinded_sig)
@@ -837,12 +807,12 @@ where
     let mut tmp = FR_ONE;
     x_prod.push(tmp);
     for (x, _) in samples.iter().take(t) {
-        fr_mul_assign(&mut tmp, &x);
+        fr_mul_assign(&mut tmp, x);
         x_prod.push(tmp);
     }
     tmp = FR_ONE;
     for (i, (x, _)) in samples[1..].iter().enumerate().rev() {
-        fr_mul_assign(&mut tmp, &x);
+        fr_mul_assign(&mut tmp, x);
         fr_mul_assign(&mut x_prod[i], &tmp);
     }
 
@@ -853,12 +823,12 @@ where
         let mut denom = FR_ONE;
         for (x0, _) in samples.iter().filter(|(x0, _)| x0 != x) {
             let mut diff = *x0;
-            fr_sub_assign(&mut diff, &x);
+            fr_sub_assign(&mut diff, x);
             fr_mul_assign(&mut denom, &diff);
         }
         fr_inverse(&mut denom); //.ok_or(Error::DuplicateEntry)?;
         fr_mul_assign(&mut l0, &denom);
-        let sample_mul = p1_mul_fr(&sample, &l0);
+        let sample_mul = p1_mul_fr(sample, &l0);
         p1_add_assign(&mut result, &sample_mul);
     }
     Ok(result)
@@ -889,12 +859,12 @@ where
     let mut tmp = FR_ONE;
     x_prod.push(tmp);
     for (x, _) in samples.iter().take(t) {
-        fr_mul_assign(&mut tmp, &x);
+        fr_mul_assign(&mut tmp, x);
         x_prod.push(tmp);
     }
     tmp = FR_ONE;
     for (i, (x, _)) in samples[1..].iter().enumerate().rev() {
-        fr_mul_assign(&mut tmp, &x);
+        fr_mul_assign(&mut tmp, x);
         fr_mul_assign(&mut x_prod[i], &tmp);
     }
 
@@ -904,12 +874,12 @@ where
         // points but `1` at `x`.
         let mut denom = FR_ONE;
         for (x0, _) in samples.iter().filter(|(x0, _)| x0 != x) {
-            let diff = fr_sub_fr(x0, &x);
+            let diff = fr_sub_fr(x0, x);
             fr_mul_assign(&mut denom, &diff);
         }
         fr_inverse(&mut denom); //.ok_or(Error::DuplicateEntry)?
         fr_mul_assign(&mut l0, &denom);
-        let sample_mul = p2_mul_fr(&sample, &l0);
+        let sample_mul = p2_mul_fr(sample, &l0);
         p2_add_assign(&mut result, &sample_mul);
     }
     Ok(result)
@@ -1789,7 +1759,8 @@ mod tests {
         let c_blinded_msg = blind_msg(c_msg, &c_blinding_factor);
         // the blinded message is sent to the authority for signing
         let w_blinded_msg = c_blinded_msg.to_bytes();
-        let a_blinded_msg = BlindedMessage::from_bytes(w_blinded_msg).expect("Invalid blinded message");
+        let a_blinded_msg =
+            BlindedMessage::from_bytes(w_blinded_msg).expect("Invalid blinded message");
         assert_eq!(c_blinded_msg, a_blinded_msg);
         // the authority signs the blinded message
         let a_blind_sig = a_sk.sign_g2(&a_blinded_msg.0);
@@ -1839,7 +1810,9 @@ mod tests {
         // key.
         // On CPU-bound services it's best to combine-then-unblind since it's
         // less total operations.
-        let blind_sig_a = pk_set.combine_signatures(blind_sigs.clone()).expect("signatures match");
+        let blind_sig_a = pk_set
+            .combine_signatures(blind_sigs.clone())
+            .expect("signatures match");
         let sig_a = unblind_signature(&blind_sig_a, &blinding_factor);
         assert!(pk_set.public_key().verify(&sig_a, msg));
 
@@ -1870,7 +1843,9 @@ mod tests {
                 (i, blind_sig)
             })
             .collect();
-        let blind_sig_c = pk_set.combine_signatures(&blind_sigs_c).expect("signatures match");
+        let blind_sig_c = pk_set
+            .combine_signatures(&blind_sigs_c)
+            .expect("signatures match");
         let sig_c = unblind_signature(&blind_sig_c, &blinding_factor);
         assert!(pk_set.public_key().verify(&sig_c, msg));
         assert_eq!(sig_a, sig_c);

@@ -12,7 +12,8 @@ pub(crate) fn clear_fr(fr: &mut blst_fr) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::blst_ops::{fr_random, FR_ZERO};
+    use crate::blst_ops::FR_ZERO;
+    use crate::util::fr_random;
     use rand::thread_rng;
 
     #[test]

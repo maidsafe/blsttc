@@ -1,5 +1,5 @@
 use blsttc::poly::{BivarPoly, Poly};
-use blsttc::blst_ops::fr_random;
+use blsttc::util::fr_random;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 const TEST_DEGREES: [usize; 4] = [5, 10, 20, 40];
@@ -113,10 +113,7 @@ mod poly_benches {
                         let x = fr_random(&mut rng);
                         (poly, x)
                     };
-                    b.iter_with_setup(
-                        rand_factors,
-                        |(poly, x)| poly.evaluate(x),
-                    )
+                    b.iter_with_setup(rand_factors, |(poly, x)| poly.evaluate(x))
                 },
             );
         }
@@ -150,10 +147,7 @@ mod bivarpoly_benches {
                         let y = fr_random(&mut rng);
                         (poly, x, y)
                     };
-                    b.iter_with_setup(
-                        rand_factors,
-                        |(poly, x, y)| poly.evaluate(x, y),
-                    )
+                    b.iter_with_setup(rand_factors, |(poly, x, y)| poly.evaluate(x, y))
                 },
             );
         }
@@ -165,21 +159,14 @@ mod bivarpoly_benches {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
             let parameter_string = format!("{}", deg);
-            group.bench_with_input(
-                BenchmarkId::new("row", parameter_string),
-                &deg,
-                |b, deg| {
-                    let rand_factors = || {
-                        let poly = BivarPoly::random(*deg, &mut rng);
-                        let x = fr_random(&mut rng);
-                        (poly, x)
-                    };
-                    b.iter_with_setup(
-                        rand_factors,
-                        |(poly, x)| poly.row(x),
-                    )
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("row", parameter_string), &deg, |b, deg| {
+                let rand_factors = || {
+                    let poly = BivarPoly::random(*deg, &mut rng);
+                    let x = fr_random(&mut rng);
+                    (poly, x)
+                };
+                b.iter_with_setup(rand_factors, |(poly, x)| poly.row(x))
+            });
         }
     }
 
@@ -231,10 +218,7 @@ mod commitment_benches {
                         let x = fr_random(&mut rng);
                         (commit, x)
                     };
-                    b.iter_with_setup(
-                        rand_factors,
-                        |(commit, x)| commit.evaluate(x),
-                    )
+                    b.iter_with_setup(rand_factors, |(commit, x)| commit.evaluate(x))
                 },
             );
         }
@@ -268,10 +252,7 @@ mod bivarcommitment_benches {
                         let y = fr_random(&mut rng);
                         (commit, x, y)
                     };
-                    b.iter_with_setup(
-                        rand_factors,
-                        |(commit, x, y)| commit.evaluate(x, y),
-                    )
+                    b.iter_with_setup(rand_factors, |(commit, x, y)| commit.evaluate(x, y))
                 },
             );
         }
@@ -283,21 +264,14 @@ mod bivarcommitment_benches {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
             let parameter_string = format!("{}", deg);
-            group.bench_with_input(
-                BenchmarkId::new("row", parameter_string),
-                &deg,
-                |b, deg| {
-                    let rand_factors = || {
-                        let commit = BivarPoly::random(*deg, &mut rng).commitment();
-                        let x = fr_random(&mut rng);
-                        (commit, x)
-                    };
-                    b.iter_with_setup(
-                        rand_factors,
-                        |(commit, x)| commit.row(x),
-                    )
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("row", parameter_string), &deg, |b, deg| {
+                let rand_factors = || {
+                    let commit = BivarPoly::random(*deg, &mut rng).commitment();
+                    let x = fr_random(&mut rng);
+                    (commit, x)
+                };
+                b.iter_with_setup(rand_factors, |(commit, x)| commit.row(x))
+            });
         }
     }
 
@@ -394,95 +368,67 @@ mod public_key_benches {
     fn verify(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("PublicKey");
-        group.bench_function(
-            "verify",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let pk = sk.public_key();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    let sig = sk.sign(&msg);
-                    (pk, msg, sig)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(pk, msg, sig)| {
-                        pk.verify(&sig, &msg)
-                    });
-            },
-        );
+        group.bench_function("verify", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let pk = sk.public_key();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let sig = sk.sign(&msg);
+                (pk, msg, sig)
+            };
+            b.iter_with_setup(rand_factors, |(pk, msg, sig)| pk.verify(&sig, &msg));
+        });
     }
 
     /// Benchmarks verifying a signature for a point p2
     fn verify_g2(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("PublicKey");
-        group.bench_function(
-            "verify_g2",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let pk = sk.public_key();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    let hash = hash_g2(&msg);
-                    let sig = sk.sign_g2(&hash);
-                    (pk, hash, sig)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(pk, hash, sig)| {
-                        pk.verify_g2(&sig, &hash)
-                    });
-            },
-        );
+        group.bench_function("verify_g2", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let pk = sk.public_key();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let hash = hash_g2(&msg);
+                let sig = sk.sign_g2(&hash);
+                (pk, hash, sig)
+            };
+            b.iter_with_setup(rand_factors, |(pk, hash, sig)| pk.verify_g2(&sig, &hash));
+        });
     }
 
     /// Benchmarks deriving a child public key
     fn derive_child(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("PublicKey");
-        group.bench_function(
-            "derive_child",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let pk = sk.public_key();
-                    let mut index = [0u8; 32];
-                    rng.fill_bytes(&mut index);
-                    (pk, index)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(pk, index)| {
-                        pk.derive_child(&index[..])
-                    });
-            },
-        );
+        group.bench_function("derive_child", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let pk = sk.public_key();
+                let mut index = [0u8; 32];
+                rng.fill_bytes(&mut index);
+                (pk, index)
+            };
+            b.iter_with_setup(rand_factors, |(pk, index)| pk.derive_child(&index[..]));
+        });
     }
 
     /// Benchmarks encrypting a 1000 byte message
     fn encrypt(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("PublicKey");
-        group.bench_function(
-            "encrypt",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let pk = sk.public_key();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    (pk, msg)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(pk, msg)| {
-                        pk.encrypt(&msg)
-                    });
-            },
-        );
+        group.bench_function("encrypt", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let pk = sk.public_key();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                (pk, msg)
+            };
+            b.iter_with_setup(rand_factors, |(pk, msg)| pk.encrypt(&msg));
+        });
     }
 
     criterion_group! {
@@ -502,91 +448,64 @@ mod secret_key_benches {
     fn sign(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("SecretKey");
-        group.bench_function(
-            "sign",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    (sk, msg)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(sk, msg)| {
-                        sk.sign(&msg)
-                    });
-            },
-        );
+        group.bench_function("sign", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                (sk, msg)
+            };
+            b.iter_with_setup(rand_factors, |(sk, msg)| sk.sign(&msg));
+        });
     }
 
     /// Benchmarks signing a point p2
     fn sign_g2(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("SecretKey");
-        group.bench_function(
-            "sign_g2",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    let hash = hash_g2(&msg);
-                    (sk, hash)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(sk, hash)| {
-                        sk.sign_g2(&hash)
-                    });
-            },
-        );
+        group.bench_function("sign_g2", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let hash = hash_g2(&msg);
+                (sk, hash)
+            };
+            b.iter_with_setup(rand_factors, |(sk, hash)| sk.sign_g2(&hash));
+        });
     }
 
     /// Benchmarks deriving a child secret key
     fn derive_child(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("SecretKey");
-        group.bench_function(
-            "derive_child",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let mut index = [0u8; 32];
-                    rng.fill_bytes(&mut index);
-                    (sk, index)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(sk, index)| {
-                        sk.derive_child(&index[..])
-                    });
-            },
-        );
+        group.bench_function("sign_g2", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let hash = hash_g2(&msg);
+                (sk, hash)
+            };
+            b.iter_with_setup(rand_factors, |(sk, hash)| sk.sign_g2(&hash));
+        });
     }
 
     /// Benchmarks decrypting a 1000 byte message
     fn decrypt(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("SecretKey");
-        group.bench_function(
-            "decrypt",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let pk = sk.public_key();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    let ct = pk.encrypt(&msg);
-                    (sk, ct)
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |(sk, ct)| {
-                        sk.decrypt(&ct)
-                    });
-            },
-        );
+        group.bench_function("decrypt", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let pk = sk.public_key();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let ct = pk.encrypt(&msg);
+                (sk, ct)
+            };
+            b.iter_with_setup(rand_factors, |(sk, ct)| sk.decrypt(&ct));
+        });
     }
 
     criterion_group! {
@@ -606,24 +525,16 @@ mod ciphertext_benches {
     fn verify(c: &mut Criterion) {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("Ciphertext");
-        group.bench_function(
-            "verify",
-            |b| {
-                let rand_factors = || {
-                    let sk = SecretKey::random();
-                    let pk = sk.public_key();
-                    let mut msg = [0u8; 1000];
-                    rng.fill_bytes(&mut msg);
-                    let ct = pk.encrypt(&msg);
-                    ct
-                };
-                b.iter_with_setup(
-                    rand_factors,
-                    |ct| {
-                        ct.verify()
-                    });
-            },
-        );
+        group.bench_function("verify", |b| {
+            let rand_factors = || {
+                let sk = SecretKey::random();
+                let pk = sk.public_key();
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                pk.encrypt(&msg)
+            };
+            b.iter_with_setup(rand_factors, |ct| ct.verify());
+        });
     }
 
     criterion_group! {
