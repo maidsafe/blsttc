@@ -4,7 +4,10 @@ use blst::{
     blst_scalar,
     blst_scalar_from_bendian,
 };
-use crate::blst_ops::fr_negate;
+use crate::blst_ops::{
+    fr_negate,
+    hash_to_fr,
+};
 
 /// A conversion into an element of the field `Fr`.
 pub trait IntoFr: Copy {
@@ -15,6 +18,12 @@ pub trait IntoFr: Copy {
 impl IntoFr for blst_fr {
     fn into_fr(self) -> blst_fr {
         self
+    }
+}
+
+impl IntoFr for &[u8] {
+    fn into_fr(self) -> blst_fr {
+        hash_to_fr(self)
     }
 }
 

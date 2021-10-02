@@ -7,6 +7,7 @@ use rand::RngCore;
 use blst::{
     BLST_ERROR,
     blst_bendian_from_scalar,
+    blst_expand_message_xmd,
     blst_final_exp,
     blst_fp,
     blst_fp12,
@@ -40,6 +41,7 @@ use blst::{
     blst_p2_to_affine,
     blst_precompute_lines,
     blst_scalar,
+    blst_scalar_from_be_bytes,
     blst_scalar_from_fr,
     blst_scalar_from_bendian,
     blst_sign_pk_in_g1,
@@ -47,6 +49,23 @@ use blst::{
 };
 
 const FR_MAX_BYTES: [u8; 32] = [115, 237, 167, 83, 41, 157, 125, 72, 51, 57, 216, 8, 9, 161, 216, 5, 83, 189, 164, 2, 255, 254, 91, 254, 255, 255, 255, 255, 0, 0, 0, 1];
+
+const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
+
+// Hash to scalar L parameter
+// See https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-10.html#section-5.1-2
+// L = ceil((ceil(log2(p)) + k) / 8)
+// where for bls p is the scalar ie 255 bits
+// and k is 128 bits security target
+const HTS_L: usize = 48;
+
+// Hash to scalar Uniform Bytes size
+// See https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-10.html#section-5.4.1-5
+// This is 64 bytes because uniform bytes comes in groups of 32 bytes (for
+// sha256), which is then truncated down to L bytes, ie 48.
+// One group of 32 bytes would not be enough, two groups ie 64 bytes is enough
+// to extract the required 48 bytes.
+const HTS_UB_SIZE: usize = 64;
 
 pub(crate) const FR_ONE: blst_fr = blst_fr { l: [8589934590, 6378425256633387010, 11064306276430008309, 1739710354780652911] };
 
@@ -295,4 +314,18 @@ pub(crate) fn fr_inverse(a: &mut blst_fr) {
     unsafe {
         blst_fr_inverse(a, a);
     }
+}
+
+pub(crate) fn hash_to_fr(a: &[u8]) -> blst_fr {
+    // Hash to scalar then convert to fr.
+    // See https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-10.html#section-5-4
+    let mut expanded = [0u8; HTS_UB_SIZE];
+    let mut scalar = blst_scalar::default();
+    let mut fr = blst_fr::default();
+    unsafe {
+        blst_expand_message_xmd(expanded.as_mut_ptr(), HTS_L, a.as_ptr(), a.len(), DST.as_ptr(), DST.len());
+        blst_scalar_from_be_bytes(&mut scalar, expanded[0..HTS_L].as_ptr(), HTS_L);
+        blst_fr_from_scalar(&mut fr, &scalar);
+    }
+    fr
 }
