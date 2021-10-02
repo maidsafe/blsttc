@@ -731,6 +731,31 @@ impl SecretKeySet {
     }
 }
 
+/// A blinded message.
+#[derive(Clone, PartialEq, Eq)]
+pub struct BlindedMessage(pub blst_p2);
+
+impl fmt::Debug for BlindedMessage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let l0 = (self.0).x.fp[0].l[0]; // TODO IC check this
+        write!(f, "BlindedMsg({:0.10})", HexFmt(l0.to_be_bytes()))
+    }
+}
+
+impl BlindedMessage {
+
+    /// Returns the blinded message with the given representation, if valid.
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
+        let p2 = p2_from_be_bytes(bytes)?;
+        Ok(BlindedMessage(p2))
+    }
+
+    /// Returns a byte string representation of the blinded message.
+    pub fn to_bytes(&self) -> [u8; SIG_SIZE] {
+        p2_to_be_bytes(&self.0)
+    }
+}
+
 /// Returns a hash of the given message in `G2`.
 pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> blst_p2 {
     let mut p2 = blst_p2::default();
@@ -747,6 +772,21 @@ pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> blst_p2 {
         )
     };
     p2
+}
+
+/// Blinds a message for signing by an authority.
+pub fn blind_msg<M: AsRef<[u8]>>(msg: M, blinding_factor: &blst_fr) -> BlindedMessage {
+    let hash = hash_g2(msg);
+    let blinded_hash = p2_mul_fr(&hash, blinding_factor);
+    BlindedMessage(blinded_hash)
+}
+
+/// Unblinds a blind signature after being signed by an authority.
+pub fn unblind_signature(blinded_sig: &Signature, blinding_factor: &blst_fr) -> Signature {
+    let mut bf_inv = blinding_factor.clone();
+    fr_inverse(&mut bf_inv);
+    let unblinded_sig = p2_mul_fr(&blinded_sig.0, &bf_inv);
+    Signature(unblinded_sig)
 }
 
 /// Returns a hash of the group element and message, in the second group.
@@ -1733,5 +1773,106 @@ mod tests {
         let pk = sk.public_key();
         assert!(pk.verify(&sig, msg));
         assert!(pk.verify_g2(&sig, &g2));
+    }
+
+    #[test]
+    fn test_blind_signature() {
+        // c_X is client-side data
+        // a_X is authority-side data
+        // w_X is bytes that go on the wire
+        let mut rng = rand::thread_rng();
+        let a_sk = SecretKey::random();
+        let a_pk = a_sk.public_key();
+        let c_msg = b"Meet at dawn";
+        // the client creates a blinded message
+        let c_blinding_factor = fr_random(&mut rng);
+        let c_blinded_msg = blind_msg(c_msg, &c_blinding_factor);
+        // the blinded message is sent to the authority for signing
+        let w_blinded_msg = c_blinded_msg.to_bytes();
+        let a_blinded_msg = BlindedMessage::from_bytes(w_blinded_msg).expect("Invalid blinded message");
+        assert_eq!(c_blinded_msg, a_blinded_msg);
+        // the authority signs the blinded message
+        let a_blind_sig = a_sk.sign_g2(&a_blinded_msg.0);
+        // the authority sends the blind signature back to the client.
+        let w_blind_sig = a_blind_sig.to_bytes();
+        let c_blind_sig = Signature::from_bytes(w_blind_sig).expect("Invalid signature");
+        assert_eq!(a_blind_sig, c_blind_sig);
+        // the client can verify the blinded message was signed correctly, but
+        // this is usually not necessary since the unblinded signature is all
+        // that will ever be used.
+        assert!(a_pk.verify_g2(&c_blind_sig, &c_blinded_msg.0));
+        // The blind signature is unblinded by the client.
+        let a_sig = unblind_signature(&a_blind_sig, &c_blinding_factor);
+        // the client can verify the authority has signed the original message
+        assert!(a_pk.verify(&a_sig, c_msg));
+        // the authority has not signed any message other than the original one
+        let bad_msg = b"Meet at noon";
+        assert!(!a_pk.verify(&a_sig, bad_msg));
+        // only the original client blinding factor can unblind the signature
+        let bad_blinding_factor = fr_random(&mut rng);
+        let bad_sig = unblind_signature(&a_blind_sig, &bad_blinding_factor);
+        assert!(!a_pk.verify(&bad_sig, c_msg));
+    }
+
+    #[test]
+    fn test_threshold_blind_sig() {
+        let mut rng = rand::thread_rng();
+        let sk_set = SecretKeySet::random(3, &mut rng);
+        let pk_set = sk_set.public_keys();
+
+        let msg = "Totally real news";
+        let blinding_factor = fr_random(&mut rng);
+        let blinded_msg = blind_msg(msg, &blinding_factor);
+
+        // The threshold is 3, so 4 signature shares will suffice to recreate the share.
+        // note: this tests passing a Vec to ::combine_signatures (instead of BTreeMap)
+        let blind_sigs: Vec<(_, _)> = [5, 8, 7, 10]
+            .iter()
+            .map(|&i| {
+                let blind_sig = sk_set.secret_key_share(i).sign_g2(&blinded_msg.0);
+                (i, blind_sig)
+            })
+            .collect();
+
+        // Scenario A
+        // Combine then unblind; produces a signature matching the main public
+        // key.
+        // On CPU-bound services it's best to combine-then-unblind since it's
+        // less total operations.
+        let blind_sig_a = pk_set.combine_signatures(blind_sigs.clone()).expect("signatures match");
+        let sig_a = unblind_signature(&blind_sig_a, &blinding_factor);
+        assert!(pk_set.public_key().verify(&sig_a, msg));
+
+        // Scenario B
+        // Unblind then combine; produces a signature matching the main public
+        // key.
+        // On latency-bound services it's best to unblind-then-combine since
+        // it removes the unblinding step at the end. Spare cpu may as well be
+        // put to use doing 'exessive' unblinding while other signatures are
+        // arriving.
+        let sigs_b: BTreeMap<_, _> = blind_sigs
+            .iter()
+            .map(|(i, blind_sig)| {
+                let sig = unblind_signature(&blind_sig.0, &blinding_factor);
+                (i, SignatureShare(sig))
+            })
+            .collect();
+        let sig_b = pk_set.combine_signatures(sigs_b).expect("signatures match");
+        assert!(pk_set.public_key().verify(&sig_b, msg));
+        assert_eq!(sig_a, sig_b);
+
+        // Scenario C
+        // A different set of signatories produces the same signature.
+        let blind_sigs_c: BTreeMap<_, _> = [42, 43, 44, 45]
+            .iter()
+            .map(|&i| {
+                let blind_sig = sk_set.secret_key_share(i).sign_g2(&blinded_msg.0);
+                (i, blind_sig)
+            })
+            .collect();
+        let blind_sig_c = pk_set.combine_signatures(&blind_sigs_c).expect("signatures match");
+        let sig_c = unblind_signature(&blind_sig_c, &blinding_factor);
+        assert!(pk_set.public_key().verify(&sig_c, msg));
+        assert_eq!(sig_a, sig_c);
     }
 }
