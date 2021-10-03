@@ -745,7 +745,7 @@ pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> blst_p2 {
 }
 
 /// Blinds a message for signing by an authority.
-pub fn blind_msg<M: AsRef<[u8]>>(msg: M, blinding_factor: &blst_fr) -> BlindedMessage {
+pub fn blind_message<M: AsRef<[u8]>>(msg: M, blinding_factor: &blst_fr) -> BlindedMessage {
     let hash = hash_g2(msg);
     let blinded_hash = p2_mul_fr(&hash, blinding_factor);
     BlindedMessage(blinded_hash)
@@ -1756,7 +1756,7 @@ mod tests {
         let c_msg = b"Meet at dawn";
         // the client creates a blinded message
         let c_blinding_factor = fr_random(&mut rng);
-        let c_blinded_msg = blind_msg(c_msg, &c_blinding_factor);
+        let c_blinded_msg = blind_message(c_msg, &c_blinding_factor);
         // the blinded message is sent to the authority for signing
         let w_blinded_msg = c_blinded_msg.to_bytes();
         let a_blinded_msg =
@@ -1793,7 +1793,7 @@ mod tests {
 
         let msg = "Totally real news";
         let blinding_factor = fr_random(&mut rng);
-        let blinded_msg = blind_msg(msg, &blinding_factor);
+        let blinded_msg = blind_message(msg, &blinding_factor);
 
         // The threshold is 3, so 4 signature shares will suffice to recreate the share.
         // note: this tests passing a Vec to ::combine_signatures (instead of BTreeMap)
