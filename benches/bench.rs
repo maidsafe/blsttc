@@ -544,6 +544,79 @@ mod ciphertext_benches {
     }
 }
 
+mod lib_benches {
+    use super::*;
+    use blsttc::{blind_msg, hash_g2, unblind_signature, util::fr_random, SecretKey};
+    use rand::{RngCore, SeedableRng};
+    use rand_xorshift::XorShiftRng;
+
+    /// Benchmarks hashing a message to a point in G2
+    fn bench_hash_g2(c: &mut Criterion) {
+        let mut rng = XorShiftRng::from_seed(RNG_SEED);
+        let mut group = c.benchmark_group("lib");
+        group.bench_function("hash_g2", |b| {
+            let rand_factors = || {
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                msg
+            };
+            b.iter_with_setup(rand_factors, |msg| hash_g2(&msg));
+        });
+    }
+
+    /// Benchmarks generating a random fr
+    fn bench_fr_random(c: &mut Criterion) {
+        let mut rng = XorShiftRng::from_seed(RNG_SEED);
+        let mut group = c.benchmark_group("lib");
+        group.bench_function("fr_random", |b| {
+            b.iter(|| fr_random(&mut rng));
+        });
+    }
+
+    /// Benchmarks creating a blinded message
+    fn bench_blind_msg(c: &mut Criterion) {
+        let mut rng = XorShiftRng::from_seed(RNG_SEED);
+        let mut group = c.benchmark_group("lib");
+        group.bench_function("blind_msg", |b| {
+            let rand_factors = || {
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let blinding_factor = fr_random(&mut rng);
+                (msg, blinding_factor)
+            };
+            b.iter_with_setup(rand_factors, |(msg, blinding_factor)| {
+                blind_msg(&msg, &blinding_factor)
+            });
+        });
+    }
+
+    /// Benchmarks unblinding a blind signature
+    fn bench_unblind_signature(c: &mut Criterion) {
+        let mut rng = XorShiftRng::from_seed(RNG_SEED);
+        let mut group = c.benchmark_group("lib");
+        group.bench_function("unblind_signature", |b| {
+            let rand_factors = || {
+                let mut msg = [0u8; 1000];
+                rng.fill_bytes(&mut msg);
+                let blinding_factor = fr_random(&mut rng);
+                let sk = SecretKey::random();
+                let blinded_msg = blind_msg(&msg, &blinding_factor);
+                let blinded_sig = sk.sign_g2(&blinded_msg.0);
+                (blinded_sig, blinding_factor)
+            };
+            b.iter_with_setup(rand_factors, |(blinded_sig, blinding_factor)| {
+                unblind_signature(&blinded_sig, &blinding_factor)
+            });
+        });
+    }
+
+    criterion_group! {
+        name = lib_benches;
+        config = Criterion::default();
+        targets = bench_hash_g2, bench_fr_random, bench_blind_msg, bench_unblind_signature,
+    }
+}
+
 criterion_main!(
     poly_benches::poly_benches,
     commitment_benches::commitment_benches,
@@ -553,4 +626,5 @@ criterion_main!(
     public_key_benches::public_key_benches,
     ciphertext_benches::ciphertext_benches,
     public_key_set_benches::public_key_set_benches,
+    lib_benches::lib_benches,
 );
