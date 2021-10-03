@@ -1330,10 +1330,8 @@ mod tests {
         let restored_sk_set =
             SecretKeySet::from_bytes(sk_set_bytes).expect("invalid secret key set bytes");
         // cannot assert_eq! for SecretKeySet so test the secret_key
-        // TODO decide if testing the secret key is adequate for testing the
-        // entire restored secret key set
         let restored_sk = restored_sk_set.secret_key();
-        assert_eq!(sk, restored_sk);
+        assert_eq!(sk.to_bytes(), restored_sk.to_bytes());
     }
 
     #[test]
