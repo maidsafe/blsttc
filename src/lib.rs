@@ -35,7 +35,7 @@ use blst_ops::{
     p1_to_be_bytes, p2_add_assign, p2_from_be_bytes, p2_mul_fr, p2_to_be_bytes, FR_ONE, FR_ZERO,
     P1_ONE,
 };
-use util::{fr_random, sha3_256};
+use util::{derivation_index_into_fr, fr_random, sha3_256};
 
 use blst::{blst_fr, blst_hash_to_g2, blst_p1, blst_p2};
 
@@ -96,7 +96,7 @@ impl PublicKey {
 
     /// Derives a child public key for a given index.
     pub fn derive_child<T: IntoFr>(&self, index: T) -> Self {
-        let index_fr = index.into_fr();
+        let index_fr = derivation_index_into_fr(index);
         let child_p1 = p1_mul_fr(&self.0, &index_fr);
         PublicKey(child_p1)
     }
@@ -326,7 +326,7 @@ impl SecretKey {
 
     /// Derives a child secret key for a given index.
     pub fn derive_child<T: IntoFr>(&self, index: T) -> Self {
-        let index_fr = index.into_fr();
+        let index_fr = derivation_index_into_fr(index);
         let child = fr_mul_fr(&self.0, &index_fr);
         SecretKey(child)
     }
@@ -588,7 +588,7 @@ impl PublicKeySet {
 
     /// Derives a child public key set for a given index.
     pub fn derive_child<T: IntoFr>(&self, index: T) -> Self {
-        let index_fr = index.into_fr();
+        let index_fr = derivation_index_into_fr(index);
         let child_coeffs: Vec<blst_p1> = self
             .commit
             .coeff
@@ -680,7 +680,7 @@ impl SecretKeySet {
         // The code here follows the same structure as in PublicKeySet for
         // similarity / symmetry / aesthetics, since Commitment can't be
         // multiplied by Fr the same way Poly can.
-        let index_fr = index.into_fr();
+        let index_fr = derivation_index_into_fr(index);
         let child_coeffs: Vec<blst_fr> = self
             .poly
             .coeff
@@ -1432,23 +1432,23 @@ mod tests {
     #[test]
     fn test_derive_child_secret_key() {
         let sk = SecretKey::random();
-        // derivation index 0
+        // derivation index [0]
         let child0 = sk.derive_child(&[0][..]);
         assert!(child0 != sk);
-        // derivation index 00
+        // derivation index [0, 0]
         let child00 = sk.derive_child(&[0, 0][..]);
         assert!(child00 != sk);
         assert!(child00 != child0);
-        // derivation index 1
+        // derivation index [1]
         let child1 = sk.derive_child(&[1][..]);
         assert!(child1 != sk);
         assert!(child1 != child0);
-        // derivation index 2
+        // derivation index [2]
         let child2 = sk.derive_child(&[2][..]);
         assert!(child2 != sk);
         assert!(child2 != child0);
         assert!(child2 != child1);
-        // derivation index 3
+        // derivation index [3]
         let child3 = sk.derive_child(&[3][..]);
         assert!(child3 != sk);
         assert!(child3 != child0);
@@ -1459,6 +1459,13 @@ mod tests {
         let index100b = [3u8; 100];
         let child100b = sk.derive_child(&index100b[..]);
         assert!(child100b != sk);
+        // derivation index 0
+        let child0i = sk.derive_child(0);
+        assert!(child0i.0 != FR_ZERO);
+        // derivation index 1
+        let child1i = sk.derive_child(1);
+        assert!(child1i.0 != FR_ONE);
+        assert!(child1i.0 != sk.0);
     }
 
     #[test]
