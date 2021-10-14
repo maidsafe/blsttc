@@ -45,6 +45,9 @@ pub type Fr = blst_fr;
 /// Historically this library has used bls12_381::G1 so this will be retained.
 pub type G1 = blst_p1;
 
+/// Historically this library has used bls12_381::G2 so this will be retained.
+pub type G2 = blst_p2;
+
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
 
@@ -70,7 +73,7 @@ impl fmt::Debug for PublicKey {
 
 impl PublicKey {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2(&self, sig: &Signature, hash: &blst_p2) -> bool {
+    pub fn verify_g2(&self, sig: &Signature, hash: &G2) -> bool {
         equal_pairs(&self.0, hash, &P1_ONE, &sig.0)
     }
 
@@ -132,7 +135,7 @@ impl fmt::Debug for PublicKeyShare {
 
 impl PublicKeyShare {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2(&self, sig: &SignatureShare, hash: &blst_p2) -> bool {
+    pub fn verify_g2(&self, sig: &SignatureShare, hash: &G2) -> bool {
         self.0.verify_g2(&sig.0, hash)
     }
 
@@ -166,7 +169,7 @@ impl PublicKeyShare {
 
 /// A signature.
 #[derive(Clone, PartialEq, Eq)]
-pub struct Signature(blst_p2);
+pub struct Signature(G2);
 
 impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -292,7 +295,7 @@ impl SecretKey {
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2(&self, hash: &blst_p2) -> Signature {
+    pub fn sign_g2(&self, hash: &G2) -> Signature {
         let sig = p2_mul_fr(hash, &self.0);
         Signature(sig)
     }
@@ -379,7 +382,7 @@ impl SecretKeyShare {
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2(&self, hash: &blst_p2) -> SignatureShare {
+    pub fn sign_g2(&self, hash: &G2) -> SignatureShare {
         SignatureShare(self.0.sign_g2(hash))
     }
 
@@ -429,7 +432,7 @@ impl SecretKeyShare {
 
 /// An encrypted message.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ciphertext(G1, Vec<u8>, blst_p2);
+pub struct Ciphertext(G1, Vec<u8>, G2);
 
 impl Ciphertext {
     /// Returns `true` if this is a valid ciphertext. This check is necessary to prevent
@@ -710,7 +713,7 @@ impl SecretKeySet {
 
 /// A blinded message.
 #[derive(Clone, PartialEq, Eq)]
-pub struct BlindedMessage(pub blst_p2);
+pub struct BlindedMessage(pub G2);
 
 impl fmt::Debug for BlindedMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -733,8 +736,8 @@ impl BlindedMessage {
 }
 
 /// Returns a hash of the given message in `G2`.
-pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> blst_p2 {
-    let mut p2 = blst_p2::default();
+pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2 {
+    let mut p2 = G2::default();
     let aug = b"";
     unsafe {
         blst_hash_to_g2(
@@ -766,7 +769,7 @@ pub fn unblind_signature(blinded_sig: &Signature, blinding_factor: &Fr) -> Signa
 }
 
 /// Returns a hash of the group element and message, in the second group.
-fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> blst_p2 {
+fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> G2 {
     // If the message is large, hash it, otherwise copy it.
     // TODO: Benchmark and optimize the threshold.
     let mut msg = if msg.as_ref().len() > 64 {
@@ -842,9 +845,9 @@ where
 
 /// Given a list of `t + 1` samples `(i - 1, f(i) * g)` for a polynomial `f` of degree `t`, and a
 /// group generator `g`, returns `f(0) * g`.
-fn interpolate_g2<T, I>(t: usize, items: I) -> Result<blst_p2>
+fn interpolate_g2<T, I>(t: usize, items: I) -> Result<G2>
 where
-    I: IntoIterator<Item = (T, blst_p2)>,
+    I: IntoIterator<Item = (T, G2)>,
     T: IntoFr,
 {
     let samples: Vec<_> = items
@@ -874,7 +877,7 @@ where
         fr_mul_assign(&mut x_prod[i], &tmp);
     }
 
-    let mut result = blst_p2::default();
+    let mut result = G2::default();
     for (mut l0, (x, sample)) in x_prod.into_iter().zip(&samples) {
         // Compute the value at 0 of the Lagrange polynomial that is `0` at the other data
         // points but `1` at `x`.
