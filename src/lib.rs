@@ -39,6 +39,9 @@ use util::{derivation_index_into_fr, fr_random, sha3_256};
 
 use blst::{blst_fr, blst_hash_to_g2, blst_p1, blst_p2};
 
+/// Historically this library has used bls12_381::Fr so this will be retained.
+pub type Fr = blst_fr;
+
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
 
@@ -214,7 +217,7 @@ impl SignatureShare {
 /// serialization in insecure contexts. To enable both use the `::serde_impl::SerdeSecret`
 /// wrapper which implements both `Deserialize` and `Serialize`.
 #[derive(PartialEq, Eq, Clone)]
-pub struct SecretKey(blst_fr);
+pub struct SecretKey(Fr);
 
 impl Zeroize for SecretKey {
     fn zeroize(&mut self) {
@@ -261,7 +264,7 @@ impl SecretKey {
     ///
     /// *WARNING* this constructor will overwrite the referenced `Fr` element with zeros after it
     /// has been copied onto the heap.
-    pub fn from_mut(fr: &mut blst_fr) -> Self {
+    pub fn from_mut(fr: &mut Fr) -> Self {
         let sk = SecretKey(*fr);
         clear_fr(fr);
         sk
@@ -363,7 +366,7 @@ impl SecretKeyShare {
     ///
     /// *WARNING* this constructor will overwrite the pointed to `Fr` element with zeros once it
     /// has been copied into a new `SecretKeyShare`.
-    pub fn from_mut(fr: &mut blst_fr) -> Self {
+    pub fn from_mut(fr: &mut Fr) -> Self {
         SecretKeyShare(SecretKey::from_mut(fr))
     }
 
@@ -681,7 +684,7 @@ impl SecretKeySet {
         // similarity / symmetry / aesthetics, since Commitment can't be
         // multiplied by Fr the same way Poly can.
         let index_fr = derivation_index_into_fr(index);
-        let child_coeffs: Vec<blst_fr> = self
+        let child_coeffs: Vec<Fr> = self
             .poly
             .coeff
             .iter()
@@ -745,14 +748,14 @@ pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> blst_p2 {
 }
 
 /// Blinds a message for signing by an authority.
-pub fn blind_message<M: AsRef<[u8]>>(msg: M, blinding_factor: &blst_fr) -> BlindedMessage {
+pub fn blind_message<M: AsRef<[u8]>>(msg: M, blinding_factor: &Fr) -> BlindedMessage {
     let hash = hash_g2(msg);
     let blinded_hash = p2_mul_fr(&hash, blinding_factor);
     BlindedMessage(blinded_hash)
 }
 
 /// Unblinds a blind signature after being signed by an authority.
-pub fn unblind_signature(blinded_sig: &Signature, blinding_factor: &blst_fr) -> Signature {
+pub fn unblind_signature(blinded_sig: &Signature, blinding_factor: &Fr) -> Signature {
     let mut bf_inv = *blinding_factor;
     fr_inverse(&mut bf_inv);
     let unblinded_sig = p2_mul_fr(&blinded_sig.0, &bf_inv);
@@ -803,7 +806,7 @@ where
     }
 
     // Compute the products `x_prod[i]` of all but the `i`-th entry.
-    let mut x_prod: Vec<blst_fr> = Vec::with_capacity(t);
+    let mut x_prod: Vec<Fr> = Vec::with_capacity(t);
     let mut tmp = FR_ONE;
     x_prod.push(tmp);
     for (x, _) in samples.iter().take(t) {
@@ -855,7 +858,7 @@ where
     }
 
     // Compute the products `x_prod[i]` of all but the `i`-th entry.
-    let mut x_prod: Vec<blst_fr> = Vec::with_capacity(t);
+    let mut x_prod: Vec<Fr> = Vec::with_capacity(t);
     let mut tmp = FR_ONE;
     x_prod.push(tmp);
     for (x, _) in samples.iter().take(t) {
@@ -885,7 +888,7 @@ where
     Ok(result)
 }
 
-fn into_fr_plus_1<I: IntoFr>(x: I) -> blst_fr {
+fn into_fr_plus_1<I: IntoFr>(x: I) -> Fr {
     let mut xfr = x.into_fr();
     fr_add_assign(&mut xfr, &FR_ONE);
     xfr

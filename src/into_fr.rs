@@ -1,26 +1,27 @@
 use crate::blst_ops::{fr_negate, hash_to_fr};
+use crate::Fr;
 use blst::{blst_fr, blst_fr_from_scalar, blst_scalar, blst_scalar_from_bendian};
 
 /// A conversion into an element of the field `Fr`.
 pub trait IntoFr: Copy {
     /// Converts `self` to a field element.
-    fn into_fr(self) -> blst_fr;
+    fn into_fr(self) -> Fr;
 }
 
-impl IntoFr for blst_fr {
-    fn into_fr(self) -> blst_fr {
+impl IntoFr for Fr {
+    fn into_fr(self) -> Fr {
         self
     }
 }
 
 impl IntoFr for &[u8] {
-    fn into_fr(self) -> blst_fr {
+    fn into_fr(self) -> Fr {
         hash_to_fr(self)
     }
 }
 
 impl IntoFr for u64 {
-    fn into_fr(self) -> blst_fr {
+    fn into_fr(self) -> Fr {
         let mut fr = blst_fr::default();
         let mut scalar = blst_scalar::default();
         let mut bytes = [0u8; 32];
@@ -37,13 +38,13 @@ impl IntoFr for u64 {
 }
 
 impl IntoFr for usize {
-    fn into_fr(self) -> blst_fr {
+    fn into_fr(self) -> Fr {
         (self as u64).into_fr()
     }
 }
 
 impl IntoFr for i32 {
-    fn into_fr(self) -> blst_fr {
+    fn into_fr(self) -> Fr {
         if self >= 0 {
             (self as u64).into_fr()
         } else {
@@ -55,7 +56,7 @@ impl IntoFr for i32 {
 }
 
 impl IntoFr for i64 {
-    fn into_fr(self) -> blst_fr {
+    fn into_fr(self) -> Fr {
         if self >= 0 {
             (self as u64).into_fr()
         } else {
@@ -67,7 +68,7 @@ impl IntoFr for i64 {
 }
 
 impl<'a, T: IntoFr> IntoFr for &'a T {
-    fn into_fr(self) -> blst_fr {
+    fn into_fr(self) -> Fr {
         (*self).into_fr()
     }
 }

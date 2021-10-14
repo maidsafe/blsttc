@@ -2,6 +2,7 @@
 
 use crate::blst_ops::{fr_to_be_bytes, FR_ONE, FR_ZERO};
 use crate::into_fr::IntoFr;
+use crate::Fr;
 use crate::SK_SIZE;
 use blst::{blst_fr, blst_fr_from_scalar, blst_keygen, blst_scalar};
 use rand::RngCore;
@@ -9,7 +10,7 @@ use tiny_keccak::{Hasher, Sha3};
 
 /// Generate a random fr using bls-sig-keygen as described in
 /// https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-02#section-2.3
-pub fn fr_random(mut rng: impl RngCore) -> blst_fr {
+pub fn fr_random(mut rng: impl RngCore) -> Fr {
     let mut fr = blst_fr::default();
     let mut scalar = blst_scalar::default();
     let mut bytes = [0u8; SK_SIZE];
@@ -30,7 +31,7 @@ pub(crate) fn sha3_256(data: &[u8]) -> [u8; 32] {
     output
 }
 
-pub(crate) fn derivation_index_into_fr<T: IntoFr>(index: T) -> blst_fr {
+pub(crate) fn derivation_index_into_fr<T: IntoFr>(index: T) -> Fr {
     let index_fr = index.into_fr();
     // Don't allow FR_ZERO or FR_ONE as a derivation index since
     // parent * 0 = 0

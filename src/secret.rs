@@ -2,10 +2,10 @@
 //! memory with zeros.
 
 use crate::blst_ops::FR_ZERO;
-use blst::blst_fr;
+use crate::Fr;
 
 /// Overwrites a single field element with zeros.
-pub(crate) fn clear_fr(fr: &mut blst_fr) {
+pub(crate) fn clear_fr(fr: &mut Fr) {
     *fr = FR_ZERO
 }
 
