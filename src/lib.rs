@@ -42,6 +42,9 @@ use blst::{blst_fr, blst_hash_to_g2, blst_p1, blst_p2};
 /// Historically this library has used bls12_381::Fr so this will be retained.
 pub type Fr = blst_fr;
 
+/// Historically this library has used bls12_381::G1 so this will be retained.
+pub type G1 = blst_p1;
+
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
 
@@ -56,7 +59,7 @@ pub const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 /// A public key.
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct PublicKey(blst_p1);
+pub struct PublicKey(G1);
 
 impl fmt::Debug for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -426,7 +429,7 @@ impl SecretKeyShare {
 
 /// An encrypted message.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ciphertext(blst_p1, Vec<u8>, blst_p2);
+pub struct Ciphertext(G1, Vec<u8>, blst_p2);
 
 impl Ciphertext {
     /// Returns `true` if this is a valid ciphertext. This check is necessary to prevent
@@ -469,7 +472,7 @@ impl Ciphertext {
 
 /// A decryption share. A threshold of decryption shares can be used to decrypt a message.
 #[derive(Clone, PartialEq, Eq)]
-pub struct DecryptionShare(blst_p1);
+pub struct DecryptionShare(G1);
 
 impl fmt::Debug for DecryptionShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -592,7 +595,7 @@ impl PublicKeySet {
     /// Derives a child public key set for a given index.
     pub fn derive_child<T: IntoFr>(&self, index: T) -> Self {
         let index_fr = derivation_index_into_fr(index);
-        let child_coeffs: Vec<blst_p1> = self
+        let child_coeffs: Vec<G1> = self
             .commit
             .coeff
             .iter()
@@ -763,7 +766,7 @@ pub fn unblind_signature(blinded_sig: &Signature, blinding_factor: &Fr) -> Signa
 }
 
 /// Returns a hash of the group element and message, in the second group.
-fn hash_g1_g2<M: AsRef<[u8]>>(g1: blst_p1, msg: M) -> blst_p2 {
+fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> blst_p2 {
     // If the message is large, hash it, otherwise copy it.
     // TODO: Benchmark and optimize the threshold.
     let mut msg = if msg.as_ref().len() > 64 {
@@ -777,7 +780,7 @@ fn hash_g1_g2<M: AsRef<[u8]>>(g1: blst_p1, msg: M) -> blst_p2 {
 }
 
 /// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.
-fn xor_with_hash(g1: blst_p1, bytes: &[u8]) -> Vec<u8> {
+fn xor_with_hash(g1: G1, bytes: &[u8]) -> Vec<u8> {
     let p1_bytes = p1_to_be_bytes(&g1);
     let digest = sha3_256(&p1_bytes);
     let rng = ChaChaRng::from_seed(digest);
@@ -787,9 +790,9 @@ fn xor_with_hash(g1: blst_p1, bytes: &[u8]) -> Vec<u8> {
 
 /// Given a list of `t + 1` samples `(i - 1, f(i) * g)` for a polynomial `f` of degree `t`, and a
 /// group generator `g`, returns `f(0) * g`.
-fn interpolate_g1<T, I>(t: usize, items: I) -> Result<blst_p1>
+fn interpolate_g1<T, I>(t: usize, items: I) -> Result<G1>
 where
-    I: IntoIterator<Item = (T, blst_p1)>,
+    I: IntoIterator<Item = (T, G1)>,
     T: IntoFr,
 {
     let samples: Vec<_> = items
@@ -819,7 +822,7 @@ where
         fr_mul_assign(&mut x_prod[i], &tmp);
     }
 
-    let mut result = blst_p1::default();
+    let mut result = G1::default();
     for (mut l0, (x, sample)) in x_prod.into_iter().zip(&samples) {
         // Compute the value at 0 of the Lagrange polynomial that is `0` at the other data
         // points but `1` at `x`.

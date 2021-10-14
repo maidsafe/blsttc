@@ -34,7 +34,7 @@ use crate::blst_ops::{
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
 use crate::util::fr_random;
-use crate::{blst_p1, Fr, PK_SIZE, SK_SIZE};
+use crate::{Fr, G1, PK_SIZE, SK_SIZE};
 use blst::blst_scalar;
 
 /// A univariate polynomial in the prime field.
@@ -469,12 +469,12 @@ impl Poly {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Commitment {
     /// The coefficients of the polynomial.
-    pub(super) coeff: Vec<blst_p1>,
+    pub(super) coeff: Vec<G1>,
 }
 
 /// Creates a new `Commitment` instance
-impl From<Vec<blst_p1>> for Commitment {
-    fn from(coeff: Vec<blst_p1>) -> Self {
+impl From<Vec<G1>> for Commitment {
+    fn from(coeff: Vec<G1>) -> Self {
         Commitment { coeff }
     }
 }
@@ -516,7 +516,7 @@ impl Commitment {
     }
 
     /// Returns the `i`-th public key share.
-    pub fn evaluate<T: IntoFr>(&self, i: T) -> blst_p1 {
+    pub fn evaluate<T: IntoFr>(&self, i: T) -> G1 {
         let mut result = match self.coeff.last() {
             None => return P1_ZERO,
             Some(c) => *c,
@@ -548,7 +548,7 @@ impl Commitment {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<blst_p1> = vec![];
+        let mut c: Vec<G1> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
             let mut p1_bytes = [0; PK_SIZE];
@@ -742,7 +742,7 @@ pub struct BivarCommitment {
     /// The polynomial's degree in each of the two variables.
     pub(crate) degree: usize,
     /// The commitments to the coefficients.
-    pub(crate) coeff: Vec<blst_p1>,
+    pub(crate) coeff: Vec<G1>,
 }
 
 impl BivarCommitment {
@@ -752,7 +752,7 @@ impl BivarCommitment {
     }
 
     /// Returns the commitment's value at the point `(x, y)`.
-    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> blst_p1 {
+    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> G1 {
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
@@ -772,7 +772,7 @@ impl BivarCommitment {
     /// Returns the `x`-th row, as a commitment to a univariate polynomial.
     pub fn row<T: IntoFr>(&self, x: T) -> Commitment {
         let x_pow = self.powers(x);
-        let coeff: Vec<blst_p1> = (0..=self.degree)
+        let coeff: Vec<G1> = (0..=self.degree)
             .map(|i| {
                 let mut result = P1_ZERO;
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
@@ -812,7 +812,7 @@ impl BivarCommitment {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<blst_p1> = vec![];
+        let mut c: Vec<G1> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
             let mut p1_bytes = [0; PK_SIZE];
