@@ -126,12 +126,12 @@ mod public_key_set_benches {
                 |b, threshold| {
                     let sk_set = SecretKeySet::random(*threshold, &mut rng);
                     let pk_set = sk_set.public_keys();
-                    let sigs: BTreeMap<_, _> = (0..=*threshold)
-                        .map(|i| {
-                            let sig = sk_set.secret_key_share(i).sign(msg);
-                            (i, sig)
-                        })
-                        .collect();
+                    let mut sigs = BTreeMap::default();
+                    for i in 0..=*threshold {
+                        let sig = sk_set.secret_key_share(i).sign(msg).unwrap();
+                        sigs.insert(i, sig);
+                    }
+
                     b.iter(|| {
                         pk_set
                             .combine_signatures(&sigs)
