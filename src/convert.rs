@@ -1,6 +1,6 @@
 //! Conversion between bls12_381 types and bytes.
 
-use crate::error::{FromBytesError, FromBytesResult};
+use crate::error::{Error, Result};
 use group::{CurveAffine, CurveProjective, EncodedPoint};
 
 use crate::{PK_SIZE, SIG_SIZE, SK_SIZE};
@@ -8,7 +8,7 @@ use ff::PrimeField;
 use pairing::bls12_381::{Fr, FrRepr, G1Affine, G2Affine, G1, G2};
 
 /// Convert big endian bytes to bls12_381::Fr
-pub fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Fr> {
+pub fn fr_from_be_bytes(bytes: [u8; SK_SIZE]) -> Result<Fr> {
     let mut le_bytes = bytes;
     le_bytes.reverse();
     let mut fr_u64s = [0u64; 4];
@@ -37,11 +37,11 @@ pub fn fr_to_be_bytes(fr: Fr) -> [u8; SK_SIZE] {
 }
 
 /// Convert big endian bytes to bls12_381::G1
-pub fn g1_from_be_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<G1> {
+pub fn g1_from_be_bytes(bytes: [u8; PK_SIZE]) -> Result<G1> {
     let mut compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
     compressed.as_mut().copy_from_slice(&bytes);
     let opt_affine = compressed.into_affine().ok();
-    let projective = opt_affine.ok_or(FromBytesError::Invalid)?.into_projective();
+    let projective = opt_affine.ok_or(Error::InvalidBytes)?.into_projective();
     Ok(projective)
 }
 
@@ -53,11 +53,11 @@ pub fn g1_to_be_bytes(g1: G1) -> [u8; PK_SIZE] {
 }
 
 /// Convert big endian bytes to bls12_381::G2
-pub fn g2_from_be_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<G2> {
+pub fn g2_from_be_bytes(bytes: [u8; SIG_SIZE]) -> Result<G2> {
     let mut compressed: <G2Affine as CurveAffine>::Compressed = EncodedPoint::empty();
     compressed.as_mut().copy_from_slice(&bytes);
     let opt_affine = compressed.into_affine().ok();
-    let projective = opt_affine.ok_or(FromBytesError::Invalid)?.into_projective();
+    let projective = opt_affine.ok_or(Error::InvalidBytes)?.into_projective();
     Ok(projective)
 }
 
