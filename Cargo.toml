@@ -21,6 +21,7 @@ edition = "2018"
 hex_fmt = "0.3.0"
 rand = "0.7.3"
 rand_chacha = "0.2.2"
+serde_bytes = "0.11.5"
 thiserror = "1.0.22"
 zeroize = "1.1.0"
 
@@ -37,6 +38,7 @@ zeroize = "1.1.0"
   features = [ "sha3" ]
 
 [dev-dependencies]
+bincode = "1.3.3"
 criterion = "0.3.1"
 eyre = "0.6.5"
 hex = "0.4.3"

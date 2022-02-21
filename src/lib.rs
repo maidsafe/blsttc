@@ -11,6 +11,7 @@ mod secret;
 
 pub mod error;
 pub mod poly;
+pub mod serde_impl;
 pub mod util;
 
 use std::borrow::Borrow;
@@ -630,6 +631,12 @@ pub struct SecretKeySet {
 impl From<Poly> for SecretKeySet {
     fn from(poly: Poly) -> SecretKeySet {
         SecretKeySet { poly }
+    }
+}
+
+impl fmt::Debug for SecretKeySet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SecretKeySet").field("coeff", &"...").finish()
     }
 }
 
