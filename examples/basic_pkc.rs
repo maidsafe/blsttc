@@ -1,4 +1,12 @@
-use blsttc::{PublicKey, Result, SecretKey};
+use bincode::{deserialize, serialize};
+use serde::{Deserialize, Serialize};
+use blsttc::{PublicKey, Result, SecretKey, Signature};
+
+#[derive(Deserialize, Serialize)]
+struct SignedMsg {
+    msg: Vec<u8>,
+    sig: Signature,
+}
 
 #[derive(Debug)]
 struct KeyPair {
@@ -11,6 +19,12 @@ impl KeyPair {
         let sk = SecretKey::random();
         let pk = sk.public_key();
         KeyPair { sk, pk }
+    }
+
+    fn create_signed_msg(&self, msg: &[u8]) -> SignedMsg {
+        let sig = self.sk.sign(msg);
+        let msg = msg.to_vec();
+        SignedMsg { msg, sig }
     }
 }
 
@@ -27,15 +41,18 @@ fn main() -> Result<()> {
     // Bob wants to send Alice a message. He signs the plaintext message with his secret key. He
     // then encrypts the signed message with Alice's public key.
     let msg = b"let's get pizza";
-    let signature = bob.sk.sign(msg);
-    let ciphertext = alice.pk.encrypt(&msg);
+    let signed_msg = bob.create_signed_msg(msg);
+    let serialized = serialize(&signed_msg).expect("Failed to serialize `SignedMsg`");
+    let ciphertext = alice.pk.encrypt(&serialized);
 
     // Alice receives Bob's encrypted message. She decrypts the message using her secret key. She
     // then verifies that the signature of the plaintext is valid using Bob's public key.
     let decrypted = alice.sk.decrypt(&ciphertext).expect("Invalid ciphertext");
-    assert!(bob.pk.verify(&signature, &decrypted));
+    let deserialized: SignedMsg =
+        deserialize(&decrypted).expect("Failed to deserialize bytes to `SignedMsg`");
+    assert!(bob.pk.verify(&deserialized.sig, &deserialized.msg));
 
     // We assert that the message that Alice received is the same message that Bob sent.
-    assert_eq!(msg, &decrypted[..]);
+    assert_eq!(msg, &deserialized.msg[..]);
     Ok(())
 }
