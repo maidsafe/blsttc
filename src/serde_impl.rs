@@ -1,9 +1,12 @@
 //! Serialization and deserialization implementations for lib structs
 
+use crate::{
+    Ciphertext, Commitment, Poly, PublicKey, PublicKeySet, PublicKeyShare, SecretKey, SecretKeySet,
+    SecretKeyShare, Signature, PK_SIZE, SIG_SIZE, SK_SIZE,
+};
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_bytes::{Bytes as SerdeBytes, ByteBuf as SerdeByteBuf};
-use crate::{Ciphertext, Commitment, Poly, PublicKey, PublicKeySet, PublicKeyShare, PK_SIZE, SecretKey, SecretKeySet, SecretKeyShare, SK_SIZE, Signature, SIG_SIZE};
+use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 impl Serialize for SecretKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -136,7 +139,10 @@ impl<'d> Deserialize<'d> for SecretKeySet {
     {
         let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
         if bytes.len() % SK_SIZE != 0 {
-            return Err(SerdeError::invalid_length(bytes.len(), &"multiple of 32 bytes"));
+            return Err(SerdeError::invalid_length(
+                bytes.len(),
+                &"multiple of 32 bytes",
+            ));
         }
         SecretKeySet::from_bytes(bytes.to_vec()).map_err(SerdeError::custom)
     }
@@ -182,7 +188,10 @@ impl<'d> Deserialize<'d> for PublicKeySet {
     {
         let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
         if bytes.len() % PK_SIZE != 0 {
-            return Err(SerdeError::invalid_length(bytes.len(), &"multiple of 48 bytes"));
+            return Err(SerdeError::invalid_length(
+                bytes.len(),
+                &"multiple of 48 bytes",
+            ));
         }
         PublicKeySet::from_bytes(bytes.to_vec()).map_err(SerdeError::custom)
     }
@@ -204,7 +213,10 @@ impl<'d> Deserialize<'d> for Poly {
     {
         let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
         if bytes.len() % SK_SIZE != 0 {
-            return Err(SerdeError::invalid_length(bytes.len(), &"multiple of 32 bytes"));
+            return Err(SerdeError::invalid_length(
+                bytes.len(),
+                &"multiple of 32 bytes",
+            ));
         }
         Poly::from_bytes(bytes.to_vec()).map_err(SerdeError::custom)
     }
@@ -226,7 +238,10 @@ impl<'d> Deserialize<'d> for Commitment {
     {
         let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
         if bytes.len() % PK_SIZE != 0 {
-            return Err(SerdeError::invalid_length(bytes.len(), &"multiple of 48 bytes"));
+            return Err(SerdeError::invalid_length(
+                bytes.len(),
+                &"multiple of 48 bytes",
+            ));
         }
         Commitment::from_bytes(bytes.to_vec()).map_err(SerdeError::custom)
     }
@@ -279,7 +294,8 @@ mod tests {
         let mut rng = rand::thread_rng();
         let sk_set = SecretKeySet::random(3, &mut rng);
         let ser_sk_set = bincode::serialize(&sk_set).expect("serialize secretkeyset");
-        let deser_sk_set: SecretKeySet = bincode::deserialize(&ser_sk_set).expect("deserialize secretkeyset");
+        let deser_sk_set: SecretKeySet =
+            bincode::deserialize(&ser_sk_set).expect("deserialize secretkeyset");
         assert_eq!(sk_set, deser_sk_set);
     }
 
@@ -299,7 +315,8 @@ mod tests {
         let sk_set = SecretKeySet::random(3, &mut rng);
         let pk_set = sk_set.public_keys();
         let ser_pk_set = bincode::serialize(&pk_set).expect("serialize publickeyset");
-        let deser_pk_set: PublicKeySet = bincode::deserialize(&ser_pk_set).expect("deserialize publickeyset");
+        let deser_pk_set: PublicKeySet =
+            bincode::deserialize(&ser_pk_set).expect("deserialize publickeyset");
         assert_eq!(pk_set, deser_pk_set);
     }
 
@@ -329,7 +346,8 @@ mod tests {
         let poly = Poly::random(3, &mut rng);
         let commit = poly.commitment();
         let ser_commit = bincode::serialize(&commit).expect("serialize commitment");
-        let deser_commit: Commitment = bincode::deserialize(&ser_commit).expect("deserialize commitment");
+        let deser_commit: Commitment =
+            bincode::deserialize(&ser_commit).expect("deserialize commitment");
         assert_eq!(commit, deser_commit);
     }
 }

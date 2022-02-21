@@ -636,7 +636,9 @@ impl From<Poly> for SecretKeySet {
 
 impl fmt::Debug for SecretKeySet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SecretKeySet").field("coeff", &"...").finish()
+        f.debug_struct("SecretKeySet")
+            .field("coeff", &"...")
+            .finish()
     }
 }
 
