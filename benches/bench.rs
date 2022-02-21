@@ -284,7 +284,7 @@ mod bivarcommitment_benches {
 
 mod public_key_set_benches {
     use super::*;
-    use blsttc::SecretKeySet;
+    use blsttc::{PublicKeySet, SecretKeySet};
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
     use std::collections::BTreeMap;
@@ -351,10 +351,51 @@ mod public_key_set_benches {
         }
     }
 
+    /// Benchmarks serialization of a PublicKeySet
+    fn serialize(c: &mut Criterion) {
+        let mut rng = XorShiftRng::from_seed(RNG_SEED);
+        let mut group = c.benchmark_group("PublicKeySet");
+        for threshold in TEST_THRESHOLDS {
+            let parameter_string = format!("{}", threshold);
+            group.bench_with_input(
+                BenchmarkId::new("serialize", parameter_string),
+                &threshold,
+                |b, threshold| {
+                    let sk_set = SecretKeySet::random(*threshold, &mut rng);
+                    let pk_set = sk_set.public_keys();
+                    b.iter(|| {
+                        let _bytes = bincode::serialize(&pk_set).unwrap();
+                    })
+                },
+            );
+        }
+    }
+
+    /// Benchmarks deserialization of a PublicKeySet
+    fn deserialize(c: &mut Criterion) {
+        let mut rng = XorShiftRng::from_seed(RNG_SEED);
+        let mut group = c.benchmark_group("PublicKeySet");
+        for threshold in TEST_THRESHOLDS {
+            let parameter_string = format!("{}", threshold);
+            group.bench_with_input(
+                BenchmarkId::new("deserialize", parameter_string),
+                &threshold,
+                |b, threshold| {
+                    let sk_set = SecretKeySet::random(*threshold, &mut rng);
+                    let pk_set = sk_set.public_keys();
+                    let bytes = bincode::serialize(&pk_set).unwrap();
+                    b.iter(|| {
+                        let _pks: PublicKeySet = bincode::deserialize(&bytes).unwrap();
+                    })
+                },
+            );
+        }
+    }
+
     criterion_group! {
         name = public_key_set_benches;
         config = Criterion::default();
-        targets = combine_signatures, combine_decryption_shares,
+        targets = combine_signatures, combine_decryption_shares, serialize, deserialize,
     }
 }
 
