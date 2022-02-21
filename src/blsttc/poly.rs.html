@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;poly.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>poly.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../blsttc/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;poly.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>poly.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
+    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../blsttc/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1228,8 +1229,14 @@
 <span id="1228">1228</span>
 <span id="1229">1229</span>
 <span id="1230">1230</span>
-</pre><pre class="rust">
-<span class="doccomment">//! Utilities for distributed key generation: uni- and bivariate polynomials and commitments.</span>
+<span id="1231">1231</span>
+<span id="1232">1232</span>
+<span id="1233">1233</span>
+<span id="1234">1234</span>
+<span id="1235">1235</span>
+<span id="1236">1236</span>
+<span id="1237">1237</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Utilities for distributed key generation: uni- and bivariate polynomials and commitments.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! If `G` is a group of prime order `r` (written additively), and `g` is a generator, then</span>
 <span class="doccomment">//! multiplication by integers factors through `r`, so the map `x -&gt; x * g` (the sum of `x`</span>
@@ -1260,11 +1267,11 @@
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">zeroize::Zeroize</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::cmp_pairing::cmp_projective</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::convert</span>::{<span class="ident">fr_from_be_bytes</span>, <span class="ident">fr_to_be_bytes</span>, <span class="ident">g1_from_be_bytes</span>};
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::error</span>::{<span class="ident">Error</span>, <span class="ident">FromBytesResult</span>, <span class="prelude-ty">Result</span>};
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::into_fr::IntoFr</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::secret::clear_fr</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cmp_pairing::cmp_projective</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">fr_from_be_bytes</span>, <span class="ident">fr_to_be_bytes</span>, <span class="ident">g1_from_be_bytes</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::into_fr::IntoFr</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::secret::clear_fr</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Fr</span>, <span class="ident">G1Affine</span>, <span class="ident">G1</span>, <span class="ident">PK_SIZE</span>, <span class="ident">SK_SIZE</span>};
 
 <span class="doccomment">/// A univariate polynomial in the prime field.</span>
@@ -1276,7 +1283,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Zeroize</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">zeroize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">zeroize</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">for</span> <span class="ident">fr</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter_mut</span>() {
             <span class="ident">clear_fr</span>(<span class="ident">fr</span>)
         }
@@ -1284,21 +1291,21 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="ident">zeroize</span>();
     }
 }
 
 <span class="doccomment">/// A debug statement where the `coeff` vector of prime field elements has been redacted.</span>
 <span class="kw">impl</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;Poly&quot;</span>).<span class="ident">field</span>(<span class="string">&quot;coeff&quot;</span>, <span class="kw-2">&amp;</span><span class="string">&quot;...&quot;</span>).<span class="ident">finish</span>()
     }
 }
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::suspicious_op_assign_impl</span>)]</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::AddAssign</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">add_assign</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
+    <span class="kw">fn</span> <span class="ident">add_assign</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">rhs_len</span> <span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">borrow</span>().<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">if</span> <span class="ident">rhs_len</span> <span class="op">&gt;</span> <span class="ident">len</span> {
@@ -1314,7 +1321,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Add</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poly</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident">Poly</span> {
         (<span class="kw-2">*</span><span class="self">self</span>).<span class="ident">clone</span>() <span class="op">+</span> <span class="ident">rhs</span>
     }
 }
@@ -1322,7 +1329,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Add</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poly</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident">Poly</span> {
         <span class="self">self</span> <span class="op">+</span><span class="op">=</span> <span class="ident">rhs</span>;
         <span class="self">self</span>
     }
@@ -1331,7 +1338,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Add</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_zero</span>() <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">rhs</span>.<span class="ident">is_zero</span>() {
             <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">push</span>(<span class="ident">rhs</span>);
         } <span class="kw">else</span> {
@@ -1345,13 +1352,13 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Add</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">u64</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="self">self</span> <span class="op">+</span> <span class="ident">rhs</span>.<span class="ident">into_fr</span>()
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::SubAssign</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">sub_assign</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
+    <span class="kw">fn</span> <span class="ident">sub_assign</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">rhs_len</span> <span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">borrow</span>().<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">if</span> <span class="ident">rhs_len</span> <span class="op">&gt;</span> <span class="ident">len</span> {
@@ -1367,7 +1374,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Sub</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poly</span> {
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident">Poly</span> {
         (<span class="kw-2">*</span><span class="self">self</span>).<span class="ident">clone</span>() <span class="op">-</span> <span class="ident">rhs</span>
     }
 }
@@ -1375,7 +1382,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Sub</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poly</span> {
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident">Poly</span> {
         <span class="self">self</span> <span class="op">-</span><span class="op">=</span> <span class="ident">rhs</span>;
         <span class="self">self</span>
     }
@@ -1386,7 +1393,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Sub</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">rhs</span>: <span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">rhs</span>: <span class="ident">Fr</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="ident">rhs</span>.<span class="ident">negate</span>();
         <span class="self">self</span> <span class="op">+</span> <span class="ident">rhs</span>
     }
@@ -1395,7 +1402,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Sub</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">u64</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="self">self</span> <span class="op">-</span> <span class="ident">rhs</span>.<span class="ident">into_fr</span>()
     }
 }
@@ -1405,7 +1412,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="kw">let</span> <span class="ident">rhs</span> <span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">borrow</span>();
         <span class="kw">if</span> <span class="ident">rhs</span>.<span class="ident">is_zero</span>() <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">is_zero</span>() {
             <span class="kw">return</span> <span class="ident">Poly::zero</span>();
@@ -1420,7 +1427,7 @@
                 <span class="ident">coeffs</span>[<span class="ident">i</span> <span class="op">+</span> <span class="ident">j</span>].<span class="ident">add_assign</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>);
             }
         }
-        <span class="ident">clear_fr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tmp</span>);
+        <span class="ident">clear_fr</span>(<span class="kw-2">&amp;mut</span> <span class="ident">tmp</span>);
         <span class="ident">Poly::from</span>(<span class="ident">coeffs</span>)
     }
 }
@@ -1428,24 +1435,24 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Poly</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span> <span class="op">*</span> <span class="ident">rhs</span>
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::MulAssign</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">mul_assign</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
+    <span class="kw">fn</span> <span class="ident">mul_assign</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
         <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span> <span class="op">*</span> <span class="ident">rhs</span>;
     }
 }
 
 <span class="kw">impl</span> <span class="ident">ops::MulAssign</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">mul_assign</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) {
+    <span class="kw">fn</span> <span class="ident">mul_assign</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) {
         <span class="kw">if</span> <span class="ident">rhs</span>.<span class="ident">is_zero</span>() {
             <span class="self">self</span>.<span class="ident">zeroize</span>();
             <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">clear</span>();
         } <span class="kw">else</span> {
-            <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">coeff</span> {
+            <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">coeff</span> {
                 <span class="ident">Field::mul_assign</span>(<span class="ident">c</span>, <span class="kw-2">&amp;</span><span class="ident">rhs</span>);
             }
         }
@@ -1455,7 +1462,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="kw">if</span> <span class="ident">rhs</span>.<span class="ident">is_zero</span>() {
             <span class="self">self</span>.<span class="ident">zeroize</span>();
             <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">clear</span>();
@@ -1469,7 +1476,7 @@
 <span class="kw">impl</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="kw">let</span> <span class="ident">rhs</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">rhs</span>;
         <span class="self">self</span> <span class="op">*</span> <span class="ident">rhs</span>
     }
@@ -1478,7 +1485,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         (<span class="kw-2">*</span><span class="self">self</span>).<span class="ident">clone</span>() <span class="op">*</span> <span class="ident">rhs</span>
     }
 }
@@ -1486,7 +1493,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">Fr</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         (<span class="kw-2">*</span><span class="self">self</span>).<span class="ident">clone</span>() <span class="op">*</span> <span class="ident">rhs</span>
     }
 }
@@ -1494,7 +1501,7 @@
 <span class="kw">impl</span> <span class="ident">ops::Mul</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Poly</span>;
 
-    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span><span class="ident">::Output</span> {
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">u64</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
         <span class="self">self</span> <span class="op">*</span> <span class="ident">rhs</span>.<span class="ident">into_fr</span>()
     }
 }
@@ -1502,7 +1509,7 @@
 <span class="doccomment">/// Creates a new `Poly` instance from a vector of prime field elements representing the</span>
 <span class="doccomment">/// coefficients of the polynomial.</span>
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Poly</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">Poly</span> { <span class="ident">coeff</span> }
     }
 }
@@ -1513,7 +1520,7 @@
     <span class="doccomment">/// # Panics</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Panics if the `degree` is too large for the coefficients to fit into a `Vec`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">Poly::try_random</span>(<span class="ident">degree</span>, <span class="ident">rng</span>)
             .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">panic!</span>(<span class="string">&quot;Failed to create random `Poly`: {}&quot;</span>, <span class="ident">e</span>))
     }
@@ -1521,8 +1528,8 @@
     <span class="doccomment">/// Creates a random polynomial. This constructor is identical to the `Poly::random()`</span>
     <span class="doccomment">/// constructor in every way except that this constructor will return an `Err` where</span>
     <span class="doccomment">/// `try_random` would return an error.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">degree</span> <span class="op">=</span><span class="op">=</span> <span class="ident">usize::max_value</span>() {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">degree</span> <span class="op">==</span> <span class="ident">usize::max_value</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::DegreeTooHigh</span>);
         }
         <span class="kw">let</span> <span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">repeat_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Fr::random</span>(<span class="ident">rng</span>)).<span class="ident">take</span>(<span class="ident">degree</span> <span class="op">+</span> <span class="number">1</span>).<span class="ident">collect</span>();
@@ -1530,37 +1537,37 @@
     }
 
     <span class="doccomment">/// Returns the polynomial with constant value `0`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">zero</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">zero</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">Poly</span> { <span class="ident">coeff</span>: <span class="macro">vec!</span>[] }
     }
 
     <span class="doccomment">/// Returns `true` if the polynomial is the constant value `0`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_zero</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_zero</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">coeff</span><span class="op">|</span> <span class="ident">coeff</span>.<span class="ident">is_zero</span>())
     }
 
     <span class="doccomment">/// Returns the polynomial with constant value `1`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">one</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">one</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">Poly::constant</span>(<span class="ident">Fr::one</span>())
     }
 
     <span class="doccomment">/// Returns the polynomial with constant value `c`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">constant</span>(<span class="kw-2">mut</span> <span class="ident">c</span>: <span class="ident">Fr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">constant</span>(<span class="kw-2">mut</span> <span class="ident">c</span>: <span class="ident">Fr</span>) -&gt; <span class="self">Self</span> {
         <span class="comment">// We create a raw pointer to the field element within this method&#39;s stack frame so we can</span>
         <span class="comment">// overwrite that portion of memory with zeros once we have copied the element onto the</span>
         <span class="comment">// heap as part of the vector of polynomial coefficients.</span>
         <span class="kw">let</span> <span class="ident">poly</span> <span class="op">=</span> <span class="ident">Poly::from</span>(<span class="macro">vec!</span>[<span class="ident">c</span>]);
-        <span class="ident">clear_fr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">c</span>);
+        <span class="ident">clear_fr</span>(<span class="kw-2">&amp;mut</span> <span class="ident">c</span>);
         <span class="ident">poly</span>
     }
 
     <span class="doccomment">/// Returns the identity function, i.e. the polynomial &quot;`x`&quot;.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">identity</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">identity</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">Poly::monomial</span>(<span class="number">1</span>)
     }
 
     <span class="doccomment">/// Returns the (monic) monomial: `x.pow(degree)`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">monomial</span>(<span class="ident">degree</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">monomial</span>(<span class="ident">degree</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">iter::repeat</span>(<span class="ident">Fr::zero</span>())
             .<span class="ident">take</span>(<span class="ident">degree</span>)
             .<span class="ident">chain</span>(<span class="ident">iter::once</span>(<span class="ident">Fr::one</span>()))
@@ -1570,7 +1577,7 @@
 
     <span class="doccomment">/// Returns the unique polynomial `f` of degree `samples.len() - 1` with the given values</span>
     <span class="doccomment">/// `(x, f(x))`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interpolate</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">samples_repr</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">interpolate</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">samples_repr</span>: <span class="ident">I</span>) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">I</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">T</span>, <span class="ident">U</span>)<span class="op">&gt;</span>,
         <span class="ident">T</span>: <span class="ident">IntoFr</span>,
@@ -1582,15 +1589,15 @@
     }
 
     <span class="doccomment">/// Returns the degree.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>().<span class="ident">saturating_sub</span>(<span class="number">1</span>)
     }
 
     <span class="doccomment">/// Returns the value at the point `i`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fr</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">T</span>) -&gt; <span class="ident">Fr</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">last</span>() {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">Fr::zero</span>(),
-            <span class="prelude-val">Some</span>(<span class="ident">c</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">c</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="ident">Fr::zero</span>(),
+            <span class="prelude-val">Some</span>(<span class="ident">c</span>) =&gt; <span class="kw-2">*</span><span class="ident">c</span>,
         };
         <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">i</span>.<span class="ident">into_fr</span>();
         <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">skip</span>(<span class="number">1</span>) {
@@ -1601,7 +1608,7 @@
     }
 
     <span class="doccomment">/// Returns the corresponding commitment.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Commitment</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Commitment</span> {
         <span class="kw">let</span> <span class="ident">to_g1</span> <span class="op">=</span> <span class="op">|</span><span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span><span class="op">|</span> <span class="ident">G1Affine::one</span>().<span class="ident">mul</span>(<span class="kw-2">*</span><span class="ident">c</span>);
         <span class="ident">Commitment</span> {
             <span class="ident">coeff</span>: <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">to_g1</span>).<span class="ident">collect</span>(),
@@ -1609,7 +1616,7 @@
     }
 
     <span class="doccomment">/// Serializes to big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">bytes_size</span> <span class="op">=</span> <span class="ident">coeff_size</span> <span class="op">*</span> <span class="ident">SK_SIZE</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">poly_bytes</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="number">0</span>; <span class="ident">bytes_size</span>];
@@ -1625,7 +1632,7 @@
     }
 
     <span class="doccomment">/// Deserializes from big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FromBytesResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">c</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">/</span> <span class="ident">SK_SIZE</span>;
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">coeff_size</span> {
@@ -1640,7 +1647,7 @@
     }
 
     <span class="doccomment">/// Removes all trailing zero coefficients.</span>
-    <span class="kw">fn</span> <span class="ident">remove_zeros</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">remove_zeros</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">zeros</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">take_while</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">is_zero</span>()).<span class="ident">count</span>();
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">zeros</span>;
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">truncate</span>(<span class="ident">len</span>);
@@ -1648,7 +1655,7 @@
 
     <span class="doccomment">/// Returns the unique polynomial `f` of degree `samples.len() - 1` with the given values</span>
     <span class="doccomment">/// `(x, f(x))`.</span>
-    <span class="kw">fn</span> <span class="ident">compute_interpolation</span>(<span class="ident">samples</span>: <span class="kw-2">&amp;</span>[(<span class="ident">Fr</span>, <span class="ident">Fr</span>)]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">compute_interpolation</span>(<span class="ident">samples</span>: <span class="kw-2">&amp;</span>[(<span class="ident">Fr</span>, <span class="ident">Fr</span>)]) -&gt; <span class="self">Self</span> {
         <span class="kw">if</span> <span class="ident">samples</span>.<span class="ident">is_empty</span>() {
             <span class="kw">return</span> <span class="ident">Poly::zero</span>();
         }
@@ -1682,7 +1689,7 @@
     <span class="doccomment">/// Generates a non-redacted debug string. This method differs from</span>
     <span class="doccomment">/// the `Debug` implementation in that it *does* leak the secret prime</span>
     <span class="doccomment">/// field elements.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
         <span class="macro">format!</span>(<span class="string">&quot;Poly {{ coeff: {:?} }}&quot;</span>, <span class="self">self</span>.<span class="ident">coeff</span>)
     }
 }
@@ -1697,19 +1704,19 @@
 
 <span class="doccomment">/// Creates a new `Commitment` instance</span>
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">Commitment</span> { <span class="ident">coeff</span> }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
-    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ordering</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ordering</span><span class="op">&gt;</span> {
         <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">cmp</span>(<span class="ident">other</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
-    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Ordering</span> {
+    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">Ordering</span> {
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>().<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">coeff</span>.<span class="ident">len</span>()).<span class="ident">then_with</span>(<span class="op">|</span><span class="op">|</span> {
             <span class="self">self</span>.<span class="ident">coeff</span>
                 .<span class="ident">iter</span>()
@@ -1721,7 +1728,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Hash</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
-    <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">H</span>) {
+    <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;mut</span> <span class="ident">H</span>) {
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
         <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">coeff</span> {
             <span class="ident">c</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
@@ -1730,7 +1737,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Commitment</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::AddAssign</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
-    <span class="kw">fn</span> <span class="ident">add_assign</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
+    <span class="kw">fn</span> <span class="ident">add_assign</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">cmp::max</span>(<span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>(), <span class="ident">rhs</span>.<span class="ident">borrow</span>().<span class="ident">coeff</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">resize</span>(<span class="ident">len</span>, <span class="ident">G1::zero</span>());
         <span class="kw">for</span> (<span class="ident">self_c</span>, <span class="ident">rhs_c</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter_mut</span>().<span class="ident">zip</span>(<span class="kw-2">&amp;</span><span class="ident">rhs</span>.<span class="ident">borrow</span>().<span class="ident">coeff</span>) {
@@ -1743,7 +1750,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Commitment</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Add</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Commitment</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Commitment</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Commitment</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident">Commitment</span> {
         (<span class="kw-2">*</span><span class="self">self</span>).<span class="ident">clone</span>() <span class="op">+</span> <span class="ident">rhs</span>
     }
 }
@@ -1751,7 +1758,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Commitment</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">ops::Add</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Commitment</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Commitment</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Commitment</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">B</span>) -&gt; <span class="ident">Commitment</span> {
         <span class="self">self</span> <span class="op">+</span><span class="op">=</span> <span class="ident">rhs</span>;
         <span class="self">self</span>
     }
@@ -1759,15 +1766,15 @@
 
 <span class="kw">impl</span> <span class="ident">Commitment</span> {
     <span class="doccomment">/// Returns the polynomial&#39;s degree.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>
     }
 
     <span class="doccomment">/// Returns the `i`-th public key share.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">G1</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">T</span>) -&gt; <span class="ident">G1</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">last</span>() {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">G1::zero</span>(),
-            <span class="prelude-val">Some</span>(<span class="ident">c</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">c</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="ident">G1::zero</span>(),
+            <span class="prelude-val">Some</span>(<span class="ident">c</span>) =&gt; <span class="kw-2">*</span><span class="ident">c</span>,
         };
         <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">i</span>.<span class="ident">into_fr</span>();
         <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">skip</span>(<span class="number">1</span>) {
@@ -1778,7 +1785,7 @@
     }
 
     <span class="doccomment">/// Serializes to big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">bytes_size</span> <span class="op">=</span> <span class="ident">coeff_size</span> <span class="op">*</span> <span class="ident">PK_SIZE</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">commit_bytes</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="number">0</span>; <span class="ident">bytes_size</span>];
@@ -1794,7 +1801,7 @@
     }
 
     <span class="doccomment">/// Deserializes from big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FromBytesResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">c</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">/</span> <span class="ident">PK_SIZE</span>;
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">coeff_size</span> {
@@ -1809,7 +1816,7 @@
     }
 
     <span class="doccomment">/// Removes all trailing zero coefficients.</span>
-    <span class="kw">fn</span> <span class="ident">remove_zeros</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">remove_zeros</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">zeros</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">take_while</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">is_zero</span>()).<span class="ident">count</span>();
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">zeros</span>;
         <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">truncate</span>(<span class="ident">len</span>)
@@ -1830,7 +1837,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Zeroize</span> <span class="kw">for</span> <span class="ident">BivarPoly</span> {
-    <span class="kw">fn</span> <span class="ident">zeroize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">zeroize</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">for</span> <span class="ident">fr</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">iter_mut</span>() {
             <span class="ident">clear_fr</span>(<span class="ident">fr</span>)
         }
@@ -1839,14 +1846,14 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">BivarPoly</span> {
-    <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="ident">zeroize</span>();
     }
 }
 
 <span class="doccomment">/// A debug statement where the `coeff` vector has been redacted.</span>
 <span class="kw">impl</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">BivarPoly</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;BivarPoly&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;degree&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">degree</span>)
             .<span class="ident">field</span>(<span class="string">&quot;coeff&quot;</span>, <span class="kw-2">&amp;</span><span class="string">&quot;...&quot;</span>)
@@ -1860,7 +1867,7 @@
     <span class="doccomment">/// # Panics</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Panics if the degree is too high for the coefficients to fit into a `Vec`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">BivarPoly::try_random</span>(<span class="ident">degree</span>, <span class="ident">rng</span>).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
             <span class="macro">panic!</span>(
                 <span class="string">&quot;Failed to create random `BivarPoly` of degree {}: {}&quot;</span>,
@@ -1870,7 +1877,7 @@
     }
 
     <span class="doccomment">/// Creates a random polynomial.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_random</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Rng</span><span class="op">&gt;</span>(<span class="ident">degree</span>: <span class="ident">usize</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">coeff_pos</span>(<span class="ident">degree</span>, <span class="ident">degree</span>)
             .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">l</span><span class="op">|</span> <span class="ident">l</span>.<span class="ident">checked_add</span>(<span class="number">1</span>))
             .<span class="ident">ok_or</span>(<span class="ident">Error::DegreeTooHigh</span>)<span class="question-mark">?</span>;
@@ -1882,12 +1889,12 @@
     }
 
     <span class="doccomment">/// Returns the polynomial&#39;s degree; which is the same in both variables.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">degree</span>
     }
 
     <span class="doccomment">/// Returns the polynomial&#39;s value at the point `(x, y)`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>, <span class="ident">y</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fr</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>, <span class="ident">y</span>: <span class="ident">T</span>) -&gt; <span class="ident">Fr</span> {
         <span class="kw">let</span> <span class="ident">x_pow</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">powers</span>(<span class="ident">x</span>);
         <span class="kw">let</span> <span class="ident">y_pow</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">powers</span>(<span class="ident">y</span>);
         <span class="comment">// TODO: Can we save a few multiplication steps here due to the symmetry?</span>
@@ -1905,7 +1912,7 @@
     }
 
     <span class="doccomment">/// Returns the `x`-th row, as a univariate polynomial.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">row</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poly</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">row</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) -&gt; <span class="ident">Poly</span> {
         <span class="kw">let</span> <span class="ident">x_pow</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">powers</span>(<span class="ident">x</span>);
         <span class="kw">let</span> <span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="op">=</span><span class="self">self</span>.<span class="ident">degree</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
@@ -1924,7 +1931,7 @@
     }
 
     <span class="doccomment">/// Returns the corresponding commitment. That information can be shared publicly.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BivarCommitment</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">BivarCommitment</span> {
         <span class="kw">let</span> <span class="ident">to_pub</span> <span class="op">=</span> <span class="op">|</span><span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span><span class="op">|</span> <span class="ident">G1Affine::one</span>().<span class="ident">mul</span>(<span class="kw-2">*</span><span class="ident">c</span>);
         <span class="ident">BivarCommitment</span> {
             <span class="ident">degree</span>: <span class="self">self</span>.<span class="ident">degree</span>,
@@ -1933,14 +1940,14 @@
     }
 
     <span class="doccomment">/// Returns the `0`-th to `degree`-th power of `x`.</span>
-    <span class="kw">fn</span> <span class="ident">powers</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">powers</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
         <span class="ident">powers</span>(<span class="ident">x</span>, <span class="self">self</span>.<span class="ident">degree</span>)
     }
 
     <span class="doccomment">/// Generates a non-redacted debug string. This method differs from the</span>
     <span class="doccomment">/// `Debug` implementation in that it *does* leak the the struct&#39;s</span>
     <span class="doccomment">/// internal state.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
         <span class="macro">format!</span>(
             <span class="string">&quot;BivarPoly {{ degree: {}, coeff: {:?} }}&quot;</span>,
             <span class="self">self</span>.<span class="ident">degree</span>, <span class="self">self</span>.<span class="ident">coeff</span>
@@ -1948,7 +1955,7 @@
     }
 
     <span class="doccomment">/// Serializes to big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">bytes_size</span> <span class="op">=</span> <span class="ident">coeff_size</span> <span class="op">*</span> <span class="ident">SK_SIZE</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">poly_bytes</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="number">0</span>; <span class="ident">bytes_size</span>];
@@ -1964,7 +1971,7 @@
     }
 
     <span class="doccomment">/// Deserializes from big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FromBytesResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">c</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">/</span> <span class="ident">SK_SIZE</span>;
         <span class="kw">for</span> <span class="ident">coeff_index</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">coeff_size</span> {
@@ -1994,7 +2001,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Hash</span> <span class="kw">for</span> <span class="ident">BivarCommitment</span> {
-    <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">H</span>) {
+    <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;mut</span> <span class="ident">H</span>) {
         <span class="self">self</span>.<span class="ident">degree</span>.<span class="ident">hash</span>(<span class="ident">state</span>);
         <span class="kw">for</span> <span class="ident">c</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">coeff</span> {
             <span class="ident">c</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
@@ -2003,13 +2010,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">BivarCommitment</span> {
-    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ordering</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ordering</span><span class="op">&gt;</span> {
         <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">cmp</span>(<span class="ident">other</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">BivarCommitment</span> {
-    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Ordering</span> {
+    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">Ordering</span> {
         <span class="self">self</span>.<span class="ident">degree</span>.<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">degree</span>).<span class="ident">then_with</span>(<span class="op">|</span><span class="op">|</span> {
             <span class="self">self</span>.<span class="ident">coeff</span>
                 .<span class="ident">iter</span>()
@@ -2022,12 +2029,12 @@
 
 <span class="kw">impl</span> <span class="ident">BivarCommitment</span> {
     <span class="doccomment">/// Returns the polynomial&#39;s degree: It is the same in both variables.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">degree</span>
     }
 
     <span class="doccomment">/// Returns the commitment&#39;s value at the point `(x, y)`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>, <span class="ident">y</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">G1</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">evaluate</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>, <span class="ident">y</span>: <span class="ident">T</span>) -&gt; <span class="ident">G1</span> {
         <span class="kw">let</span> <span class="ident">x_pow</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">powers</span>(<span class="ident">x</span>);
         <span class="kw">let</span> <span class="ident">y_pow</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">powers</span>(<span class="ident">y</span>);
         <span class="comment">// TODO: Can we save a few multiplication steps here due to the symmetry?</span>
@@ -2045,7 +2052,7 @@
     }
 
     <span class="doccomment">/// Returns the `x`-th row, as a commitment to a univariate polynomial.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">row</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Commitment</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">row</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) -&gt; <span class="ident">Commitment</span> {
         <span class="kw">let</span> <span class="ident">x_pow</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">powers</span>(<span class="ident">x</span>);
         <span class="kw">let</span> <span class="ident">coeff</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="op">=</span><span class="self">self</span>.<span class="ident">degree</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
@@ -2063,12 +2070,12 @@
     }
 
     <span class="doccomment">/// Returns the `0`-th to `degree`-th power of `x`.</span>
-    <span class="kw">fn</span> <span class="ident">powers</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">powers</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">x</span>: <span class="ident">T</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
         <span class="ident">powers</span>(<span class="ident">x</span>, <span class="self">self</span>.<span class="ident">degree</span>)
     }
 
     <span class="doccomment">/// Serializes to big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">coeff</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">bytes_size</span> <span class="op">=</span> <span class="ident">coeff_size</span> <span class="op">*</span> <span class="ident">PK_SIZE</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">commit_bytes</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="number">0</span>; <span class="ident">bytes_size</span>];
@@ -2086,7 +2093,7 @@
     }
 
     <span class="doccomment">/// Deserializes from big endian bytes</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FromBytesResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">c</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">let</span> <span class="ident">coeff_size</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">/</span> <span class="ident">PK_SIZE</span>;
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">coeff_size</span> {
@@ -2106,7 +2113,7 @@
 }
 
 <span class="doccomment">/// Returns the `0`-th to `degree`-th power of `x`.</span>
-<span class="kw">fn</span> <span class="ident">powers</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="ident">into_x</span>: <span class="ident">T</span>, <span class="ident">degree</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">powers</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">IntoFr</span><span class="op">&gt;</span>(<span class="ident">into_x</span>: <span class="ident">T</span>, <span class="ident">degree</span>: <span class="ident">usize</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">into_x</span>.<span class="ident">into_fr</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">x_pow_i</span> <span class="op">=</span> <span class="ident">Fr::one</span>();
     <span class="ident">iter::once</span>(<span class="ident">x_pow_i</span>)
@@ -2120,7 +2127,7 @@
 <span class="doccomment">/// Returns the position of coefficient `(i, j)` in the vector describing a symmetric bivariate</span>
 <span class="doccomment">/// polynomial. If `i` or `j` are too large to represent the position as a `usize`, `None` is</span>
 <span class="doccomment">/// returned.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">coeff_pos</span>(<span class="ident">i</span>: <span class="ident">usize</span>, <span class="ident">j</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">coeff_pos</span>(<span class="ident">i</span>: <span class="ident">usize</span>, <span class="ident">j</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
     <span class="comment">// Since the polynomial is symmetric, we can order such that `j &gt;= i`.</span>
     <span class="kw">let</span> (<span class="ident">j</span>, <span class="ident">i</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">j</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">i</span> { (<span class="ident">j</span>, <span class="ident">i</span>) } <span class="kw">else</span> { (<span class="ident">i</span>, <span class="ident">j</span>) };
     <span class="ident">i</span>.<span class="ident">checked_add</span>(<span class="ident">j</span>.<span class="ident">checked_mul</span>(<span class="ident">j</span>.<span class="ident">checked_add</span>(<span class="number">1</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span> <span class="op">/</span> <span class="number">2</span>)
@@ -2128,9 +2135,10 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="ident">eyre</span>::{<span class="ident">eyre</span>, <span class="prelude-ty">Result</span>};
     <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 
-    <span class="kw">use</span> <span class="kw">super</span><span class="ident">::fr_to_be_bytes</span>;
+    <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::fr_to_be_bytes</span>;
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">coeff_pos</span>, <span class="ident">BivarCommitment</span>, <span class="ident">BivarPoly</span>, <span class="ident">Commitment</span>, <span class="ident">IntoFr</span>, <span class="ident">Poly</span>};
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Fr</span>, <span class="ident">G1Affine</span>, <span class="ident">G1</span>};
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">PK_SIZE</span>, <span class="ident">SK_SIZE</span>};
@@ -2179,7 +2187,7 @@
         <span class="ident">poly</span>.<span class="ident">zeroize</span>();
         <span class="macro">assert!</span>(<span class="ident">poly</span>.<span class="ident">is_zero</span>());
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="number">3</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rand::thread_rng</span>());
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="number">3</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rand::thread_rng</span>());
         <span class="kw">let</span> <span class="ident">random_commitment</span> <span class="op">=</span> <span class="ident">bi_poly</span>.<span class="ident">commitment</span>();
 
         <span class="ident">bi_poly</span>.<span class="ident">zeroize</span>();
@@ -2188,7 +2196,7 @@
         <span class="macro">assert_ne!</span>(<span class="ident">random_commitment</span>, <span class="ident">zero_commitment</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
-        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>): (<span class="ident">Fr</span>, <span class="ident">Fr</span>) <span class="op">=</span> (<span class="ident">Fr::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>), <span class="ident">Fr::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>));
+        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>): (<span class="ident">Fr</span>, <span class="ident">Fr</span>) <span class="op">=</span> (<span class="ident">Fr::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>), <span class="ident">Fr::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>));
         <span class="macro">assert_eq!</span>(<span class="ident">zero_commitment</span>.<span class="ident">evaluate</span>(<span class="ident">x</span>, <span class="ident">y</span>), <span class="ident">G1::zero</span>());
     }
 
@@ -2203,7 +2211,7 @@
         <span class="comment">// generates random bivariate polynomials and publicly commits to them. In practice, the</span>
         <span class="comment">// dealers can e.g. be any `faulty_num + 1` nodes.</span>
         <span class="kw">let</span> <span class="ident">bi_polys</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BivarPoly</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">dealer_num</span>)
-            .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">BivarPoly::random</span>(<span class="ident">faulty_num</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>))
+            .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">BivarPoly::random</span>(<span class="ident">faulty_num</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>))
             .<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">pub_bi_commits</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">bi_polys</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">BivarPoly::commitment</span>).<span class="ident">collect</span>();
 
@@ -2280,7 +2288,7 @@
     <span class="kw">fn</span> <span class="ident">test_commitment_to_from_bytes</span>() {
         <span class="kw">let</span> <span class="ident">degree</span> <span class="op">=</span> <span class="number">3</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
-        <span class="kw">let</span> <span class="ident">poly</span> <span class="op">=</span> <span class="ident">Poly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">poly</span> <span class="op">=</span> <span class="ident">Poly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">commitment</span> <span class="op">=</span> <span class="ident">poly</span>.<span class="ident">commitment</span>();
         <span class="comment">// length is fixed to (degree + 1) * 48</span>
         <span class="kw">let</span> <span class="ident">commitment_bytes</span> <span class="op">=</span> <span class="ident">commitment</span>.<span class="ident">to_bytes</span>();
@@ -2303,7 +2311,7 @@
     <span class="kw">fn</span> <span class="ident">test_bivar_commitment_to_from_bytes</span>() {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
         <span class="kw">let</span> <span class="ident">degree</span> <span class="op">=</span> <span class="number">3</span>;
-        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">bi_commit</span> <span class="op">=</span> <span class="ident">bi_poly</span>.<span class="ident">commitment</span>();
         <span class="kw">let</span> <span class="ident">commitment</span> <span class="op">=</span> <span class="ident">bi_commit</span>.<span class="ident">row</span>(<span class="number">0</span>);
         <span class="comment">// length is fixed by the degree and G1 size</span>
@@ -2328,7 +2336,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">vectors_bivar_commitment_to_from_bytes</span>() {
+    <span class="kw">fn</span> <span class="ident">vectors_bivar_commitment_to_from_bytes</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">vectors</span> <span class="op">=</span> <span class="macro">vec!</span>[
             <span class="comment">// Plain old Bivar Commitment</span>
             <span class="macro">vec!</span>[
@@ -2342,7 +2350,8 @@
         ];
         <span class="kw">for</span> <span class="ident">vector</span> <span class="kw">in</span> <span class="ident">vectors</span> {
             <span class="comment">// read bivar commitment</span>
-            <span class="kw">let</span> <span class="ident">bi_commit_bytes</span> <span class="op">=</span> <span class="ident">hex::decode</span>(<span class="ident">vector</span>[<span class="number">0</span>]).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">bi_commit_bytes</span> <span class="op">=</span>
+                <span class="ident">hex::decode</span>(<span class="ident">vector</span>[<span class="number">0</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">eyre!</span>(<span class="string">&quot;invalid msg hex bytes: {}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">bi_commit</span> <span class="op">=</span> <span class="ident">BivarCommitment::from_bytes</span>(<span class="ident">bi_commit_bytes</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;invalid bivar commitment bytes&quot;</span>);
             <span class="comment">// check row 0</span>
@@ -2354,6 +2363,8 @@
             <span class="kw">let</span> <span class="ident">row_1_hex</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">HexFmt</span>(<span class="kw-2">&amp;</span><span class="ident">row_1</span>.<span class="ident">to_bytes</span>()));
             <span class="macro">assert_eq!</span>(<span class="ident">row_1_hex</span>, <span class="ident">vector</span>[<span class="number">2</span>]);
         }
+
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -2361,7 +2372,7 @@
         <span class="comment">// The overall size increases rapidly, size is sum(1..degree+1)</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
         <span class="kw">let</span> <span class="ident">degree</span> <span class="op">=</span> <span class="number">9</span>; <span class="comment">// TODO pick a less magic value here</span>
-        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">bi_commit</span> <span class="op">=</span> <span class="ident">bi_poly</span>.<span class="ident">commitment</span>();
         <span class="kw">let</span> <span class="ident">bi_commit_bytes</span> <span class="op">=</span> <span class="ident">bi_commit</span>.<span class="ident">to_bytes</span>();
         <span class="kw">let</span> <span class="ident">dp1</span> <span class="op">=</span> <span class="ident">degree</span> <span class="op">+</span> <span class="number">1</span>;
@@ -2374,7 +2385,7 @@
     <span class="kw">fn</span> <span class="ident">test_poly_to_from_bytes</span>() {
         <span class="kw">let</span> <span class="ident">degree</span> <span class="op">=</span> <span class="number">3</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
-        <span class="kw">let</span> <span class="ident">poly</span> <span class="op">=</span> <span class="ident">Poly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">poly</span> <span class="op">=</span> <span class="ident">Poly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="comment">// length is fixed to (degree + 1) * 32</span>
         <span class="kw">let</span> <span class="ident">poly_bytes</span> <span class="op">=</span> <span class="ident">poly</span>.<span class="ident">to_bytes</span>();
         <span class="macro">assert_eq!</span>(<span class="ident">poly_bytes</span>.<span class="ident">len</span>(), (<span class="ident">degree</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">32</span>);
@@ -2395,7 +2406,7 @@
     <span class="kw">fn</span> <span class="ident">test_bivar_poly_to_from_bytes</span>() {
         <span class="kw">let</span> <span class="ident">degree</span> <span class="op">=</span> <span class="number">3</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
-        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="comment">// length is fixed by the degree and Fr size</span>
         <span class="kw">let</span> <span class="ident">bi_poly_bytes</span> <span class="op">=</span> <span class="ident">bi_poly</span>.<span class="ident">to_bytes</span>();
         <span class="kw">let</span> <span class="ident">dp1</span> <span class="op">=</span> <span class="ident">degree</span> <span class="op">+</span> <span class="number">1</span>;
@@ -2422,7 +2433,7 @@
     <span class="kw">fn</span> <span class="ident">test_bivar_poly_to_from_bytes_large_degree</span>() {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
         <span class="kw">let</span> <span class="ident">degree</span> <span class="op">=</span> <span class="number">9</span>; <span class="comment">// TODO pick a less magic value here</span>
-        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">bi_poly_bytes</span> <span class="op">=</span> <span class="ident">bi_poly</span>.<span class="ident">to_bytes</span>();
         <span class="kw">let</span> <span class="ident">dp1</span> <span class="op">=</span> <span class="ident">degree</span> <span class="op">+</span> <span class="number">1</span>;
         <span class="kw">let</span> <span class="ident">sum</span> <span class="op">=</span> <span class="ident">dp1</span> <span class="op">*</span> (<span class="ident">dp1</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">/</span> <span class="number">2</span>; <span class="comment">// sum of 1,2,3,...,dp1</span>
@@ -2431,7 +2442,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">vectors_bivar_poly_to_from_bytes</span>() {
+    <span class="kw">fn</span> <span class="ident">vectors_bivar_poly_to_from_bytes</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">vectors</span> <span class="op">=</span> <span class="macro">vec!</span>[
             <span class="comment">// Plain old Bivar Poly</span>
             <span class="comment">// Sourced from BivarPoly::reveal and Poly::reveal</span>
@@ -2446,7 +2457,8 @@
         ];
         <span class="kw">for</span> <span class="ident">vector</span> <span class="kw">in</span> <span class="ident">vectors</span> {
             <span class="comment">// read BivarPoly from hex</span>
-            <span class="kw">let</span> <span class="ident">bi_poly_bytes</span> <span class="op">=</span> <span class="ident">hex::decode</span>(<span class="ident">vector</span>[<span class="number">0</span>]).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">bi_poly_bytes</span> <span class="op">=</span>
+                <span class="ident">hex::decode</span>(<span class="ident">vector</span>[<span class="number">0</span>]).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">eyre!</span>(<span class="string">&quot;invalid msg hex bytes: {}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">bi_poly</span> <span class="op">=</span> <span class="ident">BivarPoly::from_bytes</span>(<span class="ident">bi_poly_bytes</span>).<span class="ident">expect</span>(<span class="string">&quot;invalid bipoly bytes&quot;</span>);
             <span class="comment">// check row 0</span>
             <span class="kw">let</span> <span class="ident">row_0</span> <span class="op">=</span> <span class="ident">bi_poly</span>.<span class="ident">row</span>(<span class="number">0</span>);
@@ -2457,9 +2469,10 @@
             <span class="kw">let</span> <span class="ident">row_1_hex</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">HexFmt</span>(<span class="kw-2">&amp;</span><span class="ident">row_1</span>.<span class="ident">to_bytes</span>()));
             <span class="macro">assert_eq!</span>(<span class="ident">row_1_hex</span>, <span class="ident">vector</span>[<span class="number">2</span>]);
         }
+
+        <span class="prelude-val">Ok</span>(())
     }
 }
-</pre></div>
+</code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
-    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script>
 </body></html>
