@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/maidsafe/blsttc/compare/v3.4.0...v4.0.0) (2022-02-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** changes to public API
+
+* **api:** removing calls to unwrap(), returning Result from all apis ([91db096](https://github.com/maidsafe/blsttc/commit/91db096613191175e757f1e740fedbf5afa56217))
+
 ## [3.4.0](https://github.com/maidsafe/blsttc/compare/v3.3.0...v3.4.0) (2021-09-13)
 
 
