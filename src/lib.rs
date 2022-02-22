@@ -41,10 +41,10 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
+use crate::error::{Error, FromBytesError, FromBytesResult, Result};
 use crate::poly::{Commitment, Poly};
 use crate::secret::clear_fr;
 
-pub use self::error::{Error, Result};
 pub use crate::into_fr::IntoFr;
 
 use convert::{
@@ -108,16 +108,15 @@ impl PublicKey {
     }
 
     /// Returns `true` if the signature matches the message.
-    pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> Result<()> {
-        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes())?;
-        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes())?;
-
-        let result = blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false);
-        if result == BLST_ERROR::BLST_SUCCESS {
-            Ok(())
-        } else {
-            Err(result.into())
-        }
+    pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
+        // TC
+        //self.verify_g2(sig, hash_g2(msg))
+        // BLST
+        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes()).unwrap();
+        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes()).unwrap();
+        blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false) == BLST_ERROR::BLST_SUCCESS
+        // DISABLED
+        //true
     }
 
     /// Encrypts the message using the OS random number generator.
@@ -149,7 +148,7 @@ impl PublicKey {
     }
 
     /// Returns the key with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
         let g1 = g1_from_be_bytes(bytes)?;
         Ok(PublicKey(g1))
     }
@@ -179,16 +178,15 @@ impl PublicKeyShare {
     }
 
     /// Returns `true` if the signature matches the message.
-    pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> Result<()> {
-        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes())?;
-        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes())?;
-
-        let result = blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false);
-        if result == BLST_ERROR::BLST_SUCCESS {
-            Ok(())
-        } else {
-            Err(result.into())
-        }
+    pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {
+        // TC
+        //self.verify_g2(sig, hash_g2(msg))
+        // BLST
+        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes()).unwrap();
+        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes()).unwrap();
+        blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false) == BLST_ERROR::BLST_SUCCESS
+        // DISABLED
+        //true
     }
 
     /// Returns `true` if the decryption share matches the ciphertext.
@@ -204,7 +202,7 @@ impl PublicKeyShare {
     }
 
     /// Returns the key share with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
         Ok(PublicKeyShare(PublicKey::from_bytes(bytes)?))
     }
 
@@ -261,7 +259,7 @@ impl Signature {
     }
 
     /// Returns the signature with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
         let g2 = g2_from_be_bytes(bytes)?;
         Ok(Signature(g2))
     }
@@ -293,7 +291,7 @@ impl fmt::Debug for SignatureShare {
 
 impl SignatureShare {
     /// Returns the signature share with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
         Ok(SignatureShare(Signature::from_bytes(bytes)?))
     }
 
@@ -388,12 +386,23 @@ impl SecretKey {
     }
 
     /// Signs the given message.
-    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Result<Signature> {
-        let blst_sk = BlstSecretKey::from_bytes(&self.to_bytes())?;
+    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
+        // TC
+        //self.sign_g2(hash_g2(msg))
+        // BLST
+        let blst_sk = BlstSecretKey::from_bytes(&self.to_bytes()).unwrap();
         let blst_sig = blst_sk.sign(msg.as_ref(), DST, &[]);
-
-        let signature = Signature::from_bytes(blst_sig.to_bytes())?;
-        Ok(signature)
+        Signature::from_bytes(blst_sig.to_bytes()).unwrap()
+        // DISABLED
+        //Signature::from_bytes([
+        //    174, 110, 104, 53, 218, 40, 126, 73, 178, 216, 213, 13, 22, 20,
+        //    166, 46, 201, 163, 42, 74, 181, 235, 176, 22, 48, 117, 85, 234,
+        //    236, 215, 64, 46, 166, 100, 98, 63, 112, 27, 79, 224, 189, 80,
+        //    214, 39, 45, 233, 94, 141, 1, 14, 227, 20, 128, 126, 235, 99, 222,
+        //    6, 89, 192, 186, 12, 237, 209, 190, 36, 2, 126, 48, 168, 57, 240,
+        //    25, 169, 238, 190, 77, 132, 88, 41, 192, 45, 221, 113, 162, 17,
+        //    127, 230, 122, 254, 54, 247, 58, 169, 160, 151
+        //]).unwrap()
     }
 
     /// Converts the secret key to big endian bytes
@@ -402,7 +411,7 @@ impl SecretKey {
     }
 
     /// Deserialize from big endian bytes
-    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Self> {
         let mut fr = fr_from_be_bytes(bytes)?;
         Ok(SecretKey::from_mut(&mut fr))
     }
@@ -478,9 +487,8 @@ impl SecretKeyShare {
     }
 
     /// Signs the given message.
-    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Result<SignatureShare> {
-        let signature = self.0.sign(msg)?;
-        Ok(SignatureShare(signature))
+    pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> SignatureShare {
+        SignatureShare(self.0.sign(msg))
     }
 
     /// Returns a decryption share, or `None`, if the ciphertext isn't valid.
@@ -514,7 +522,7 @@ impl SecretKeyShare {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Self> {
         Ok(SecretKeyShare(SecretKey::from_bytes(bytes)?))
     }
 }
@@ -572,9 +580,9 @@ impl Ciphertext {
     }
 
     /// Returns the Ciphertext with the given representation, if valid.
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+    pub fn from_bytes(bytes: &[u8]) -> FromBytesResult<Self> {
         if bytes.len() < PK_SIZE + SIG_SIZE + 1 {
-            return Err(Error::InvalidBytes);
+            return Err(FromBytesError::Invalid);
         }
 
         let mut u_compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
@@ -591,13 +599,13 @@ impl Ciphertext {
             u_compressed
                 .into_affine()
                 .ok()
-                .ok_or(Error::InvalidBytes)?
+                .ok_or(FromBytesError::Invalid)?
                 .into_projective(),
             v,
             w_compressed
                 .into_affine()
                 .ok()
-                .ok_or(Error::InvalidBytes)?
+                .ok_or(FromBytesError::Invalid)?
                 .into_projective(),
         ))
     }
@@ -627,7 +635,7 @@ impl fmt::Debug for DecryptionShare {
 
 impl DecryptionShare {
     /// Deserializes the share from big endian bytes
-    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
         let g1 = g1_from_be_bytes(bytes)?;
         Ok(DecryptionShare(g1))
     }
@@ -705,18 +713,18 @@ impl PublicKeySet {
     /// let msg = "Happy birthday! If this is signed, at least four people remembered!";
     ///
     /// // Create four signature shares for the message.
-    /// let sig_shares: BTreeMap<_, _> = (0..4).map(|i| (i, sk_shares[i].sign(msg).expect("failed to sign msg"))).collect();
+    /// let sig_shares: BTreeMap<_, _> = (0..4).map(|i| (i, sk_shares[i].sign(msg))).collect();
     ///
     /// // Validate the signature shares.
     /// for (i, sig_share) in &sig_shares {
-    ///     pk_set.public_key_share(*i).verify(sig_share, msg).expect("signature verification failed");
+    ///     assert!(pk_set.public_key_share(*i).verify(sig_share, msg));
     /// }
     ///
     /// // Combine them to produce the main signature.
     /// let sig = pk_set.combine_signatures(&sig_shares).expect("not enough shares");
     ///
     /// // Validate the main signature. If the shares were valid, this can't fail.
-    /// pk_set.public_key().verify(&sig, msg).expect("signature verification failed");
+    /// assert!(pk_set.public_key().verify(&sig, msg));
     /// ```
     pub fn combine_signatures<T, I, S: Borrow<SignatureShare>>(
         &self,
@@ -765,7 +773,7 @@ impl PublicKeySet {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
         let commit = Commitment::from_bytes(bytes)?;
         Ok(PublicKeySet { commit })
     }
@@ -861,7 +869,7 @@ impl SecretKeySet {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
         let poly = Poly::from_bytes(bytes)?;
         Ok(SecretKeySet { poly })
     }
@@ -966,7 +974,6 @@ impl fmt::Debug for DebugDots {
 mod tests {
     use super::*;
 
-    use eyre::{eyre, Result};
     use std::collections::BTreeMap;
 
     use rand::{self, distributions::Standard, random, Rng};
@@ -989,20 +996,19 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_sig() -> Result<()> {
+    fn test_simple_sig() {
         let sk0 = SecretKey::random();
         let sk1 = SecretKey::random();
         let pk0 = sk0.public_key();
         let msg0 = b"Real news";
         let msg1 = b"Fake news";
-        pk0.verify(&sk0.sign(msg0)?, msg0)?;
-        assert!(pk0.verify(&sk1.sign(msg0)?, msg0).is_err()); // Wrong key.
-        assert!(pk0.verify(&sk0.sign(msg1)?, msg0).is_err()); // Wrong message.
-        Ok(())
+        assert!(pk0.verify(&sk0.sign(msg0), msg0));
+        assert!(!pk0.verify(&sk1.sign(msg0), msg0)); // Wrong key.
+        assert!(!pk0.verify(&sk0.sign(msg1), msg0)); // Wrong message.
     }
 
     #[test]
-    fn test_threshold_sig() -> Result<()> {
+    fn test_threshold_sig() {
         let mut rng = rand::thread_rng();
         let sk_set = SecretKeySet::random(3, &mut rng);
         let pk_set = sk_set.public_keys();
@@ -1026,32 +1032,33 @@ mod tests {
 
         // The threshold is 3, so 4 signature shares will suffice to recreate the share.
         // note: this tests passing a Vec to ::combine_signatures (instead of BTreeMap)
-        let mut sigs: Vec<(_, _)> = vec![];
-        for i in [5, 8, 7, 10] {
-            let sig = sk_set.secret_key_share(i).sign(msg)?;
-            sigs.push((i, sig));
-        }
+        let sigs: Vec<(_, _)> = [5, 8, 7, 10]
+            .iter()
+            .map(|&i| {
+                let sig = sk_set.secret_key_share(i).sign(msg);
+                (i, sig)
+            })
+            .collect();
 
         // Each of the shares is a valid signature matching its public key share.
         for (i, sig) in &sigs {
-            pk_set.public_key_share(*i).verify(sig, msg)?;
+            assert!(pk_set.public_key_share(*i).verify(sig, msg));
         }
 
         // Combined, they produce a signature matching the main public key.
         let sig = pk_set.combine_signatures(sigs).expect("signatures match");
-        pk_set.public_key().verify(&sig, msg)?;
+        assert!(pk_set.public_key().verify(&sig, msg));
 
         // A different set of signatories produces the same signature.
-        let mut sigs2 = BTreeMap::default();
-        for i in [42, 43, 44, 45] {
-            let sig = sk_set.secret_key_share(i).sign(msg)?;
-            sigs2.insert(i, sig);
-        }
-
+        let sigs2: BTreeMap<_, _> = [42, 43, 44, 45]
+            .iter()
+            .map(|&i| {
+                let sig = sk_set.secret_key_share(i).sign(msg);
+                (i, sig)
+            })
+            .collect();
         let sig2 = pk_set.combine_signatures(&sigs2).expect("signatures match");
         assert_eq!(sig, sig2);
-
-        Ok(())
     }
 
     #[test]
@@ -1164,9 +1171,9 @@ mod tests {
     }
 
     #[test]
-    fn test_from_to_bytes() -> Result<()> {
+    fn test_from_to_bytes() {
         let sk: SecretKey = random();
-        let sig = sk.sign("Please sign here: ______")?;
+        let sig = sk.sign("Please sign here: ______");
         let pk = sk.public_key();
         let pk2 = PublicKey::from_bytes(pk.to_bytes()).expect("invalid pk representation");
         assert_eq!(pk, pk2);
@@ -1176,13 +1183,12 @@ mod tests {
         let cipher2 =
             Ciphertext::from_bytes(&cipher.to_bytes()).expect("invalid cipher representation");
         assert_eq!(cipher, cipher2);
-        Ok(())
     }
 
     #[test]
-    fn test_serde() -> Result<()> {
+    fn test_serde() {
         let sk = SecretKey::random();
-        let sig = sk.sign("Please sign here: ______")?;
+        let sig = sk.sign("Please sign here: ______");
         let pk = sk.public_key();
         let ser_pk = bincode::serialize(&pk).expect("serialize public key");
         let deser_pk = bincode::deserialize(&ser_pk).expect("deserialize public key");
@@ -1192,7 +1198,6 @@ mod tests {
         let deser_sig = bincode::deserialize(&ser_sig).expect("deserialize signature");
         assert_eq!(ser_sig.len(), SIG_SIZE);
         assert_eq!(sig, deser_sig);
-        Ok(())
     }
 
     #[cfg(feature = "codec-support")]
@@ -1205,7 +1210,7 @@ mod tests {
         macro_rules! assert_codec {
             ($obj:expr, $type:ty) => {
                 let encoded: Vec<u8> = $obj.encode();
-                let decoded: $type = <$type>::decode(&mut &encoded[..])?;
+                let decoded: $type = <$type>::decode(&mut &encoded[..]).unwrap();
                 assert_eq!(decoded, $obj.clone());
             };
         }
@@ -1269,7 +1274,7 @@ mod tests {
     }
 
     #[test]
-    fn test_interoperability() -> Result<()> {
+    fn test_interoperability() {
         // This test only pases if fn sign and fn verify are using the BLST code
         // https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249-L260
         let skbytes = [
@@ -1294,24 +1299,24 @@ mod tests {
         // little endian bytes.
         let mut leskbytes = skbytes;
         leskbytes.reverse();
-        let sk: SecretKey = bincode::deserialize(&leskbytes)?;
+        let sk: SecretKey = bincode::deserialize(&leskbytes).unwrap();
         let pk = sk.public_key();
         // secret key gives same public key
         assert_eq!(pkbytes, pk.to_bytes());
         // signature matches test vector
-        let sig = sk.sign(&msgbytes)?;
+        let sig = sk.sign(&msgbytes);
         assert_eq!(sigbytes, sig.to_bytes());
         // signature can be verified
-        pk.verify(&sig, msgbytes)?;
-        Ok(())
+        let is_valid = pk.verify(&sig, msgbytes);
+        assert!(is_valid);
     }
 
     #[test]
-    fn test_sk_to_from_bytes() -> Result<()> {
+    fn test_sk_to_from_bytes() {
         use crate::serde_impl::SerdeSecret;
         let sk = SecretKey::random();
         // bincode is little endian, so must reverse to get big endian
-        let mut bincode_bytes = bincode::serialize(&SerdeSecret(&sk))?;
+        let mut bincode_bytes = bincode::serialize(&SerdeSecret(&sk)).unwrap();
         bincode_bytes.reverse();
         // sk.to_bytes() is big endian
         let sk_be_bytes = sk.to_bytes();
@@ -1319,15 +1324,14 @@ mod tests {
         // from bytes gives original secret key
         let restored_sk = SecretKey::from_bytes(sk_be_bytes).expect("invalid sk bytes");
         assert_eq!(sk, restored_sk);
-        Ok(())
     }
 
     #[test]
-    fn vectors_sk_to_from_bytes() -> Result<()> {
+    fn vectors_sk_to_from_bytes() {
         // from https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249
         let sk_hex = "4a353be3dac091a0a7e640620372f5e1e2e4401717c1e79cac6ffba8f6905604";
         let pk_hex = "85695fcbc06cc4c4c9451f4dce21cbf8de3e5a13bf48f44cdbb18e2038ba7b8bb1632d7911ef1e2e08749bddbf165352";
-        let sk_vec = hex::decode(sk_hex)?;
+        let sk_vec = hex::decode(sk_hex).unwrap();
         let mut sk_bytes = [0u8; SK_SIZE];
         sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
         let sk = SecretKey::from_bytes(sk_bytes).expect("invalid sk bytes");
@@ -1335,7 +1339,6 @@ mod tests {
         let pk_bytes = pk.to_bytes();
         let pk_to_hex = &format!("{}", HexFmt(&pk_bytes));
         assert_eq!(pk_to_hex, pk_hex);
-        Ok(())
     }
 
     #[test]
@@ -1381,7 +1384,7 @@ mod tests {
     }
 
     #[test]
-    fn vectors_public_key_set_to_from_bytes() -> Result<()> {
+    fn vectors_public_key_set_to_from_bytes() {
         let vectors = vec![
             // Plain old Public Key Set
             vec![
@@ -1424,7 +1427,7 @@ mod tests {
         ];
         for vector in vectors {
             // read PublicKeyShare from hex
-            let pks_bytes = hex::decode(vector[0])?;
+            let pks_bytes = hex::decode(vector[0]).unwrap();
             let pks = PublicKeySet::from_bytes(pks_bytes).expect("Invalid public key set bytes");
             // check public key
             let pk = pks.public_key();
@@ -1441,8 +1444,6 @@ mod tests {
             let pk_share_2_hex = &format!("{}", HexFmt(&pk_share_2.to_bytes()));
             assert_eq!(pk_share_2_hex, vector[4]);
         }
-
-        Ok(())
     }
 
     #[test]
@@ -1491,7 +1492,7 @@ mod tests {
     }
 
     #[test]
-    fn vectors_secret_key_set_to_from_bytes() -> Result<()> {
+    fn vectors_secret_key_set_to_from_bytes() {
         let vectors = vec![
             // Plain old Secret Key Set
             // Sourced from Poly::reveal and SecretKey::reveal
@@ -1528,7 +1529,7 @@ mod tests {
         ];
         for vector in vectors {
             // read SecretKeyShare from hex
-            let sks_bytes = hex::decode(vector[0])?;
+            let sks_bytes = hex::decode(vector[0]).unwrap();
             let sks = SecretKeySet::from_bytes(sks_bytes).expect("invalid secret key set bytes");
             // check secret key
             let sk = sks.secret_key();
@@ -1545,8 +1546,6 @@ mod tests {
             let sk_share_2_hex = &format!("{}", HexFmt(&sk_share_2.to_bytes()));
             assert_eq!(sk_share_2_hex, vector[4]);
         }
-
-        Ok(())
     }
 
     #[test]
@@ -1624,7 +1623,7 @@ mod tests {
     }
 
     #[test]
-    fn test_derive_child_key_vectors() -> Result<()> {
+    fn test_derive_child_key_vectors() {
         let vectors = vec![
             // Plain old derivation
             vec![
@@ -1717,7 +1716,7 @@ mod tests {
         ];
         for vector in vectors {
             // get parent keypair
-            let sk_vec = hex::decode(vector[0])?;
+            let sk_vec = hex::decode(vector[0]).unwrap();
             let mut sk_bytes = [0u8; SK_SIZE];
             sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
             let sk = SecretKey::from_bytes(sk_bytes).expect("invalid secret key bytes");
@@ -1729,7 +1728,7 @@ mod tests {
             for i in 0..children {
                 let v = 2 + i * 3;
                 // get index
-                let index = hex::decode(vector[v])?;
+                let index = hex::decode(vector[v]).unwrap();
                 // derive child secret key at this index
                 let sk_child = sk.derive_child(&index);
                 let sk_child_hex = &format!("{}", HexFmt(&sk_child.to_bytes()));
@@ -1742,12 +1741,10 @@ mod tests {
                 assert_eq!(sk_child.public_key(), pk_child);
             }
         }
-
-        Ok(())
     }
 
     #[test]
-    fn test_ciphertext_vectors() -> Result<()> {
+    fn test_ciphertext_vectors() {
         let vectors = vec![
             // Plain old ciphertext
             vec![
@@ -1770,27 +1767,20 @@ mod tests {
         ];
         for vector in vectors {
             // get secret key
-            let sk_vec =
-                hex::decode(vector[0]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
+            let sk_vec = hex::decode(vector[0]).unwrap();
             let mut sk_bytes = [0u8; SK_SIZE];
             sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
-            let sk = SecretKey::from_bytes(sk_bytes)
-                .map_err(|err| eyre!("invalid secret key bytes: {}", err))?;
+            let sk = SecretKey::from_bytes(sk_bytes).expect("invalid secret key bytes");
             // get ciphertext
-            let ct_vec =
-                hex::decode(vector[2]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
-            let ct = Ciphertext::from_bytes(&ct_vec)
-                .map_err(|err| eyre!("invalid ciphertext bytes: {}", err))?;
+            let ct_vec = hex::decode(vector[2]).unwrap();
+            let ct = Ciphertext::from_bytes(&ct_vec).expect("invalid ciphertext bytes");
             // check the ciphertext is valid
             assert!(ct.verify());
             // check the decrypted ciphertext matches the original message
-            let msg_vec =
-                hex::decode(vector[1]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
-            let plaintext = sk.decrypt(&ct).ok_or_else(|| eyre!("decryption failed"))?;
+            let msg_vec = hex::decode(vector[1]).unwrap();
+            let plaintext = sk.decrypt(&ct).expect("decryption failed");
             assert_eq!(plaintext, msg_vec);
         }
-
-        Ok(())
     }
 
     #[test]
@@ -1844,7 +1834,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sk_set_child_sig() -> Result<()> {
+    fn test_sk_set_child_sig() {
         // combining signatures from child keyshares produces
         // a valid signature for the child public key set
         let mut rng = rand::thread_rng();
@@ -1872,19 +1862,19 @@ mod tests {
             .collect();
         // all participants sign a message with their child keyshare
         let msg = "Totally real news";
-        let mut child_sig_shares = BTreeMap::default();
-        for (i, child_key_share) in child_key_shares.iter() {
-            let child_sig_share = child_key_share.sign(&msg)?;
-            child_sig_shares.insert(i, child_sig_share);
-        }
+        let child_sig_shares: BTreeMap<_, _> = child_key_shares
+            .iter()
+            .map(|(i, child_key_share)| {
+                let child_sig_share = child_key_share.sign(&msg);
+                (i, child_sig_share)
+            })
+            .collect();
         // Combining the child shares creates a valid signature for the child
         // public key set.
         let pks_child = pks.derive_child(&index);
         let sig = pks_child
             .combine_signatures(&child_sig_shares)
-            .map_err(|err| eyre!("signatures match: {}", err))?;
-        pks_child.public_key().verify(&sig, msg)?;
-
-        Ok(())
+            .expect("signatures match");
+        assert!(pks_child.public_key().verify(&sig, msg));
     }
 }

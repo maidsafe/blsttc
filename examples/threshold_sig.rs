@@ -1,4 +1,3 @@
-use eyre::Result;
 use std::collections::BTreeMap;
 
 use blsttc::{
@@ -116,11 +115,12 @@ impl ChatNetwork {
         for (user_id, signed_msgs) in &all_pending {
             for (msg, sigs) in signed_msgs.iter() {
                 let sigs = sigs.iter().filter_map(|node_sig| {
-                    if let Ok(()) = self
+                    let node_sig_is_valid = self
                         .get_node(node_sig.node_id)
                         .pk_share
-                        .verify(&node_sig.sig, msg.as_bytes())
-                    {
+                        .verify(&node_sig.sig, msg.as_bytes());
+
+                    if node_sig_is_valid {
                         Some((node_sig.node_id, &node_sig.sig))
                     } else {
                         None
@@ -157,10 +157,10 @@ impl Node {
 
     // Receives a message from a user, signs the message with the node's signing-key share,
     // then adds the signed message to its database of `pending` messages.
-    fn recv(&mut self, user_id: UserId, msg: Msg) -> Result<()> {
+    fn recv(&mut self, user_id: UserId, msg: Msg) {
         let sig = NodeSignature {
             node_id: self.id,
-            sig: self.sk_share.sign(msg.as_bytes())?,
+            sig: self.sk_share.sign(msg.as_bytes()),
         };
         self.pending
             .entry(user_id)
@@ -168,8 +168,6 @@ impl Node {
             .entry(msg)
             .or_insert_with(Vec::new)
             .push(sig);
-
-        Ok(())
     }
 }
 
@@ -190,13 +188,12 @@ impl User {
     }
 
     // Sends a message to one of the network's validator nodes.
-    fn send(&self, node: &mut Node, msg: Msg) -> Result<()> {
-        node.recv(self.id, msg)?;
-        Ok(())
+    fn send(&self, node: &mut Node, msg: Msg) {
+        node.recv(self.id, msg);
     }
 }
 
-fn main() -> Result<()> {
+fn main() {
     // Creates a new network of 3 nodes running our chat protocol. The protocol has a
     // signing-threshold of 1. This means each message requires 2 validator signatures before it can be
     // added to the chat log.
@@ -211,7 +208,7 @@ fn main() -> Result<()> {
     // Alice sends her message to a validator. The validator signs the message. Before Alice can
     // send her message to a second validator, the network runs a round of consensus. Because
     // Alice's message has only one validator signature, it is not added to the chat log.
-    alice.send(network.get_mut_node(node1), alice_greeting.clone())?;
+    alice.send(network.get_mut_node(node1), alice_greeting.clone());
     network.step();
     assert!(network.chat_log.is_empty());
 
@@ -219,9 +216,7 @@ fn main() -> Result<()> {
     // message now has two signatures (which is `threshold + 1` signatures). The network runs a
     // round of consensus, which successfully creates a combined-signature for Alice's message.
     // Alice's message is appended to the chat log.
-    alice.send(network.get_mut_node(node2), alice_greeting)?;
+    alice.send(network.get_mut_node(node2), alice_greeting);
     network.step();
     assert_eq!(network.chat_log.len(), 1);
-
-    Ok(())
 }
