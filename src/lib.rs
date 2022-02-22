@@ -558,18 +558,18 @@ impl PublicKeySet {
     /// let msg = "Happy birthday! If this is signed, at least four people remembered!";
     ///
     /// // Create four signature shares for the message.
-    /// let sig_shares: BTreeMap<_, _> = (0..4).map(|i| (i, sk_shares[i].sign(msg).expect("failed to sign msg"))).collect();
+    /// let sig_shares: BTreeMap<_, _> = (0..4).map(|i| (i, sk_shares[i].sign(msg))).collect();
     ///
     /// // Validate the signature shares.
     /// for (i, sig_share) in &sig_shares {
-    ///     pk_set.public_key_share(*i).verify(sig_share, msg).expect("signature verification failed");
+    ///     assert!(pk_set.public_key_share(*i).verify(sig_share, msg));
     /// }
     ///
     /// // Combine them to produce the main signature.
     /// let sig = pk_set.combine_signatures(&sig_shares).expect("not enough shares");
     ///
     /// // Validate the main signature. If the shares were valid, this can't fail.
-    /// pk_set.public_key().verify(&sig, msg).expect("signature verification failed");
+    /// assert!(pk_set.public_key().verify(&sig, msg));
     /// ```
     pub fn combine_signatures<T, I, S: Borrow<SignatureShare>>(
         &self,

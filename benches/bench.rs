@@ -304,7 +304,7 @@ mod public_key_set_benches {
                     let pk_set = sk_set.public_keys();
                     let mut sigs = BTreeMap::default();
                     for i in 0..=*threshold {
-                        let sig = sk_set.secret_key_share(i).sign(msg).unwrap();
+                        let sig = sk_set.secret_key_share(i).sign(msg);
                         sigs.insert(i, sig);
                     }
 

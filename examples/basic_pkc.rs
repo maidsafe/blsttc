@@ -1,6 +1,6 @@
 use bincode::{deserialize, serialize};
-use serde::{Deserialize, Serialize};
 use blsttc::{PublicKey, Result, SecretKey, Signature};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 struct SignedMsg {

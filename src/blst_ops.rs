@@ -1,7 +1,7 @@
 //! Conversion between bls12_381 types and bytes.
 
-use crate::{PK_SIZE, SIG_SIZE, SK_SIZE};
 use crate::error::{Error, Result};
+use crate::{PK_SIZE, SIG_SIZE, SK_SIZE};
 
 use blst::{
     blst_bendian_from_scalar, blst_expand_message_xmd, blst_final_exp, blst_fp, blst_fp12,

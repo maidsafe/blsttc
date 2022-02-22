@@ -9,7 +9,7 @@ use rand::RngCore;
 use tiny_keccak::{Hasher, Sha3};
 
 /// Generate a random fr using bls-sig-keygen as described in
-/// https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-02#section-2.3
+/// <https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-02#section-2.3>
 pub fn fr_random(mut rng: impl RngCore) -> Fr {
     let mut fr = blst_fr::default();
     let mut scalar = blst_scalar::default();

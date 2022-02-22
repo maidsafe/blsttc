@@ -25,12 +25,12 @@ use std::{cmp, iter, ops};
 use rand::Rng;
 use zeroize::Zeroize;
 
-use crate::error::{Error, Result};
 use crate::blst_ops::{
     fr_add_assign, fr_from_be_bytes, fr_inverse, fr_mul_assign, fr_negate, fr_sub_assign,
     fr_to_be_bytes, fr_to_scalar, p1_add_assign, p1_from_be_bytes, p1_mul_assign_scalar, p1_mul_fr,
     p1_to_be_bytes, FR_ONE, FR_ZERO, P1_ONE, P1_ZERO,
 };
+use crate::error::{Error, Result};
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
 use crate::util::fr_random;
