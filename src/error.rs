@@ -1,11 +1,7 @@
 //! Crypto errors.
-use blst::BLST_ERROR as BlstError;
 use ff::PrimeFieldDecodingError;
 
 use thiserror::Error;
-
-/// A crypto result.
-pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// A crypto error.
 #[derive(Clone, Eq, PartialEq, Debug, Error)]
@@ -19,32 +15,10 @@ pub enum Error {
     /// The degree is too high for the coefficients to be indexed by `usize`.
     #[error("The degree is too high for the coefficients to be indexed by usize.")]
     DegreeTooHigh,
-    /// An error reading a structure from an array of bytes. Invalid bytes representation.
-    #[error("Invalid bytes representation.")]
-    InvalidBytes,
-    /// BLST error
-    #[error("BLST error: {0}")]
-    BlstError(String),
 }
 
-impl From<PrimeFieldDecodingError> for Error {
-    fn from(_: PrimeFieldDecodingError) -> Self {
-        Error::InvalidBytes
-    }
-}
-
-impl From<BlstError> for Error {
-    fn from(error: BlstError) -> Self {
-        if error == BlstError::BLST_SUCCESS {
-            Error::BlstError(format!(
-                "received inconsistent and unexpected result: {:?}",
-                error
-            ))
-        } else {
-            Error::BlstError(format!("{:?}", error))
-        }
-    }
-}
+/// A crypto result.
+pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[cfg(test)]
 mod tests {
@@ -56,5 +30,22 @@ mod tests {
     #[test]
     fn errors_are_send_and_sync() {
         is_send_and_sync(Error::NotEnoughShares);
+    }
+}
+
+/// An error reading a structure from an array of bytes.
+#[derive(Clone, Eq, PartialEq, Debug, Error)]
+pub enum FromBytesError {
+    /// Invalid representation
+    #[error("Invalid representation.")]
+    Invalid,
+}
+
+/// The result of attempting to read a structure from an array of bytes.
+pub type FromBytesResult<T> = ::std::result::Result<T, FromBytesError>;
+
+impl From<PrimeFieldDecodingError> for FromBytesError {
+    fn from(_: PrimeFieldDecodingError) -> Self {
+        FromBytesError::Invalid
     }
 }

@@ -31,7 +31,7 @@ use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
 use crate::convert::{fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes};
-use crate::error::{Error, Result};
+use crate::error::{Error, FromBytesResult, Result};
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
 use crate::{Fr, G1Affine, G1, PK_SIZE, SK_SIZE};
@@ -394,7 +394,7 @@ impl Poly {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
         let mut c: Vec<Fr> = vec![];
         let coeff_size = bytes.len() / SK_SIZE;
         for i in 0..coeff_size {
@@ -563,7 +563,7 @@ impl Commitment {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
         let mut c: Vec<G1> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
@@ -733,7 +733,7 @@ impl BivarPoly {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
         let mut c: Vec<Fr> = vec![];
         let coeff_size = bytes.len() / SK_SIZE;
         for coeff_index in 0..coeff_size {
@@ -855,7 +855,7 @@ impl BivarCommitment {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
         let mut c: Vec<G1> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
@@ -897,7 +897,6 @@ pub(crate) fn coeff_pos(i: usize, j: usize) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use eyre::{eyre, Result};
     use std::collections::BTreeMap;
 
     use super::fr_to_be_bytes;
@@ -1098,7 +1097,7 @@ mod tests {
     }
 
     #[test]
-    fn vectors_bivar_commitment_to_from_bytes() -> Result<()> {
+    fn vectors_bivar_commitment_to_from_bytes() {
         let vectors = vec![
             // Plain old Bivar Commitment
             vec![
@@ -1112,8 +1111,7 @@ mod tests {
         ];
         for vector in vectors {
             // read bivar commitment
-            let bi_commit_bytes =
-                hex::decode(vector[0]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
+            let bi_commit_bytes = hex::decode(vector[0]).unwrap();
             let bi_commit = BivarCommitment::from_bytes(bi_commit_bytes)
                 .expect("invalid bivar commitment bytes");
             // check row 0
@@ -1125,8 +1123,6 @@ mod tests {
             let row_1_hex = &format!("{}", HexFmt(&row_1.to_bytes()));
             assert_eq!(row_1_hex, vector[2]);
         }
-
-        Ok(())
     }
 
     #[test]
@@ -1204,7 +1200,7 @@ mod tests {
     }
 
     #[test]
-    fn vectors_bivar_poly_to_from_bytes() -> Result<()> {
+    fn vectors_bivar_poly_to_from_bytes() {
         let vectors = vec![
             // Plain old Bivar Poly
             // Sourced from BivarPoly::reveal and Poly::reveal
@@ -1219,8 +1215,7 @@ mod tests {
         ];
         for vector in vectors {
             // read BivarPoly from hex
-            let bi_poly_bytes =
-                hex::decode(vector[0]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
+            let bi_poly_bytes = hex::decode(vector[0]).unwrap();
             let bi_poly = BivarPoly::from_bytes(bi_poly_bytes).expect("invalid bipoly bytes");
             // check row 0
             let row_0 = bi_poly.row(0);
@@ -1231,7 +1226,5 @@ mod tests {
             let row_1_hex = &format!("{}", HexFmt(&row_1.to_bytes()));
             assert_eq!(row_1_hex, vector[2]);
         }
-
-        Ok(())
     }
 }

@@ -1,4 +1,3 @@
-use eyre::{eyre, Result};
 use std::collections::BTreeMap;
 
 use blsttc::{
@@ -97,47 +96,37 @@ struct DecryptionMeeting {
 
 impl DecryptionMeeting {
     // An actor contributes their decryption share to the decryption process.
-    fn accept_decryption_share(&mut self, actor: &mut Actor) -> Result<()> {
-        let ciphertext = actor
-            .msg_inbox
-            .take()
-            .ok_or_else(|| eyre!("no msg in inbox"))?;
+    fn accept_decryption_share(&mut self, actor: &mut Actor) {
+        let ciphertext = actor.msg_inbox.take().unwrap();
 
         // Check that the actor's ciphertext is the same ciphertext decrypted at the meeting.
         // The first actor to arrive at the decryption meeting sets the meeting's ciphertext.
         if let Some(ref meeting_ciphertext) = self.ciphertext {
             if ciphertext != *meeting_ciphertext {
-                return Ok(());
+                return;
             }
         } else {
             self.ciphertext = Some(ciphertext.clone());
         }
 
-        let dec_share = actor
-            .sk_share
-            .decrypt_share(&ciphertext)
-            .ok_or_else(|| eyre!("failed to decrpyt ciphertext"))?;
+        let dec_share = actor.sk_share.decrypt_share(&ciphertext).unwrap();
         let dec_share_is_valid = actor
             .pk_share
             .verify_decryption_share(&dec_share, &ciphertext);
         assert!(dec_share_is_valid);
         self.dec_shares.insert(actor.id, dec_share);
-
-        Ok(())
     }
 
     // Tries to decrypt the shared ciphertext using the decryption shares.
-    fn decrypt_message(&self) -> Result<Vec<u8>> {
-        let ciphertext = self
-            .ciphertext
-            .clone()
-            .ok_or_else(|| eyre!("missing cyphertext"))?;
-        let bytes = self.pk_set.decrypt(&self.dec_shares, &ciphertext)?;
-        Ok(bytes)
+    fn decrypt_message(&self) -> Result<Vec<u8>, ()> {
+        let ciphertext = self.ciphertext.clone().unwrap();
+        self.pk_set
+            .decrypt(&self.dec_shares, &ciphertext)
+            .map_err(|_| ())
     }
 }
 
-fn main() -> Result<()> {
+fn main() {
     // Create a `SecretSociety` with 3 actors. Any message encrypted with the society's public-key
     // will require 2 or more actors working together to decrypt (i.e. the decryption threshold is
     // 1). Once the secret society has created its master keys, it "deals" a secret-key share and
@@ -166,21 +155,21 @@ fn main() -> Result<()> {
 
     // Alice is the first actor to arrive at the meeting, she provides her decryption share. One
     // actor alone cannot decrypt the ciphertext, decryption fails.
-    meeting.accept_decryption_share(society.get_actor(alice))?;
+    meeting.accept_decryption_share(society.get_actor(alice));
     assert!(meeting.decrypt_message().is_err());
 
     // Bob joins the meeting and provides his decryption share. Alice and Bob are now collaborating
     // to decrypt the ciphertext, they succeed because the society requires two or more actors for
     // decryption.
-    meeting.accept_decryption_share(society.get_actor(bob))?;
-    let res = meeting.decrypt_message()?;
-    assert_eq!(msg, res.as_slice());
+    meeting.accept_decryption_share(society.get_actor(bob));
+    let mut res = meeting.decrypt_message();
+    assert!(res.is_ok());
+    assert_eq!(msg, res.unwrap().as_slice());
 
     // Clara joins the meeting and provides her decryption share. We already are able to decrypt
     // the ciphertext with 2 actors, but let's show that we can with 3 actors as well.
-    meeting.accept_decryption_share(society.get_actor(clara))?;
-    let res = meeting.decrypt_message()?;
-    assert_eq!(msg, res.as_slice());
-
-    Ok(())
+    meeting.accept_decryption_share(society.get_actor(clara));
+    res = meeting.decrypt_message();
+    assert!(res.is_ok());
+    assert_eq!(msg, res.unwrap().as_slice());
 }
