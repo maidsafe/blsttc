@@ -1,20 +1,24 @@
 //! Crypto errors.
-use ff::PrimeFieldDecodingError;
-
 use thiserror::Error;
 
 /// A crypto error.
 #[derive(Clone, Eq, PartialEq, Debug, Error)]
 pub enum Error {
     /// Not enough signature shares.
-    #[error("Not enough signature shares")]
+    #[error("Not enough shares for interpolation")]
     NotEnoughShares,
-    /// Signature shares contain a duplicated index.
-    #[error("Signature shares contain a duplicated index")]
+    /// Samples for interpolation contain a duplicated index.
+    #[error("Samples for interpolation contain a duplicated index")]
     DuplicateEntry,
     /// The degree is too high for the coefficients to be indexed by `usize`.
     #[error("The degree is too high for the coefficients to be indexed by usize.")]
     DegreeTooHigh,
+    /// An error reading a structure from an array of bytes. Invalid bytes representation.
+    #[error("Invalid bytes representation.")]
+    InvalidBytes,
+    /// The result of Hash To Field is zero which should never happen.
+    #[error("Hash To Field returned zero")]
+    HashToFieldIsZero,
 }
 
 /// A crypto result.
@@ -30,22 +34,5 @@ mod tests {
     #[test]
     fn errors_are_send_and_sync() {
         is_send_and_sync(Error::NotEnoughShares);
-    }
-}
-
-/// An error reading a structure from an array of bytes.
-#[derive(Clone, Eq, PartialEq, Debug, Error)]
-pub enum FromBytesError {
-    /// Invalid representation
-    #[error("Invalid representation.")]
-    Invalid,
-}
-
-/// The result of attempting to read a structure from an array of bytes.
-pub type FromBytesResult<T> = ::std::result::Result<T, FromBytesError>;
-
-impl From<PrimeFieldDecodingError> for FromBytesError {
-    fn from(_: PrimeFieldDecodingError) -> Self {
-        FromBytesError::Invalid
     }
 }

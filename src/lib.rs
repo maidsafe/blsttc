@@ -1,24 +1,18 @@
 //! A pairing-based threshold cryptosystem for collaborative decryption and signatures.
 
 // Clippy warns that it's dangerous to derive `PartialEq` and explicitly implement `Hash`, but the
-// `pairing::bls12_381` types don't implement `Hash`, so we can't derive it.
+// `blstrs` types don't implement `Hash`, so we can't derive it.
 #![allow(clippy::derive_hash_xor_eq)]
 #![warn(missing_docs)]
 
-pub use ff;
 pub use group;
-pub use pairing;
 
 mod cmp_pairing;
+mod convert;
 mod into_fr;
 mod secret;
 mod util;
 
-#[cfg(feature = "codec-support")]
-#[macro_use]
-mod codec_impl;
-
-pub mod convert;
 pub mod error;
 pub mod poly;
 pub mod serde_impl;
@@ -27,12 +21,10 @@ use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::vec::Vec;
+use std::ops::{AddAssign, Mul, MulAssign, SubAssign};
 
-use ff::Field;
-use group::{CurveAffine, CurveProjective, EncodedPoint};
+use group::{ff::Field, prime::PrimeCurveAffine, Curve, Group};
 use hex_fmt::HexFmt;
-use log::debug;
 use pairing::Engine;
 use rand::distributions::{Distribution, Standard};
 use rand::{rngs::OsRng, Rng, RngCore, SeedableRng};
@@ -41,24 +33,16 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_projective;
-use crate::error::{Error, FromBytesError, FromBytesResult, Result};
+use crate::convert::{derivation_index_into_fr, fr_from_bytes, g1_from_bytes, g2_from_bytes};
+pub use crate::error::{Error, Result};
+pub use crate::into_fr::IntoFr;
 use crate::poly::{Commitment, Poly};
 use crate::secret::clear_fr;
+use crate::util::sha3_256;
 
-pub use crate::into_fr::IntoFr;
-
-use convert::{
-    fr_from_be_bytes, fr_to_be_bytes, g1_from_be_bytes, g1_to_be_bytes, g2_from_be_bytes,
-    g2_to_be_bytes,
+pub use blstrs::{
+    Bls12 as PEngine, G1Affine, G1Projective as G1, G2Affine, G2Projective as G2, Scalar as Fr,
 };
-use util::{derivation_index_into_fr, sha3_256};
-
-use blst::{
-    min_pk::{PublicKey as BlstPublicKey, SecretKey as BlstSecretKey, Signature as BlstSignature},
-    BLST_ERROR,
-};
-
-pub use pairing::bls12_381::{Bls12 as PEngine, Fr, FrRepr, G1Affine, G2Affine, G1, G2};
 
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
@@ -78,13 +62,13 @@ pub struct PublicKey(#[serde(with = "serde_impl::projective")] G1);
 
 impl Hash for PublicKey {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.into_affine().into_compressed().as_ref().hash(state);
+        self.0.to_affine().to_compressed().as_ref().hash(state);
     }
 }
 
 impl fmt::Debug for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = self.0.into_affine().into_uncompressed();
+        let uncomp = self.0.to_affine().to_uncompressed();
         write!(f, "PublicKey({:0.10})", HexFmt(uncomp))
     }
 }
@@ -104,19 +88,13 @@ impl Ord for PublicKey {
 impl PublicKey {
     /// Returns `true` if the signature matches the element of `G2`.
     pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &Signature, hash: H) -> bool {
-        PEngine::pairing(self.0, hash) == PEngine::pairing(G1Affine::one(), sig.0)
+        PEngine::pairing(&self.0.to_affine(), &hash.into())
+            == PEngine::pairing(&G1Affine::generator(), &sig.0.to_affine())
     }
 
     /// Returns `true` if the signature matches the message.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &Signature, msg: M) -> bool {
-        // TC
-        //self.verify_g2(sig, hash_g2(msg))
-        // BLST
-        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes()).unwrap();
-        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes()).unwrap();
-        blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false) == BLST_ERROR::BLST_SUCCESS
-        // DISABLED
-        //true
+        self.verify_g2(sig, hash_g2(msg))
     }
 
     /// Encrypts the message using the OS random number generator.
@@ -130,12 +108,12 @@ impl PublicKey {
     /// Encrypts the message.
     pub fn encrypt_with_rng<R: RngCore, M: AsRef<[u8]>>(&self, rng: &mut R, msg: M) -> Ciphertext {
         let r: Fr = Fr::random(rng);
-        let u = G1Affine::one().mul(r);
+        let u = G1Affine::generator().mul(r);
         let v: Vec<u8> = {
-            let g = self.0.into_affine().mul(r);
+            let g = self.0.to_affine().mul(r);
             xor_with_hash(g, msg.as_ref())
         };
-        let w = hash_g1_g2(u, &v).into_affine().mul(r);
+        let w = hash_g1_g2(u, &v).to_affine().mul(r);
         Ciphertext(u, v, w)
     }
 
@@ -148,25 +126,24 @@ impl PublicKey {
     }
 
     /// Returns the key with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
-        let g1 = g1_from_be_bytes(bytes)?;
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
+        let g1 = g1_from_bytes(bytes)?;
         Ok(PublicKey(g1))
     }
 
     /// Returns a byte string representation of the public key.
     pub fn to_bytes(self) -> [u8; PK_SIZE] {
-        g1_to_be_bytes(self.0)
+        self.0.to_compressed()
     }
 }
 
 /// A public key share.
-#[cfg_attr(feature = "codec-support", derive(codec::Encode, codec::Decode))]
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct PublicKeyShare(PublicKey);
 
 impl fmt::Debug for PublicKeyShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = (self.0).0.into_affine().into_uncompressed();
+        let uncomp = self.0 .0.to_affine().to_uncompressed();
         write!(f, "PublicKeyShare({:0.10})", HexFmt(uncomp))
     }
 }
@@ -179,21 +156,15 @@ impl PublicKeyShare {
 
     /// Returns `true` if the signature matches the message.
     pub fn verify<M: AsRef<[u8]>>(&self, sig: &SignatureShare, msg: M) -> bool {
-        // TC
-        //self.verify_g2(sig, hash_g2(msg))
-        // BLST
-        let blst_sig = BlstSignature::from_bytes(&sig.to_bytes()).unwrap();
-        let blst_pk = BlstPublicKey::from_bytes(&self.to_bytes()).unwrap();
-        blst_sig.verify(false, msg.as_ref(), DST, &[], &blst_pk, false) == BLST_ERROR::BLST_SUCCESS
-        // DISABLED
-        //true
+        self.0.verify(&sig.0, msg)
     }
 
     /// Returns `true` if the decryption share matches the ciphertext.
     pub fn verify_decryption_share(&self, share: &DecryptionShare, ct: &Ciphertext) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *ct;
         let hash = hash_g1_g2(*u, v);
-        PEngine::pairing(share.0, hash) == PEngine::pairing((self.0).0, *w)
+        PEngine::pairing(&share.0.to_affine(), &hash.to_affine())
+            == PEngine::pairing(&(self.0).0.to_affine(), &w.to_affine())
     }
 
     /// Derives a child public key share for a given index.
@@ -202,7 +173,7 @@ impl PublicKeyShare {
     }
 
     /// Returns the key share with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
         Ok(PublicKeyShare(PublicKey::from_bytes(bytes)?))
     }
 
@@ -237,42 +208,39 @@ impl Distribution<Signature> for Standard {
 
 impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = self.0.into_affine().into_uncompressed();
+        let uncomp = self.0.to_affine().to_uncompressed();
         write!(f, "Signature({:0.10})", HexFmt(uncomp))
     }
 }
 
 impl Hash for Signature {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.into_affine().into_compressed().as_ref().hash(state);
+        self.0.to_affine().to_compressed().as_ref().hash(state);
     }
 }
 
 impl Signature {
     /// Returns `true` if the signature contains an odd number of ones.
     pub fn parity(&self) -> bool {
-        let uncomp = self.0.into_affine().into_uncompressed();
+        let uncomp = self.0.to_affine().to_uncompressed();
         let xor_bytes: u8 = uncomp.as_ref().iter().fold(0, |result, byte| result ^ byte);
-        let parity = 0 != xor_bytes.count_ones() % 2;
-        debug!("Signature: {:0.10}, parity: {}", HexFmt(uncomp), parity);
-        parity
+        0 != xor_bytes.count_ones() % 2
     }
 
     /// Returns the signature with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
-        let g2 = g2_from_be_bytes(bytes)?;
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
+        let g2 = g2_from_bytes(bytes)?;
         Ok(Signature(g2))
     }
 
     /// Returns a byte string representation of the signature.
     pub fn to_bytes(&self) -> [u8; SIG_SIZE] {
-        g2_to_be_bytes(self.0)
+        self.0.to_compressed()
     }
 }
 
 /// A signature share.
 // Note: Random signature shares can be generated for testing.
-#[cfg_attr(feature = "codec-support", derive(codec::Encode, codec::Decode))]
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct SignatureShare(pub Signature);
 
@@ -284,14 +252,14 @@ impl Distribution<SignatureShare> for Standard {
 
 impl fmt::Debug for SignatureShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let uncomp = (self.0).0.into_affine().into_uncompressed();
+        let uncomp = (self.0).0.to_affine().to_uncompressed();
         write!(f, "SignatureShare({:0.10})", HexFmt(uncomp))
     }
 }
 
 impl SignatureShare {
     /// Returns the signature share with the given representation, if valid.
-    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; SIG_SIZE]) -> Result<Self> {
         Ok(SignatureShare(Signature::from_bytes(bytes)?))
     }
 
@@ -377,7 +345,7 @@ impl SecretKey {
 
     /// Returns the matching public key.
     pub fn public_key(&self) -> PublicKey {
-        PublicKey(G1Affine::one().mul(self.0))
+        PublicKey(G1Affine::generator() * self.0)
     }
 
     /// Signs the given element of `G2`.
@@ -387,32 +355,17 @@ impl SecretKey {
 
     /// Signs the given message.
     pub fn sign<M: AsRef<[u8]>>(&self, msg: M) -> Signature {
-        // TC
-        //self.sign_g2(hash_g2(msg))
-        // BLST
-        let blst_sk = BlstSecretKey::from_bytes(&self.to_bytes()).unwrap();
-        let blst_sig = blst_sk.sign(msg.as_ref(), DST, &[]);
-        Signature::from_bytes(blst_sig.to_bytes()).unwrap()
-        // DISABLED
-        //Signature::from_bytes([
-        //    174, 110, 104, 53, 218, 40, 126, 73, 178, 216, 213, 13, 22, 20,
-        //    166, 46, 201, 163, 42, 74, 181, 235, 176, 22, 48, 117, 85, 234,
-        //    236, 215, 64, 46, 166, 100, 98, 63, 112, 27, 79, 224, 189, 80,
-        //    214, 39, 45, 233, 94, 141, 1, 14, 227, 20, 128, 126, 235, 99, 222,
-        //    6, 89, 192, 186, 12, 237, 209, 190, 36, 2, 126, 48, 168, 57, 240,
-        //    25, 169, 238, 190, 77, 132, 88, 41, 192, 45, 221, 113, 162, 17,
-        //    127, 230, 122, 254, 54, 247, 58, 169, 160, 151
-        //]).unwrap()
+        self.sign_g2(hash_g2(msg))
     }
 
     /// Converts the secret key to big endian bytes
     pub fn to_bytes(&self) -> [u8; SK_SIZE] {
-        fr_to_be_bytes(self.0)
+        self.0.to_bytes_be()
     }
 
     /// Deserialize from big endian bytes
-    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Self> {
-        let mut fr = fr_from_be_bytes(bytes)?;
+    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> Result<Self> {
+        let mut fr = fr_from_bytes(bytes)?;
         Ok(SecretKey::from_mut(&mut fr))
     }
 
@@ -422,7 +375,7 @@ impl SecretKey {
             return None;
         }
         let Ciphertext(ref u, ref v, _) = *ct;
-        let g = u.into_affine().mul(self.0);
+        let g = u.to_affine().mul(self.0);
         Some(xor_with_hash(g, v))
     }
 
@@ -501,7 +454,7 @@ impl SecretKeyShare {
 
     /// Returns a decryption share, without validating the ciphertext.
     pub fn decrypt_share_no_verify(&self, ct: &Ciphertext) -> DecryptionShare {
-        DecryptionShare(ct.0.into_affine().mul((self.0).0))
+        DecryptionShare(ct.0.to_affine() * (self.0).0)
     }
 
     /// Generates a non-redacted debug string. This method differs from
@@ -522,7 +475,7 @@ impl SecretKeyShare {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: [u8; SK_SIZE]) -> Result<Self> {
         Ok(SecretKeyShare(SecretKey::from_bytes(bytes)?))
     }
 }
@@ -538,9 +491,9 @@ pub struct Ciphertext(
 impl Hash for Ciphertext {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let Ciphertext(ref u, ref v, ref w) = *self;
-        u.into_affine().into_compressed().as_ref().hash(state);
+        u.to_affine().to_compressed().as_ref().hash(state);
         v.hash(state);
-        w.into_affine().into_compressed().as_ref().hash(state);
+        w.to_affine().to_compressed().as_ref().hash(state);
     }
 }
 
@@ -566,48 +519,37 @@ impl Ciphertext {
     pub fn verify(&self) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *self;
         let hash = hash_g1_g2(*u, v);
-        PEngine::pairing(G1Affine::one(), *w) == PEngine::pairing(*u, hash)
+        PEngine::pairing(&G1Affine::generator(), &w.to_affine())
+            == PEngine::pairing(&u.to_affine(), &hash.to_affine())
     }
 
     /// Returns byte representation of Ciphertext
     pub fn to_bytes(&self) -> Vec<u8> {
         let Ciphertext(ref u, ref v, ref w) = *self;
         let mut result: Vec<u8> = Default::default();
-        result.extend(u.into_affine().into_compressed().as_ref());
-        result.extend(w.into_affine().into_compressed().as_ref());
+        result.extend(u.to_affine().to_compressed().as_ref());
+        result.extend(w.to_affine().to_compressed().as_ref());
         result.extend(v);
         result
     }
 
     /// Returns the Ciphertext with the given representation, if valid.
-    pub fn from_bytes(bytes: &[u8]) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < PK_SIZE + SIG_SIZE + 1 {
-            return Err(FromBytesError::Invalid);
+            return Err(Error::InvalidBytes);
         }
 
-        let mut u_compressed: <G1Affine as CurveAffine>::Compressed = EncodedPoint::empty();
-        u_compressed.as_mut().copy_from_slice(&bytes[0..PK_SIZE]);
+        let mut ubytes: [u8; PK_SIZE] = [0u8; PK_SIZE];
+        ubytes.copy_from_slice(&bytes[0..PK_SIZE]);
+        let u = g1_from_bytes(ubytes)?;
 
-        let mut w_compressed: <G2Affine as CurveAffine>::Compressed = EncodedPoint::empty();
-        w_compressed
-            .as_mut()
-            .copy_from_slice(&bytes[PK_SIZE..PK_SIZE + SIG_SIZE]);
+        let mut wbytes: [u8; SIG_SIZE] = [0u8; SIG_SIZE];
+        wbytes.copy_from_slice(&bytes[PK_SIZE..PK_SIZE + SIG_SIZE]);
+        let w = g2_from_bytes(wbytes)?;
 
         let v: Vec<u8> = (&bytes[PK_SIZE + SIG_SIZE..]).to_vec();
 
-        Ok(Self(
-            u_compressed
-                .into_affine()
-                .ok()
-                .ok_or(FromBytesError::Invalid)?
-                .into_projective(),
-            v,
-            w_compressed
-                .into_affine()
-                .ok()
-                .ok_or(FromBytesError::Invalid)?
-                .into_projective(),
-        ))
+        Ok(Self(u, v, w))
     }
 }
 
@@ -623,7 +565,7 @@ impl Distribution<DecryptionShare> for Standard {
 
 impl Hash for DecryptionShare {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.into_affine().into_compressed().as_ref().hash(state);
+        self.0.to_affine().to_compressed().as_ref().hash(state);
     }
 }
 
@@ -635,14 +577,14 @@ impl fmt::Debug for DecryptionShare {
 
 impl DecryptionShare {
     /// Deserializes the share from big endian bytes
-    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> FromBytesResult<Self> {
-        let g1 = g1_from_be_bytes(bytes)?;
+    pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
+        let g1 = g1_from_bytes(bytes)?;
         Ok(DecryptionShare(g1))
     }
 
     /// Serializes the share as big endian bytes
     pub fn to_bytes(&self) -> [u8; PK_SIZE] {
-        g1_to_be_bytes(self.0)
+        self.0.to_compressed()
     }
 }
 
@@ -773,7 +715,7 @@ impl PublicKeySet {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
         let commit = Commitment::from_bytes(bytes)?;
         Ok(PublicKeySet { commit })
     }
@@ -869,7 +811,7 @@ impl SecretKeySet {
     }
 
     /// Deserializes from big endian bytes
-    pub fn from_bytes(bytes: Vec<u8>) -> FromBytesResult<Self> {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
         let poly = Poly::from_bytes(bytes)?;
         Ok(SecretKeySet { poly })
     }
@@ -877,8 +819,7 @@ impl SecretKeySet {
 
 /// Returns a hash of the given message in `G2`.
 pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2 {
-    let digest = sha3_256(msg.as_ref());
-    G2::random(&mut ChaChaRng::from_seed(digest))
+    G2::hash_to_curve(msg.as_ref(), DST, &[])
 }
 
 /// Returns a hash of the group element and message, in the second group.
@@ -890,13 +831,13 @@ fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> G2 {
     } else {
         msg.as_ref().to_vec()
     };
-    msg.extend(g1.into_affine().into_compressed().as_ref());
+    msg.extend(g1.to_affine().to_compressed().as_ref());
     hash_g2(&msg)
 }
 
 /// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.
 fn xor_with_hash(g1: G1, bytes: &[u8]) -> Vec<u8> {
-    let digest = sha3_256(g1.into_affine().into_compressed().as_ref());
+    let digest = sha3_256(g1.to_affine().to_compressed().as_ref());
     let rng = ChaChaRng::from_seed(digest);
     let xor = |(a, b): (u8, &u8)| a ^ b;
     rng.sample_iter(&Standard).zip(bytes).map(xor).collect()
@@ -906,7 +847,7 @@ fn xor_with_hash(g1: G1, bytes: &[u8]) -> Vec<u8> {
 /// group generator `g`, returns `f(0) * g`.
 fn interpolate<C, B, T, I>(t: usize, items: I) -> Result<C>
 where
-    C: CurveProjective<Scalar = Fr>,
+    C: Curve<Scalar = Fr>,
     I: IntoIterator<Item = (T, B)>,
     T: IntoFr,
     B: Borrow<C>,
@@ -938,7 +879,7 @@ where
         x_prod[i].mul_assign(&tmp);
     }
 
-    let mut result = C::zero();
+    let mut result = C::identity();
     for (mut l0, (x, sample)) in x_prod.into_iter().zip(&samples) {
         // Compute the value at 0 of the Lagrange polynomial that is `0` at the other data
         // points but `1` at `x`.
@@ -948,8 +889,14 @@ where
             diff.sub_assign(x);
             denom.mul_assign(&diff);
         }
-        l0.mul_assign(&denom.inverse().ok_or(Error::DuplicateEntry)?);
-        result.add_assign(&sample.borrow().into_affine().mul(l0));
+        // Can we avoid using unwrap with CtOption? Should always be ok
+        // because of `is_none` check.
+        let denom_inv = denom.invert();
+        if denom_inv.is_none().into() {
+            return Err(Error::DuplicateEntry);
+        }
+        l0.mul_assign(&denom_inv.unwrap());
+        result.add_assign(&sample.borrow().mul(l0));
     }
     Ok(result)
 }
@@ -974,9 +921,9 @@ impl fmt::Debug for DebugDots {
 mod tests {
     use super::*;
 
-    use std::collections::BTreeMap;
-
+    use eyre::{eyre, Result};
     use rand::{self, distributions::Standard, random, Rng};
+    use std::collections::BTreeMap;
 
     #[test]
     fn test_interpolate() {
@@ -987,7 +934,7 @@ mod tests {
             let mut values = Vec::new();
             let mut x = 0;
             for _ in 0..=deg {
-                x += rng.gen_range(1, 5);
+                x += rng.gen_range(1..5);
                 values.push((x - 1, comm.evaluate(x)));
             }
             let actual = interpolate(deg, values).expect("wrong number of values");
@@ -996,7 +943,7 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_sig() {
+    fn test_simple_sig() -> Result<()> {
         let sk0 = SecretKey::random();
         let sk1 = SecretKey::random();
         let pk0 = sk0.public_key();
@@ -1005,10 +952,11 @@ mod tests {
         assert!(pk0.verify(&sk0.sign(msg0), msg0));
         assert!(!pk0.verify(&sk1.sign(msg0), msg0)); // Wrong key.
         assert!(!pk0.verify(&sk0.sign(msg1), msg0)); // Wrong message.
+        Ok(())
     }
 
     #[test]
-    fn test_threshold_sig() {
+    fn test_threshold_sig() -> Result<()> {
         let mut rng = rand::thread_rng();
         let sk_set = SecretKeySet::random(3, &mut rng);
         let pk_set = sk_set.public_keys();
@@ -1057,8 +1005,11 @@ mod tests {
                 (i, sig)
             })
             .collect();
+
         let sig2 = pk_set.combine_signatures(&sigs2).expect("signatures match");
         assert_eq!(sig, sig2);
+
+        Ok(())
     }
 
     #[test]
@@ -1144,11 +1095,11 @@ mod tests {
     #[test]
     fn test_hash_g1_g2() {
         let mut rng = rand::thread_rng();
+        let g0 = G1::random(&mut rng);
+        let g1 = G1::random(&mut rng);
         let msg: Vec<u8> = rng.sample_iter(&Standard).take(1000).collect();
         let msg_end0: Vec<u8> = msg.iter().chain(b"end0").cloned().collect();
         let msg_end1: Vec<u8> = msg.iter().chain(b"end1").cloned().collect();
-        let g0 = G1::random(&mut rng);
-        let g1 = G1::random(&mut rng);
 
         assert_eq!(hash_g1_g2(g0, &msg), hash_g1_g2(g0, &msg));
         assert_ne!(hash_g1_g2(g0, &msg), hash_g1_g2(g0, &msg_end0));
@@ -1171,7 +1122,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_to_bytes() {
+    fn test_from_to_bytes() -> Result<()> {
         let sk: SecretKey = random();
         let sig = sk.sign("Please sign here: ______");
         let pk = sk.public_key();
@@ -1183,10 +1134,11 @@ mod tests {
         let cipher2 =
             Ciphertext::from_bytes(&cipher.to_bytes()).expect("invalid cipher representation");
         assert_eq!(cipher, cipher2);
+        Ok(())
     }
 
     #[test]
-    fn test_serde() {
+    fn test_serde() -> Result<()> {
         let sk = SecretKey::random();
         let sig = sk.sign("Please sign here: ______");
         let pk = sk.public_key();
@@ -1198,60 +1150,14 @@ mod tests {
         let deser_sig = bincode::deserialize(&ser_sig).expect("deserialize signature");
         assert_eq!(ser_sig.len(), SIG_SIZE);
         assert_eq!(sig, deser_sig);
-    }
-
-    #[cfg(feature = "codec-support")]
-    #[test]
-    fn test_codec() {
-        use codec::{Decode, Encode};
-        use rand::distributions::{Distribution, Standard};
-        use rand::thread_rng;
-
-        macro_rules! assert_codec {
-            ($obj:expr, $type:ty) => {
-                let encoded: Vec<u8> = $obj.encode();
-                let decoded: $type = <$type>::decode(&mut &encoded[..]).unwrap();
-                assert_eq!(decoded, $obj.clone());
-            };
-        }
-
-        let sk = SecretKey::random();
-        let pk = sk.public_key();
-        assert_codec!(pk, PublicKey);
-
-        let pk_share = PublicKeyShare(pk);
-        assert_codec!(pk_share, PublicKeyShare);
-
-        let sig = sk.sign(b"this is a test");
-        assert_codec!(sig, Signature);
-
-        let sig_share = SignatureShare(sig);
-        assert_codec!(sig_share, SignatureShare);
-
-        let cipher_text = pk.encrypt(b"cipher text");
-        assert_codec!(cipher_text, Ciphertext);
-
-        let dec_share: DecryptionShare = Standard.sample(&mut thread_rng());
-        assert_codec!(dec_share, DecryptionShare);
-
-        let sk_set = SecretKeySet::random(3, &mut thread_rng());
-        let pk_set = sk_set.public_keys();
-        assert_codec!(pk_set, PublicKeySet);
-    }
-
-    #[test]
-    fn test_size() {
-        assert_eq!(<G1Affine as CurveAffine>::Compressed::size(), PK_SIZE);
-        assert_eq!(<G2Affine as CurveAffine>::Compressed::size(), SIG_SIZE);
+        Ok(())
     }
 
     #[test]
     fn test_zeroize() {
         let zero_sk = SecretKey::from_mut(&mut Fr::zero());
-
         let mut sk = SecretKey::random();
         assert_ne!(zero_sk, sk);
-
         sk.zeroize();
         assert_eq!(zero_sk, sk);
     }
@@ -1274,7 +1180,7 @@ mod tests {
     }
 
     #[test]
-    fn test_interoperability() {
+    fn test_interoperability() -> Result<()> {
         // This test only pases if fn sign and fn verify are using the BLST code
         // https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249-L260
         let skbytes = [
@@ -1295,11 +1201,7 @@ mod tests {
             41, 147, 127, 112, 220, 23, 106, 31, 1, 67, 33, 41, 187, 43, 148, 211, 213, 3, 31, 128,
             101, 161,
         ];
-        // no SecretKey::from_bytes method, so use bincode which requires
-        // little endian bytes.
-        let mut leskbytes = skbytes;
-        leskbytes.reverse();
-        let sk: SecretKey = bincode::deserialize(&leskbytes).unwrap();
+        let sk = SecretKey::from_bytes(skbytes)?;
         let pk = sk.public_key();
         // secret key gives same public key
         assert_eq!(pkbytes, pk.to_bytes());
@@ -1307,31 +1209,31 @@ mod tests {
         let sig = sk.sign(&msgbytes);
         assert_eq!(sigbytes, sig.to_bytes());
         // signature can be verified
-        let is_valid = pk.verify(&sig, msgbytes);
-        assert!(is_valid);
+        assert!(pk.verify(&sig, msgbytes));
+        Ok(())
     }
 
     #[test]
-    fn test_sk_to_from_bytes() {
+    fn test_sk_to_from_bytes() -> Result<()> {
         use crate::serde_impl::SerdeSecret;
         let sk = SecretKey::random();
-        // bincode is little endian, so must reverse to get big endian
-        let mut bincode_bytes = bincode::serialize(&SerdeSecret(&sk)).unwrap();
-        bincode_bytes.reverse();
+        // bincode is little endian, but will always serialize sk to big endian
+        let bincode_bytes = bincode::serialize(&SerdeSecret(&sk))?;
         // sk.to_bytes() is big endian
         let sk_be_bytes = sk.to_bytes();
         assert_eq!(bincode_bytes, sk_be_bytes);
         // from bytes gives original secret key
         let restored_sk = SecretKey::from_bytes(sk_be_bytes).expect("invalid sk bytes");
         assert_eq!(sk, restored_sk);
+        Ok(())
     }
 
     #[test]
-    fn vectors_sk_to_from_bytes() {
+    fn vectors_sk_to_from_bytes() -> Result<()> {
         // from https://github.com/Chia-Network/bls-signatures/blob/ee71adc0efeae3a7487cf0662b7bee3825752a29/src/test.cpp#L249
         let sk_hex = "4a353be3dac091a0a7e640620372f5e1e2e4401717c1e79cac6ffba8f6905604";
         let pk_hex = "85695fcbc06cc4c4c9451f4dce21cbf8de3e5a13bf48f44cdbb18e2038ba7b8bb1632d7911ef1e2e08749bddbf165352";
-        let sk_vec = hex::decode(sk_hex).unwrap();
+        let sk_vec = hex::decode(sk_hex)?;
         let mut sk_bytes = [0u8; SK_SIZE];
         sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
         let sk = SecretKey::from_bytes(sk_bytes).expect("invalid sk bytes");
@@ -1339,6 +1241,7 @@ mod tests {
         let pk_bytes = pk.to_bytes();
         let pk_to_hex = &format!("{}", HexFmt(&pk_bytes));
         assert_eq!(pk_to_hex, pk_hex);
+        Ok(())
     }
 
     #[test]
@@ -1384,7 +1287,7 @@ mod tests {
     }
 
     #[test]
-    fn vectors_public_key_set_to_from_bytes() {
+    fn vectors_public_key_set_to_from_bytes() -> Result<()> {
         let vectors = vec![
             // Plain old Public Key Set
             vec![
@@ -1427,7 +1330,7 @@ mod tests {
         ];
         for vector in vectors {
             // read PublicKeyShare from hex
-            let pks_bytes = hex::decode(vector[0]).unwrap();
+            let pks_bytes = hex::decode(vector[0])?;
             let pks = PublicKeySet::from_bytes(pks_bytes).expect("Invalid public key set bytes");
             // check public key
             let pk = pks.public_key();
@@ -1444,6 +1347,8 @@ mod tests {
             let pk_share_2_hex = &format!("{}", HexFmt(&pk_share_2.to_bytes()));
             assert_eq!(pk_share_2_hex, vector[4]);
         }
+
+        Ok(())
     }
 
     #[test]
@@ -1492,7 +1397,7 @@ mod tests {
     }
 
     #[test]
-    fn vectors_secret_key_set_to_from_bytes() {
+    fn vectors_secret_key_set_to_from_bytes() -> Result<()> {
         let vectors = vec![
             // Plain old Secret Key Set
             // Sourced from Poly::reveal and SecretKey::reveal
@@ -1529,7 +1434,7 @@ mod tests {
         ];
         for vector in vectors {
             // read SecretKeyShare from hex
-            let sks_bytes = hex::decode(vector[0]).unwrap();
+            let sks_bytes = hex::decode(vector[0])?;
             let sks = SecretKeySet::from_bytes(sks_bytes).expect("invalid secret key set bytes");
             // check secret key
             let sk = sks.secret_key();
@@ -1546,6 +1451,8 @@ mod tests {
             let sk_share_2_hex = &format!("{}", HexFmt(&sk_share_2.to_bytes()));
             assert_eq!(sk_share_2_hex, vector[4]);
         }
+
+        Ok(())
     }
 
     #[test]
@@ -1623,7 +1530,7 @@ mod tests {
     }
 
     #[test]
-    fn test_derive_child_key_vectors() {
+    fn test_derive_child_key_vectors() -> Result<()> {
         let vectors = vec![
             // Plain old derivation
             vec![
@@ -1634,9 +1541,9 @@ mod tests {
                 // random index
                 "57cb1459985906a9c00036f0b1d700b52a4dc25b3e0ff3808dd2c9fa6ca6ba87",
                 // child secret key at random index
-                "4039a5958f0a10baa1d1f0d5d7e06435a126744e8b656289e74d74241492df89",
+                "2125994b85332e1478e7d01b81f30933e92074ff05c873ee8306a43dd5be17d4",
                 // child public key at random index
-                "b46666bbe6f6315df6cacd8200566a977d1875a09b233b0ea60ecd8ee4ffda6f2e1d2cd28665b60f48682f8d14a95a04",
+                "a01044f663a75c2000c4b33cec26c92e35c56bb77ed4dc1c1bfe88c890df9caf9153b7069dcf1d93c934ccf391fca3a1",
             ],
             vec![
                 // secret key
@@ -1646,77 +1553,71 @@ mod tests {
                 // index 0
                 "00",
                 // child secret key at index 0
-                "46b9a6b0b09523de44c2df70650e93320ec9d252c89b7a9eedcebacc0b96ad7a",
+                "67b1bb08bee06eaa528d1a412d2d4237daa1204234543f27e0afe901a520b78e",
                 // child public key at index 0
-                "813695785a144e84c48c2a5644772514b6a58503f675f9c77ddfb7513eeb44888031f3ffe6b907a7f3889817a0de3abe",
+                "842de40cbb1d66e60b5e4ce3ce02e6081d5fdacf3dbd1cb0c5959c306d54cab40622c5188f4fa91c818c1a5560bcbcc1",
                 // index 1
                 "01",
                 // child secret key at index 1
-                "633a4afa473971245620d27dc5778102d000fff80fa15ce06e74e1f610a50493",
+                "379446550d351164cf5a8ed4f6ad4cb7cab5c7c3388f103515b84e40aaa1ef30",
                 // child public key at index 1
-                "8fd67eac24b4673a00000f57d40e10852eef9fda2800dff003536e3042a6ac5973f0709776c6c93191df4f0d7daf7e46",
+                "aecea20ec775b2fd9640517fa4da8e845217f1b4667ace6e7340d1b35ef986c1603056b4a6a66bebe5d2b5a86ff5a7b5",
                 // index 2
                 "02",
                 // child secret key at index 2
-                "2cc4bf8dd81c619e41146c963e00a245c6cf00163c2932132908f76edf539c7f",
+                "1ac3cee2dca114a3d0003e6bcf0ac2da26ec2b28044da4bc550a655b527b4693",
                 // child public key at index 2
-                "8ab99d21622d98ad8bea68c5db881298f317fac691db1ae1eef191407107978338383ef8408fca0743997d040dab27c1",
+                "8c9c00407c09dcc6ea186fd8d5e6a39018c83b95ff5610307b6e6b186d00ab925b82405adb120e9c3498b8581a282672",
                 // index 1 with left padding
                 // different to single byte index "01"
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 // child secret key for 1 with left padding
-                "35f65c516e54a08e29f4f9996738dbfc33f5e1a22b023082ff9f01a4a507fc7c",
+                "41308f892e28336c5cbf3109c0a6717e759a68badd217e2816b02acc68a852ad",
                 // child public key for 1 with left padding
-                "81a2a9a1b3c891701dba0bdbe975bb06ff20947a35519e7938da7a783b0d561694ae5a9c2ec0c0011fc899dae67e11aa",
+                "a1be856a26d993fee069481b37b22fd4955fcc5cb289bb30f4c6e98d9c36fd6892c7d36674d400c4bda136f9b7c6e1dc",
                 // index 1 with right padding
                 // different to single byte index "01"
                 "0100000000000000000000000000000000000000000000000000000000000000",
                 // child secret key for 1 with right padding
-                "49df2b6e5b2d4310f8419d8ea651c790e502884c0b9e903c65d23c2f3d522f8b",
+                "48c9761c4350e2cf76a765b7d95e6021902d5daf3221cfe2d687ae3e9fba3717",
                 // child public key for 1 with right padding
-                "a2479d4554fbf8bc98f206bb09de80e2790f44fa3ea8f0cb02c44116111c60da2691683b17367cbb933c27836d721206",
+                "a6b1df11c4346da734253993e329ed54ad99907024f35e555374d46b33fb602790105479e68e0d89c48c3798aecc871b",
                 // index with 17 bytes
                 "0000000000000000000000000000000101",
                 // child secret key for 17 bytes
-                "65a44b4096fb8948d42a762c27141f58b678de54b9cba554f13e8e144f1ed889",
+                "120fb53090d6cfd1528c83e83af582f96dd105b43f6622df6d797b174429c0f4",
                 // child public key for 17 bytes
-                "b2a88bac72330a081500b3b27698664812039b61d6929d3ed0a4fea28a4ae35ebc72a149a8d8b2534860672b4348e7ef",
-                // large index greater than q
+                "8c6a3c63379c0c48e652ad3190205ec39e6d0679cf47abca5b92915319ecb5f1eda560801e0490aa6f6566b55e132744",
+                // large index greater than q, ie Fr::MAX
                 "fedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedc",
                 // child secret key at large index
-                "3da527e935752a7924b8b244be2b6e4b6a8ef54865ef7e1dfeae5187d1cf414d",
+                "2ffa71ee5cf75392ffcde2ce8d68fb4524453f55ba2e148d0d4a4000da876be6",
                 // child public key at large index
-                "85954d86b7028b362d43e8d8319ef529a8d69c5a4b0a9352f6d3f10d9aa9a5d44b576f14087882d6d51fd10b70e228e9",
+                "b492577c7a7e324dec2e34397689e41fa8a894890db931fe93cdb29c5342e1e50ea53c969fae1780677ab27c4ff62fca",
                 // index with more than 256 bits
                 // note different to single byte index "00"
                 "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 // child secret key for index more than 256 bits
-                "50524fce1903b24900bd7ae12fce29d3e7cf0520f5fbaee08bc8efe9922458c0",
+                "10ca7b3cb66ce637d1de47d25cb6817c4b16efcb2221fc60f0190231b2ad656f",
                 // child public key for index more than 256 bits
-                "a419c001ca4f8261388f0ca55a43ded57f741d2833c532450bded670dad3b0654f2c7ffa81ca9a1fa7b03639d1fd9171",
-                // index with many repeated hashes (34 rounds for this index)
-                "0000000028c0acd2",
-                // child secret key for index with main repeated hashes
-                "319e0ac479cff5cb4261e465de3736d634c583bcb5a1ac33fb0dcb1d77908268",
-                // child public key for index with many repeated hashes
-                "86037c3f7fbd88572bd56025444bb2a49375d2e146f9a52d8a35689fd93d04ebc62559a1441cdc7edbf39189247b9620",
-                // index with child secret key leading zero
-                "0000000000000017",
+                "8b1d9fada310a22ec2523e42fa1ece8e6bf5b6bc91e591d352dbe96271a9ba9dbecd9a4529befffaf8e57bf929aa227c",
+                // index with child secret key leading and trailing zeros
+                "000000000014a06d",
                 // child secret key for sk leading zero
-                "00dc1689706a2de1f9b84b647776f200c61de5ba2699ab4be6890d96e7870ef8",
+                "0000ed12dc692ec6401e3e53be147671e1ab934e346fdc146835443e902d0e00",
                 // child public key for sk leading zero
-                "825cb1914a0b5f006d529b081c06b04f334c8c97456e83a4e61917ce6b5256dab462575b1c03a9bed913bf1c070fda0d",
+                "8258c937cb778d01ee22857b6a120c948638bbf8073e92517b44cde58c1c3117e76d7ee5b62ac3a4cdcdc2971e434643",
                 // index with child public key trailing zero
-                "0000000000000152",
+                "0000000000003f51",
                 // child secret key for child pk trailing zero
-                "4237e4e30390f33a329107edde05130ce84e403e0f78a0ba4e5dea79289ba200",
+                "16be290c63b85ad7c4db5a5c446e40cb79f7bdd2095589c7f1dd97fc869cb816",
                 // child public key for child pk trailing zero
-                "adb936c7a97c9c98c80b92635ce6ffaceba6620d133ddc7252bd5d11cf7c7a3aa3bbda9428f860987655820a9e940fd8",
+                "9493e3176f8a0f8e5e0f855b57f3f09246c628ccda707919e806192369c9f9b84a5c16d1c6a907c4bad01c17ab560000",
             ],
         ];
         for vector in vectors {
             // get parent keypair
-            let sk_vec = hex::decode(vector[0]).unwrap();
+            let sk_vec = hex::decode(vector[0])?;
             let mut sk_bytes = [0u8; SK_SIZE];
             sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
             let sk = SecretKey::from_bytes(sk_bytes).expect("invalid secret key bytes");
@@ -1728,7 +1629,7 @@ mod tests {
             for i in 0..children {
                 let v = 2 + i * 3;
                 // get index
-                let index = hex::decode(vector[v]).unwrap();
+                let index = hex::decode(vector[v])?;
                 // derive child secret key at this index
                 let sk_child = sk.derive_child(&index);
                 let sk_child_hex = &format!("{}", HexFmt(&sk_child.to_bytes()));
@@ -1741,10 +1642,12 @@ mod tests {
                 assert_eq!(sk_child.public_key(), pk_child);
             }
         }
+
+        Ok(())
     }
 
     #[test]
-    fn test_ciphertext_vectors() {
+    fn test_ciphertext_vectors() -> Result<()> {
         let vectors = vec![
             // Plain old ciphertext
             vec![
@@ -1753,7 +1656,7 @@ mod tests {
                 // plain text hex
                 "0102030405",
                 // ciphertext
-                "96f6ab7884f1d1627439df210ce0c192071612a2fe212ec4bf3c70a885be007c7514dc15b769ef02f92558e862d2894e95f892f1eb4a8cfb6f05ac83adcb5b429261bc8b195830d92a59859135157b1f3394156dba1e905f29158d0eeea49faa0238bc51704cfcffdab35fb0d4ca9311bbb5b80d616be2d505d8f82a2ff4e69e756cc835b19e622f5b94457ad9c084e91de6b13d27",
+                "9369436c4f3b930aebeb1458b5478a393c90c51de74ebe0ad53b178f25ea0ab51b8acae9847ca3ec9d85bea816e174ca81a7160b714ed5a2a2b6d473473e02345bdeabddad35f13127259b905a8b01ea8225a9449ead9922d8d388959d712bc719889f12f8f273c530e1a7b38a0c2bda9a568453e011c41bb3c66e6dc6c313451802bade49a97e2315507e9a68f1f8794cda1b5420",
             ],
             // Leading zeros and trailing
             vec![
@@ -1762,25 +1665,32 @@ mod tests {
                 // plain text hex
                 "00bdc600",
                 // ciphertext with u and w having trailing zeros
-                "b01724be1ed730f0b1713c24aa5963bff7845a56892b78b1a24152dfe48848223ea54a358c27946323ec013ee46af80088f508ef7ce6abf174f51dbfa5692adc975fa99a569860cff555b3e7f68d06dfe6dd2621643ec859a64e61cee1f9aced1569b695253936197585696cfab0b38dfd159051ec569e0d3ba1bb0d2a3dec008467810621111fb2dd92c44ef251280038164cb6",
+                "8d86c6a960cf15f0170b855f5b8d7eca52885fa63ba9c242e54f9cdd5a91f0e42c5b16d39108457613eff00e50b21357af578a279b048d4334434402c129c7754b6461bf653bf57b4b09eb06f53b9360b52438cb9c32c580d9b58981dbf1671519f413245fc288f973d7a47ceca5a21d3e69de7561f70c1c4296f40cdcc0043f20b13e6953fbb1b3363af011350e315fed74a849",
             ],
         ];
         for vector in vectors {
             // get secret key
-            let sk_vec = hex::decode(vector[0]).unwrap();
+            let sk_vec =
+                hex::decode(vector[0]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
             let mut sk_bytes = [0u8; SK_SIZE];
             sk_bytes[..SK_SIZE].clone_from_slice(&sk_vec[..SK_SIZE]);
-            let sk = SecretKey::from_bytes(sk_bytes).expect("invalid secret key bytes");
+            let sk = SecretKey::from_bytes(sk_bytes)
+                .map_err(|err| eyre!("invalid secret key bytes: {}", err))?;
             // get ciphertext
-            let ct_vec = hex::decode(vector[2]).unwrap();
-            let ct = Ciphertext::from_bytes(&ct_vec).expect("invalid ciphertext bytes");
+            let ct_vec =
+                hex::decode(vector[2]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
+            let ct = Ciphertext::from_bytes(&ct_vec)
+                .map_err(|err| eyre!("invalid ciphertext bytes: {}", err))?;
             // check the ciphertext is valid
             assert!(ct.verify());
             // check the decrypted ciphertext matches the original message
-            let msg_vec = hex::decode(vector[1]).unwrap();
-            let plaintext = sk.decrypt(&ct).expect("decryption failed");
+            let msg_vec =
+                hex::decode(vector[1]).map_err(|err| eyre!("invalid msg hex bytes: {}", err))?;
+            let plaintext = sk.decrypt(&ct).ok_or_else(|| eyre!("decryption failed"))?;
             assert_eq!(plaintext, msg_vec);
         }
+
+        Ok(())
     }
 
     #[test]
@@ -1834,7 +1744,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sk_set_child_sig() {
+    fn test_sk_set_child_sig() -> Result<()> {
         // combining signatures from child keyshares produces
         // a valid signature for the child public key set
         let mut rng = rand::thread_rng();
@@ -1862,19 +1772,19 @@ mod tests {
             .collect();
         // all participants sign a message with their child keyshare
         let msg = "Totally real news";
-        let child_sig_shares: BTreeMap<_, _> = child_key_shares
-            .iter()
-            .map(|(i, child_key_share)| {
-                let child_sig_share = child_key_share.sign(&msg);
-                (i, child_sig_share)
-            })
-            .collect();
+        let mut child_sig_shares = BTreeMap::default();
+        for (i, child_key_share) in child_key_shares.iter() {
+            let child_sig_share = child_key_share.sign(&msg);
+            child_sig_shares.insert(i, child_sig_share);
+        }
         // Combining the child shares creates a valid signature for the child
         // public key set.
         let pks_child = pks.derive_child(&index);
         let sig = pks_child
             .combine_signatures(&child_sig_shares)
-            .expect("signatures match");
+            .map_err(|err| eyre!("signatures match: {}", err))?;
         assert!(pks_child.public_key().verify(&sig, msg));
+
+        Ok(())
     }
 }
