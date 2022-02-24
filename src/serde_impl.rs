@@ -5,12 +5,12 @@ pub use self::field_vec::FieldWrap;
 use std::borrow::Cow;
 use std::ops::Deref;
 
-use crate::G1;
 use serde::de::Error as DeserializeError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::poly::{coeff_pos, BivarCommitment};
 use crate::serde_impl::serialize_secret_internal::SerializeSecret;
+use crate::{SecretKey, G1};
 
 const ERR_DEG: &str = "commitment degree does not match coefficients";
 
@@ -84,29 +84,17 @@ impl<'de> Deserialize<'de> for crate::SecretKey {
     where
         D: Deserializer<'de>,
     {
-        use crate::{Fr, FrRepr};
-        use ff::PrimeField;
-        use serde::de;
+        use crate::Fr;
 
-        let mut fr = match Fr::from_repr(FrRepr(Deserialize::deserialize(deserializer)?)) {
-            Ok(x) => x,
-            Err(ff::PrimeFieldDecodingError::NotInField(_)) => {
-                return Err(de::Error::invalid_value(
-                    de::Unexpected::Other("Number outside of prime field."),
-                    &"Valid prime field element.",
-                ));
-            }
-        };
-
-        Ok(crate::SecretKey::from_mut(&mut fr))
+        let bytes = Deserialize::deserialize(deserializer)?;
+        let mut fr = Fr::from_bytes_be(&bytes).unwrap();
+        Ok(SecretKey::from_mut(&mut fr))
     }
 }
 
 impl SerializeSecret for crate::SecretKey {
     fn serialize_secret<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        use ff::PrimeField;
-
-        Serialize::serialize(&self.0.into_repr().0, serializer)
+        Serialize::serialize(&self.0.to_bytes_be(), serializer)
     }
 }
 
@@ -133,7 +121,6 @@ struct WireBivarCommitment<'a> {
     /// The polynomial's degree in each of the two variables.
     degree: usize,
     /// The commitments to the coefficients.
-    #[serde(with = "projective_vec")]
     coeff: Cow<'a, [G1]>,
 }
 
@@ -165,7 +152,7 @@ pub(crate) mod projective {
     use std::fmt;
     use std::marker::PhantomData;
 
-    use group::{CurveAffine, CurveProjective, EncodedPoint};
+    use group::prime::PrimeCurve;
     use serde::de::{Error as DeserializeError, SeqAccess, Visitor};
     use serde::{ser::SerializeTuple, Deserializer, Serializer};
 
@@ -174,11 +161,11 @@ pub(crate) mod projective {
     pub fn serialize<S, C>(c: &C, s: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        C: CurveProjective,
+        C: PrimeCurve,
     {
-        let len = <C::Affine as CurveAffine>::Compressed::size();
+        let len = C::Repr::default().as_ref().len();
         let mut tup = s.serialize_tuple(len)?;
-        for byte in c.into_affine().into_compressed().as_ref() {
+        for byte in c.to_bytes().as_ref() {
             tup.serialize_element(byte)?;
         }
         tup.end()
@@ -187,33 +174,37 @@ pub(crate) mod projective {
     pub fn deserialize<'de, D, C>(d: D) -> Result<C, D::Error>
     where
         D: Deserializer<'de>,
-        C: CurveProjective,
+        C: PrimeCurve,
     {
         struct TupleVisitor<C> {
             _ph: PhantomData<C>,
         }
 
-        impl<'de, C: CurveProjective> Visitor<'de> for TupleVisitor<C> {
+        impl<'de, C: PrimeCurve> Visitor<'de> for TupleVisitor<C> {
             type Value = C;
 
             fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                let len = <C::Affine as CurveAffine>::Compressed::size();
+                let len = C::Repr::default().as_ref().len();
                 write!(f, "a tuple of size {}", len)
             }
 
             #[inline]
             fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<C, A::Error> {
-                let mut compressed = <C::Affine as CurveAffine>::Compressed::empty();
+                let mut compressed = C::Repr::default();
                 for (i, byte) in compressed.as_mut().iter_mut().enumerate() {
                     let len_err = || DeserializeError::invalid_length(i, &self);
                     *byte = seq.next_element()?.ok_or_else(len_err)?;
                 }
-                let to_err = |_| DeserializeError::custom(ERR_CODE);
-                Ok(compressed.into_affine().map_err(to_err)?.into_projective())
+                let opt = C::from_bytes(&compressed);
+                if opt.is_some().into() {
+                    Ok(opt.unwrap())
+                } else {
+                    Err(DeserializeError::custom(ERR_CODE))
+                }
             }
         }
 
-        let len = <C::Affine as CurveAffine>::Compressed::size();
+        let len = C::Repr::default().as_ref().len();
         d.deserialize_tuple(len, TupleVisitor { _ph: PhantomData })
     }
 }
@@ -224,7 +215,7 @@ pub(crate) mod projective_vec {
     use std::iter::FromIterator;
     use std::marker::PhantomData;
 
-    use group::CurveProjective;
+    use group::prime::PrimeCurve;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     use super::projective;
@@ -238,13 +229,13 @@ pub(crate) mod projective_vec {
         }
     }
 
-    impl<C: CurveProjective, B: Borrow<C>> Serialize for CurveWrap<C, B> {
+    impl<C: PrimeCurve, B: Borrow<C>> Serialize for CurveWrap<C, B> {
         fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
             projective::serialize(self.0.borrow(), s)
         }
     }
 
-    impl<'de, C: CurveProjective> Deserialize<'de> for CurveWrap<C, C> {
+    impl<'de, C: PrimeCurve> Deserialize<'de> for CurveWrap<C, C> {
         fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
             Ok(CurveWrap::new(projective::deserialize(d)?))
         }
@@ -253,7 +244,7 @@ pub(crate) mod projective_vec {
     pub fn serialize<S, C, T>(vec: T, s: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        C: CurveProjective,
+        C: PrimeCurve,
         T: AsRef<[C]>,
     {
         let wrap_vec: Vec<CurveWrap<C, &C>> = vec.as_ref().iter().map(CurveWrap::new).collect();
@@ -263,7 +254,7 @@ pub(crate) mod projective_vec {
     pub fn deserialize<'de, D, C, T>(d: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
-        C: CurveProjective,
+        C: PrimeCurve,
         T: FromIterator<C>,
     {
         let wrap_vec = <Vec<CurveWrap<C, C>>>::deserialize(d)?;
@@ -273,13 +264,10 @@ pub(crate) mod projective_vec {
 
 /// Serialization and deserialization of vectors of field elements.
 pub(crate) mod field_vec {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::borrow::Borrow;
 
-    use ff::PrimeField;
-    use serde::de::Error as DeserializeError;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-    use crate::{Fr, FrRepr};
+    use crate::Fr;
 
     /// A wrapper type to facilitate serialization and deserialization of field elements.
     pub struct FieldWrap<B>(pub B);
@@ -293,16 +281,14 @@ pub(crate) mod field_vec {
 
     impl<B: Borrow<Fr>> Serialize for FieldWrap<B> {
         fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-            self.0.borrow().into_repr().0.serialize(s)
+            self.0.borrow().to_bytes_be().serialize(s)
         }
     }
 
     impl<'de> Deserialize<'de> for FieldWrap<Fr> {
         fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-            let repr = FrRepr(Deserialize::deserialize(d)?);
-            Ok(FieldWrap(Fr::from_repr(repr).map_err(|_| {
-                D::Error::custom("invalid field element representation")
-            })?))
+            let bytes = Deserialize::deserialize(d)?;
+            Ok(FieldWrap(Fr::from_bytes_be(&bytes).unwrap()))
         }
     }
 
@@ -322,7 +308,7 @@ mod tests {
     use std::iter::repeat_with;
 
     use ff::Field;
-    use group::CurveProjective;
+    use group::Group;
     use serde::{Deserialize, Serialize};
 
     use crate::poly::BivarPoly;
@@ -410,6 +396,7 @@ mod tests {
             let ser_val = bincode::serialize(&SerdeSecret(sk)).expect("serialize secret key");
             assert_eq!(ser_ref, ser_val);
 
+            #[cfg(not(feature = "use-insecure-test-only-mock-crypto"))]
             assert_eq!(ser_val.len(), 32);
         }
     }

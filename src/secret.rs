@@ -1,15 +1,12 @@
 //! Utilities for working with secret values. This module includes functionality for overwriting
 //! memory with zeros.
 
-use zeroize::Zeroize;
-
-use crate::{Fr, FrRepr};
+use crate::Fr;
+use group::ff::Field;
 
 /// Overwrites a single field element with zeros.
 pub(crate) fn clear_fr(fr: &mut Fr) {
-    // TODO: Remove this after pairing support `Zeroize`
-    let fr_repr = unsafe { &mut *(fr as *mut Fr as *mut FrRepr) };
-    fr_repr.0.zeroize();
+    *fr = Fr::zero();
 }
 
 #[cfg(test)]
