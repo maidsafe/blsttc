@@ -85,6 +85,35 @@ impl Ord for PublicKey {
     }
 }
 
+/// Utility to convert blsttc to blst types
+impl From<PublicKey> for G1 {
+    fn from(item: PublicKey) -> Self {
+        item.0
+    }
+}
+
+/// Utility to convert blsttc to blst types
+impl From<PublicKey> for G1Affine {
+    fn from(item: PublicKey) -> Self {
+        item.0.to_affine()
+    }
+}
+
+/// Utility to compare between blsttc and blst types
+impl std::cmp::PartialEq<G1> for PublicKey {
+    fn eq(&self, other: &G1) -> bool {
+        &self.0 == other
+    }
+}
+
+/// Utility to compare between blsttc and blst types
+impl std::cmp::PartialEq<G1Affine> for PublicKey {
+    fn eq(&self, other: &G1Affine) -> bool {
+        // TODO is there a way to avoid the to_affine() by doing some cheap op on other?
+        &self.0.to_affine() == other
+    }
+}
+
 impl PublicKey {
     /// Returns `true` if the signature matches the element of `G2`.
     pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &Signature, hash: H) -> bool {
@@ -314,6 +343,20 @@ impl Distribution<SecretKey> for Standard {
 impl fmt::Debug for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("SecretKey").field(&DebugDots).finish()
+    }
+}
+
+/// Utility to convert blsttc to blst types
+impl From<SecretKey> for Fr {
+    fn from(item: SecretKey) -> Self {
+        item.0
+    }
+}
+
+/// Utility to compare between blsttc and blst types
+impl std::cmp::PartialEq<Fr> for SecretKey {
+    fn eq(&self, other: &Fr) -> bool {
+        &self.0 == other
     }
 }
 
@@ -1143,7 +1186,7 @@ mod tests {
         let sig = sk.sign("Please sign here: ______");
         let pk = sk.public_key();
         let ser_pk = bincode::serialize(&pk).expect("serialize public key");
-        let deser_pk = bincode::deserialize(&ser_pk).expect("deserialize public key");
+        let deser_pk: PublicKey = bincode::deserialize(&ser_pk).expect("deserialize public key");
         assert_eq!(ser_pk.len(), PK_SIZE);
         assert_eq!(pk, deser_pk);
         let ser_sig = bincode::serialize(&sig).expect("serialize signature");
