@@ -363,7 +363,7 @@ mod tests {
             let sk: SecretKey = rng.gen();
             let ser_ref = bincode::serialize(&SerdeSecret(&sk)).expect("serialize secret key");
 
-            let de = bincode::deserialize(&ser_ref).expect("deserialize secret key");
+            let de: SecretKey = bincode::deserialize(&ser_ref).expect("deserialize secret key");
             assert_eq!(sk, de);
 
             let de_serde_secret: SerdeSecret<SecretKey> =
@@ -386,7 +386,8 @@ mod tests {
             let sk: SecretKeyShare = rng.gen();
             let ser_ref = bincode::serialize(&SerdeSecret(&sk)).expect("serialize secret key");
 
-            let de = bincode::deserialize(&ser_ref).expect("deserialize secret key");
+            let de: SecretKeyShare =
+                bincode::deserialize(&ser_ref).expect("deserialize secret key");
             assert_eq!(sk, de);
 
             let de_serde_secret: SerdeSecret<SecretKeyShare> =
