@@ -99,6 +99,13 @@ impl From<PublicKey> for G1Affine {
     }
 }
 
+/// Utility to convert blst to blsttc types
+impl From<G1Affine> for PublicKey {
+    fn from(item: G1Affine) -> Self {
+        PublicKey(item.into())
+    }
+}
+
 /// Utility to compare between blsttc and blst types
 impl std::cmp::PartialEq<G1> for PublicKey {
     fn eq(&self, other: &G1) -> bool {
@@ -347,7 +354,7 @@ impl fmt::Debug for SecretKey {
 }
 
 /// Utility to convert blsttc to blst types
-impl From<SecretKey> for Fr {
+impl From<SecretKey> for blstrs::Scalar {
     fn from(item: SecretKey) -> Self {
         item.0
     }
