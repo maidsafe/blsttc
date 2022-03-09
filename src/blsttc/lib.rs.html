@@ -1,5 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../blsttc/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
+    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a class="sidebar-logo" href="../../blsttc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.png" alt="logo"></div>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../blsttc/index.html"><img class="rust-logo" src="../../rust-logo.png" alt="logo"></a><nav class="sub"><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1789,127 +1790,21 @@
 <span id="1788">1788</span>
 <span id="1789">1789</span>
 <span id="1790">1790</span>
-<span id="1791">1791</span>
-<span id="1792">1792</span>
-<span id="1793">1793</span>
-<span id="1794">1794</span>
-<span id="1795">1795</span>
-<span id="1796">1796</span>
-<span id="1797">1797</span>
-<span id="1798">1798</span>
-<span id="1799">1799</span>
-<span id="1800">1800</span>
-<span id="1801">1801</span>
-<span id="1802">1802</span>
-<span id="1803">1803</span>
-<span id="1804">1804</span>
-<span id="1805">1805</span>
-<span id="1806">1806</span>
-<span id="1807">1807</span>
-<span id="1808">1808</span>
-<span id="1809">1809</span>
-<span id="1810">1810</span>
-<span id="1811">1811</span>
-<span id="1812">1812</span>
-<span id="1813">1813</span>
-<span id="1814">1814</span>
-<span id="1815">1815</span>
-<span id="1816">1816</span>
-<span id="1817">1817</span>
-<span id="1818">1818</span>
-<span id="1819">1819</span>
-<span id="1820">1820</span>
-<span id="1821">1821</span>
-<span id="1822">1822</span>
-<span id="1823">1823</span>
-<span id="1824">1824</span>
-<span id="1825">1825</span>
-<span id="1826">1826</span>
-<span id="1827">1827</span>
-<span id="1828">1828</span>
-<span id="1829">1829</span>
-<span id="1830">1830</span>
-<span id="1831">1831</span>
-<span id="1832">1832</span>
-<span id="1833">1833</span>
-<span id="1834">1834</span>
-<span id="1835">1835</span>
-<span id="1836">1836</span>
-<span id="1837">1837</span>
-<span id="1838">1838</span>
-<span id="1839">1839</span>
-<span id="1840">1840</span>
-<span id="1841">1841</span>
-<span id="1842">1842</span>
-<span id="1843">1843</span>
-<span id="1844">1844</span>
-<span id="1845">1845</span>
-<span id="1846">1846</span>
-<span id="1847">1847</span>
-<span id="1848">1848</span>
-<span id="1849">1849</span>
-<span id="1850">1850</span>
-<span id="1851">1851</span>
-<span id="1852">1852</span>
-<span id="1853">1853</span>
-<span id="1854">1854</span>
-<span id="1855">1855</span>
-<span id="1856">1856</span>
-<span id="1857">1857</span>
-<span id="1858">1858</span>
-<span id="1859">1859</span>
-<span id="1860">1860</span>
-<span id="1861">1861</span>
-<span id="1862">1862</span>
-<span id="1863">1863</span>
-<span id="1864">1864</span>
-<span id="1865">1865</span>
-<span id="1866">1866</span>
-<span id="1867">1867</span>
-<span id="1868">1868</span>
-<span id="1869">1869</span>
-<span id="1870">1870</span>
-<span id="1871">1871</span>
-<span id="1872">1872</span>
-<span id="1873">1873</span>
-<span id="1874">1874</span>
-<span id="1875">1875</span>
-<span id="1876">1876</span>
-<span id="1877">1877</span>
-<span id="1878">1878</span>
-<span id="1879">1879</span>
-<span id="1880">1880</span>
-<span id="1881">1881</span>
-<span id="1882">1882</span>
-<span id="1883">1883</span>
-<span id="1884">1884</span>
-<span id="1885">1885</span>
-<span id="1886">1886</span>
-<span id="1887">1887</span>
-<span id="1888">1888</span>
-<span id="1889">1889</span>
-<span id="1890">1890</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.</span>
 
 <span class="comment">// Clippy warns that it&#39;s dangerous to derive `PartialEq` and explicitly implement `Hash`, but the</span>
-<span class="comment">// `pairing::bls12_381` types don&#39;t implement `Hash`, so we can&#39;t derive it.</span>
+<span class="comment">// `blstrs` types don&#39;t implement `Hash`, so we can&#39;t derive it.</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::derive_hash_xor_eq</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ff</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">group</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pairing</span>;
 
 <span class="kw">mod</span> <span class="ident">cmp_pairing</span>;
+<span class="kw">mod</span> <span class="ident">convert</span>;
 <span class="kw">mod</span> <span class="ident">into_fr</span>;
 <span class="kw">mod</span> <span class="ident">secret</span>;
 <span class="kw">mod</span> <span class="ident">util</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;codec-support&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">macro_use</span>]</span>
-<span class="kw">mod</span> <span class="ident">codec_impl</span>;
-
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">convert</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">error</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">poly</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">serde_impl</span>;
@@ -1918,12 +1813,10 @@
 <span class="kw">use</span> <span class="ident">std::cmp::Ordering</span>;
 <span class="kw">use</span> <span class="ident">std::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::hash</span>::{<span class="ident">Hash</span>, <span class="ident">Hasher</span>};
-<span class="kw">use</span> <span class="ident">std::vec::Vec</span>;
+<span class="kw">use</span> <span class="ident">std::ops</span>::{<span class="ident">AddAssign</span>, <span class="ident">Mul</span>, <span class="ident">MulAssign</span>, <span class="ident">SubAssign</span>};
 
-<span class="kw">use</span> <span class="ident">ff::Field</span>;
-<span class="kw">use</span> <span class="ident">group</span>::{<span class="ident">CurveAffine</span>, <span class="ident">CurveProjective</span>, <span class="ident">EncodedPoint</span>};
+<span class="kw">use</span> <span class="ident">group</span>::{<span class="ident">ff::Field</span>, <span class="ident">prime::PrimeCurveAffine</span>, <span class="ident">Curve</span>, <span class="ident">Group</span>};
 <span class="kw">use</span> <span class="ident">hex_fmt::HexFmt</span>;
-<span class="kw">use</span> <span class="ident">log::debug</span>;
 <span class="kw">use</span> <span class="ident">pairing::Engine</span>;
 <span class="kw">use</span> <span class="ident">rand::distributions</span>::{<span class="ident">Distribution</span>, <span class="ident">Standard</span>};
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">rngs::OsRng</span>, <span class="ident">Rng</span>, <span class="ident">RngCore</span>, <span class="ident">SeedableRng</span>};
@@ -1932,24 +1825,16 @@
 <span class="kw">use</span> <span class="ident">zeroize::Zeroize</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cmp_pairing::cmp_projective</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::convert</span>::{<span class="ident">derivation_index_into_fr</span>, <span class="ident">fr_from_bytes</span>, <span class="ident">g1_from_bytes</span>, <span class="ident">g2_from_bytes</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error</span>::{<span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::into_fr::IntoFr</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::poly</span>::{<span class="ident">Commitment</span>, <span class="ident">Poly</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::secret::clear_fr</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::sha3_256</span>;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::error</span>::{<span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::into_fr::IntoFr</span>;
-
-<span class="kw">use</span> <span class="ident">convert</span>::{
-    <span class="ident">fr_from_be_bytes</span>, <span class="ident">fr_to_be_bytes</span>, <span class="ident">g1_from_be_bytes</span>, <span class="ident">g1_to_be_bytes</span>, <span class="ident">g2_from_be_bytes</span>,
-    <span class="ident">g2_to_be_bytes</span>,
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">blstrs</span>::{
+    <span class="ident">Bls12</span> <span class="kw">as</span> <span class="ident">PEngine</span>, <span class="ident">G1Affine</span>, <span class="ident">G1Projective</span> <span class="kw">as</span> <span class="ident">G1</span>, <span class="ident">G2Affine</span>, <span class="ident">G2Projective</span> <span class="kw">as</span> <span class="ident">G2</span>, <span class="ident">Scalar</span> <span class="kw">as</span> <span class="ident">Fr</span>,
 };
-<span class="kw">use</span> <span class="ident">util</span>::{<span class="ident">derivation_index_into_fr</span>, <span class="ident">sha3_256</span>};
-
-<span class="kw">use</span> <span class="ident">blst</span>::{
-    <span class="ident">min_pk</span>::{<span class="ident">PublicKey</span> <span class="kw">as</span> <span class="ident">BlstPublicKey</span>, <span class="ident">SecretKey</span> <span class="kw">as</span> <span class="ident">BlstSecretKey</span>, <span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">BlstSignature</span>},
-    <span class="ident">BLST_ERROR</span>,
-};
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pairing::bls12_381</span>::{<span class="ident">Bls12</span> <span class="kw">as</span> <span class="ident">PEngine</span>, <span class="ident">Fr</span>, <span class="ident">FrRepr</span>, <span class="ident">G1Affine</span>, <span class="ident">G2Affine</span>, <span class="ident">G1</span>, <span class="ident">G2</span>};
 
 <span class="doccomment">/// The size of a secret key&#39;s representation in bytes.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SK_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">32</span>;
@@ -1969,13 +1854,13 @@
 
 <span class="kw">impl</span> <span class="ident">Hash</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
     <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;mut</span> <span class="ident">H</span>) {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
     }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_uncompressed</span>();
+        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_uncompressed</span>();
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;PublicKey({:0.10})&quot;</span>, <span class="ident">HexFmt</span>(<span class="ident">uncomp</span>))
     }
 }
@@ -1995,20 +1880,13 @@
 <span class="kw">impl</span> <span class="ident">PublicKey</span> {
     <span class="doccomment">/// Returns `true` if the signature matches the element of `G2`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_g2</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">G2Affine</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>, <span class="ident">hash</span>: <span class="ident">H</span>) -&gt; <span class="ident">bool</span> {
-        <span class="ident">PEngine::pairing</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="ident">hash</span>) <span class="op">==</span> <span class="ident">PEngine::pairing</span>(<span class="ident">G1Affine::one</span>(), <span class="ident">sig</span>.<span class="number">0</span>)
+        <span class="ident">PEngine::pairing</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>(), <span class="kw-2">&amp;</span><span class="ident">hash</span>.<span class="ident">into</span>())
+            <span class="op">==</span> <span class="ident">PEngine::pairing</span>(<span class="kw-2">&amp;</span><span class="ident">G1Affine::generator</span>(), <span class="kw-2">&amp;</span><span class="ident">sig</span>.<span class="number">0</span>.<span class="ident">to_affine</span>())
     }
 
     <span class="doccomment">/// Returns `true` if the signature matches the message.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">blst_sig</span> <span class="op">=</span> <span class="ident">BlstSignature::from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>.<span class="ident">to_bytes</span>())<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">blst_pk</span> <span class="op">=</span> <span class="ident">BlstPublicKey::from_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">to_bytes</span>())<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">blst_sig</span>.<span class="ident">verify</span>(<span class="bool-val">false</span>, <span class="ident">msg</span>.<span class="ident">as_ref</span>(), <span class="ident">DST</span>, <span class="kw-2">&amp;</span>[], <span class="kw-2">&amp;</span><span class="ident">blst_pk</span>, <span class="bool-val">false</span>);
-        <span class="kw">if</span> <span class="ident">result</span> <span class="op">==</span> <span class="ident">BLST_ERROR::BLST_SUCCESS</span> {
-            <span class="prelude-val">Ok</span>(())
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">result</span>.<span class="ident">into</span>())
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">verify_g2</span>(<span class="ident">sig</span>, <span class="ident">hash_g2</span>(<span class="ident">msg</span>))
     }
 
     <span class="doccomment">/// Encrypts the message using the OS random number generator.</span>
@@ -2022,12 +1900,12 @@
     <span class="doccomment">/// Encrypts the message.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encrypt_with_rng</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span>, <span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="ident">Ciphertext</span> {
         <span class="kw">let</span> <span class="ident">r</span>: <span class="ident">Fr</span> <span class="op">=</span> <span class="ident">Fr::random</span>(<span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">u</span> <span class="op">=</span> <span class="ident">G1Affine::one</span>().<span class="ident">mul</span>(<span class="ident">r</span>);
+        <span class="kw">let</span> <span class="ident">u</span> <span class="op">=</span> <span class="ident">G1Affine::generator</span>().<span class="ident">mul</span>(<span class="ident">r</span>);
         <span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> {
-            <span class="kw">let</span> <span class="ident">g</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">mul</span>(<span class="ident">r</span>);
+            <span class="kw">let</span> <span class="ident">g</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">mul</span>(<span class="ident">r</span>);
             <span class="ident">xor_with_hash</span>(<span class="ident">g</span>, <span class="ident">msg</span>.<span class="ident">as_ref</span>())
         };
-        <span class="kw">let</span> <span class="ident">w</span> <span class="op">=</span> <span class="ident">hash_g1_g2</span>(<span class="ident">u</span>, <span class="kw-2">&amp;</span><span class="ident">v</span>).<span class="ident">into_affine</span>().<span class="ident">mul</span>(<span class="ident">r</span>);
+        <span class="kw">let</span> <span class="ident">w</span> <span class="op">=</span> <span class="ident">hash_g1_g2</span>(<span class="ident">u</span>, <span class="kw-2">&amp;</span><span class="ident">v</span>).<span class="ident">to_affine</span>().<span class="ident">mul</span>(<span class="ident">r</span>);
         <span class="ident">Ciphertext</span>(<span class="ident">u</span>, <span class="ident">v</span>, <span class="ident">w</span>)
     }
 
@@ -2041,24 +1919,23 @@
 
     <span class="doccomment">/// Returns the key with the given representation, if valid.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="ident">PK_SIZE</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">g1</span> <span class="op">=</span> <span class="ident">g1_from_be_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">g1</span> <span class="op">=</span> <span class="ident">g1_from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">PublicKey</span>(<span class="ident">g1</span>))
     }
 
     <span class="doccomment">/// Returns a byte string representation of the public key.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="self">self</span>) -&gt; [<span class="ident">u8</span>; <span class="ident">PK_SIZE</span>] {
-        <span class="ident">g1_to_be_bytes</span>(<span class="self">self</span>.<span class="number">0</span>)
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_compressed</span>()
     }
 }
 
 <span class="doccomment">/// A public key share.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;codec-support&quot;</span>, <span class="ident">derive</span>(<span class="ident">codec::Encode</span>, <span class="ident">codec::Decode</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PublicKeyShare</span>(<span class="ident">PublicKey</span>);
 
 <span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">PublicKeyShare</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_uncompressed</span>();
+        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span> .<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_uncompressed</span>();
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;PublicKeyShare({:0.10})&quot;</span>, <span class="ident">HexFmt</span>(<span class="ident">uncomp</span>))
     }
 }
@@ -2070,23 +1947,16 @@
     }
 
     <span class="doccomment">/// Returns `true` if the signature matches the message.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureShare</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">blst_sig</span> <span class="op">=</span> <span class="ident">BlstSignature::from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>.<span class="ident">to_bytes</span>())<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">blst_pk</span> <span class="op">=</span> <span class="ident">BlstPublicKey::from_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">to_bytes</span>())<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">blst_sig</span>.<span class="ident">verify</span>(<span class="bool-val">false</span>, <span class="ident">msg</span>.<span class="ident">as_ref</span>(), <span class="ident">DST</span>, <span class="kw-2">&amp;</span>[], <span class="kw-2">&amp;</span><span class="ident">blst_pk</span>, <span class="bool-val">false</span>);
-        <span class="kw">if</span> <span class="ident">result</span> <span class="op">==</span> <span class="ident">BLST_ERROR::BLST_SUCCESS</span> {
-            <span class="prelude-val">Ok</span>(())
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">result</span>.<span class="ident">into</span>())
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureShare</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>.<span class="number">0</span>, <span class="ident">msg</span>)
     }
 
     <span class="doccomment">/// Returns `true` if the decryption share matches the ciphertext.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_decryption_share</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">share</span>: <span class="kw-2">&amp;</span><span class="ident">DecryptionShare</span>, <span class="ident">ct</span>: <span class="kw-2">&amp;</span><span class="ident">Ciphertext</span>) -&gt; <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">Ciphertext</span>(<span class="kw-2">ref</span> <span class="ident">u</span>, <span class="kw-2">ref</span> <span class="ident">v</span>, <span class="kw-2">ref</span> <span class="ident">w</span>) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">ct</span>;
         <span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">hash_g1_g2</span>(<span class="kw-2">*</span><span class="ident">u</span>, <span class="ident">v</span>);
-        <span class="ident">PEngine::pairing</span>(<span class="ident">share</span>.<span class="number">0</span>, <span class="ident">hash</span>) <span class="op">==</span> <span class="ident">PEngine::pairing</span>((<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>, <span class="kw-2">*</span><span class="ident">w</span>)
+        <span class="ident">PEngine::pairing</span>(<span class="kw-2">&amp;</span><span class="ident">share</span>.<span class="number">0</span>.<span class="ident">to_affine</span>(), <span class="kw-2">&amp;</span><span class="ident">hash</span>.<span class="ident">to_affine</span>())
+            <span class="op">==</span> <span class="ident">PEngine::pairing</span>(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.<span class="ident">to_affine</span>(), <span class="kw-2">&amp;</span><span class="ident">w</span>.<span class="ident">to_affine</span>())
     }
 
     <span class="doccomment">/// Derives a child public key share for a given index.</span>
@@ -2130,42 +2000,39 @@
 
 <span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Signature</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_uncompressed</span>();
+        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_uncompressed</span>();
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Signature({:0.10})&quot;</span>, <span class="ident">HexFmt</span>(<span class="ident">uncomp</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Hash</span> <span class="kw">for</span> <span class="ident">Signature</span> {
     <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;mut</span> <span class="ident">H</span>) {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Signature</span> {
     <span class="doccomment">/// Returns `true` if the signature contains an odd number of ones.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_uncompressed</span>();
+        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_uncompressed</span>();
         <span class="kw">let</span> <span class="ident">xor_bytes</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="ident">uncomp</span>.<span class="ident">as_ref</span>().<span class="ident">iter</span>().<span class="ident">fold</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">result</span>, <span class="ident">byte</span><span class="op">|</span> <span class="ident">result</span> <span class="op">^</span> <span class="ident">byte</span>);
-        <span class="kw">let</span> <span class="ident">parity</span> <span class="op">=</span> <span class="number">0</span> <span class="op">!</span><span class="op">=</span> <span class="ident">xor_bytes</span>.<span class="ident">count_ones</span>() <span class="op">%</span> <span class="number">2</span>;
-        <span class="macro">debug!</span>(<span class="string">&quot;Signature: {:0.10}, parity: {}&quot;</span>, <span class="ident">HexFmt</span>(<span class="ident">uncomp</span>), <span class="ident">parity</span>);
-        <span class="ident">parity</span>
+        <span class="number">0</span> <span class="op">!</span><span class="op">=</span> <span class="ident">xor_bytes</span>.<span class="ident">count_ones</span>() <span class="op">%</span> <span class="number">2</span>
     }
 
     <span class="doccomment">/// Returns the signature with the given representation, if valid.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="ident">SIG_SIZE</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">g2</span> <span class="op">=</span> <span class="ident">g2_from_be_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">g2</span> <span class="op">=</span> <span class="ident">g2_from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">Signature</span>(<span class="ident">g2</span>))
     }
 
     <span class="doccomment">/// Returns a byte string representation of the signature.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">u8</span>; <span class="ident">SIG_SIZE</span>] {
-        <span class="ident">g2_to_be_bytes</span>(<span class="self">self</span>.<span class="number">0</span>)
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_compressed</span>()
     }
 }
 
 <span class="doccomment">/// A signature share.</span>
 <span class="comment">// Note: Random signature shares can be generated for testing.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;codec-support&quot;</span>, <span class="ident">derive</span>(<span class="ident">codec::Encode</span>, <span class="ident">codec::Decode</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SignatureShare</span>(<span class="kw">pub</span> <span class="ident">Signature</span>);
 
@@ -2177,7 +2044,7 @@
 
 <span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">SignatureShare</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_uncompressed</span>();
+        <span class="kw">let</span> <span class="ident">uncomp</span> <span class="op">=</span> (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_uncompressed</span>();
         <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;SignatureShare({:0.10})&quot;</span>, <span class="ident">HexFmt</span>(<span class="ident">uncomp</span>))
     }
 }
@@ -2270,7 +2137,7 @@
 
     <span class="doccomment">/// Returns the matching public key.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">PublicKey</span> {
-        <span class="ident">PublicKey</span>(<span class="ident">G1Affine::one</span>().<span class="ident">mul</span>(<span class="self">self</span>.<span class="number">0</span>))
+        <span class="ident">PublicKey</span>(<span class="ident">G1Affine::generator</span>() <span class="op">*</span> <span class="self">self</span>.<span class="number">0</span>)
     }
 
     <span class="doccomment">/// Signs the given element of `G2`.</span>
@@ -2279,22 +2146,18 @@
     }
 
     <span class="doccomment">/// Signs the given message.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sign</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Signature</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">blst_sk</span> <span class="op">=</span> <span class="ident">BlstSecretKey::from_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">to_bytes</span>())<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">blst_sig</span> <span class="op">=</span> <span class="ident">blst_sk</span>.<span class="ident">sign</span>(<span class="ident">msg</span>.<span class="ident">as_ref</span>(), <span class="ident">DST</span>, <span class="kw-2">&amp;</span>[]);
-
-        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">Signature::from_bytes</span>(<span class="ident">blst_sig</span>.<span class="ident">to_bytes</span>())<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">signature</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sign</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="ident">Signature</span> {
+        <span class="self">self</span>.<span class="ident">sign_g2</span>(<span class="ident">hash_g2</span>(<span class="ident">msg</span>))
     }
 
     <span class="doccomment">/// Converts the secret key to big endian bytes</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">u8</span>; <span class="ident">SK_SIZE</span>] {
-        <span class="ident">fr_to_be_bytes</span>(<span class="self">self</span>.<span class="number">0</span>)
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_bytes_be</span>()
     }
 
     <span class="doccomment">/// Deserialize from big endian bytes</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="ident">SK_SIZE</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fr</span> <span class="op">=</span> <span class="ident">fr_from_be_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fr</span> <span class="op">=</span> <span class="ident">fr_from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">SecretKey::from_mut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">fr</span>))
     }
 
@@ -2304,7 +2167,7 @@
             <span class="kw">return</span> <span class="prelude-val">None</span>;
         }
         <span class="kw">let</span> <span class="ident">Ciphertext</span>(<span class="kw-2">ref</span> <span class="ident">u</span>, <span class="kw-2">ref</span> <span class="ident">v</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">ct</span>;
-        <span class="kw">let</span> <span class="ident">g</span> <span class="op">=</span> <span class="ident">u</span>.<span class="ident">into_affine</span>().<span class="ident">mul</span>(<span class="self">self</span>.<span class="number">0</span>);
+        <span class="kw">let</span> <span class="ident">g</span> <span class="op">=</span> <span class="ident">u</span>.<span class="ident">to_affine</span>().<span class="ident">mul</span>(<span class="self">self</span>.<span class="number">0</span>);
         <span class="prelude-val">Some</span>(<span class="ident">xor_with_hash</span>(<span class="ident">g</span>, <span class="ident">v</span>))
     }
 
@@ -2369,9 +2232,8 @@
     }
 
     <span class="doccomment">/// Signs the given message.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sign</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignatureShare</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">sign</span>(<span class="ident">msg</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">SignatureShare</span>(<span class="ident">signature</span>))
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sign</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="ident">SignatureShare</span> {
+        <span class="ident">SignatureShare</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">sign</span>(<span class="ident">msg</span>))
     }
 
     <span class="doccomment">/// Returns a decryption share, or `None`, if the ciphertext isn&#39;t valid.</span>
@@ -2384,7 +2246,7 @@
 
     <span class="doccomment">/// Returns a decryption share, without validating the ciphertext.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">decrypt_share_no_verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ct</span>: <span class="kw-2">&amp;</span><span class="ident">Ciphertext</span>) -&gt; <span class="ident">DecryptionShare</span> {
-        <span class="ident">DecryptionShare</span>(<span class="ident">ct</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">mul</span>((<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>))
+        <span class="ident">DecryptionShare</span>(<span class="ident">ct</span>.<span class="number">0</span>.<span class="ident">to_affine</span>() <span class="op">*</span> (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>)
     }
 
     <span class="doccomment">/// Generates a non-redacted debug string. This method differs from</span>
@@ -2421,9 +2283,9 @@
 <span class="kw">impl</span> <span class="ident">Hash</span> <span class="kw">for</span> <span class="ident">Ciphertext</span> {
     <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;mut</span> <span class="ident">H</span>) {
         <span class="kw">let</span> <span class="ident">Ciphertext</span>(<span class="kw-2">ref</span> <span class="ident">u</span>, <span class="kw-2">ref</span> <span class="ident">v</span>, <span class="kw-2">ref</span> <span class="ident">w</span>) <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>;
-        <span class="ident">u</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
+        <span class="ident">u</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
         <span class="ident">v</span>.<span class="ident">hash</span>(<span class="ident">state</span>);
-        <span class="ident">w</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
+        <span class="ident">w</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
     }
 }
 
@@ -2449,15 +2311,16 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">Ciphertext</span>(<span class="kw-2">ref</span> <span class="ident">u</span>, <span class="kw-2">ref</span> <span class="ident">v</span>, <span class="kw-2">ref</span> <span class="ident">w</span>) <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>;
         <span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">hash_g1_g2</span>(<span class="kw-2">*</span><span class="ident">u</span>, <span class="ident">v</span>);
-        <span class="ident">PEngine::pairing</span>(<span class="ident">G1Affine::one</span>(), <span class="kw-2">*</span><span class="ident">w</span>) <span class="op">==</span> <span class="ident">PEngine::pairing</span>(<span class="kw-2">*</span><span class="ident">u</span>, <span class="ident">hash</span>)
+        <span class="ident">PEngine::pairing</span>(<span class="kw-2">&amp;</span><span class="ident">G1Affine::generator</span>(), <span class="kw-2">&amp;</span><span class="ident">w</span>.<span class="ident">to_affine</span>())
+            <span class="op">==</span> <span class="ident">PEngine::pairing</span>(<span class="kw-2">&amp;</span><span class="ident">u</span>.<span class="ident">to_affine</span>(), <span class="kw-2">&amp;</span><span class="ident">hash</span>.<span class="ident">to_affine</span>())
     }
 
     <span class="doccomment">/// Returns byte representation of Ciphertext</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">Ciphertext</span>(<span class="kw-2">ref</span> <span class="ident">u</span>, <span class="kw-2">ref</span> <span class="ident">v</span>, <span class="kw-2">ref</span> <span class="ident">w</span>) <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Default::default</span>();
-        <span class="ident">result</span>.<span class="ident">extend</span>(<span class="ident">u</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>());
-        <span class="ident">result</span>.<span class="ident">extend</span>(<span class="ident">w</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>());
+        <span class="ident">result</span>.<span class="ident">extend</span>(<span class="ident">u</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>());
+        <span class="ident">result</span>.<span class="ident">extend</span>(<span class="ident">w</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>());
         <span class="ident">result</span>.<span class="ident">extend</span>(<span class="ident">v</span>);
         <span class="ident">result</span>
     }
@@ -2468,29 +2331,17 @@
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::InvalidBytes</span>);
         }
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">u_compressed</span>: <span class="op">&lt;</span><span class="ident">G1Affine</span> <span class="kw">as</span> <span class="ident">CurveAffine</span><span class="op">&gt;</span><span class="ident">::Compressed</span> <span class="op">=</span> <span class="ident">EncodedPoint::empty</span>();
-        <span class="ident">u_compressed</span>.<span class="ident">as_mut</span>().<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[<span class="number">0</span>..<span class="ident">PK_SIZE</span>]);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ubytes</span>: [<span class="ident">u8</span>; <span class="ident">PK_SIZE</span>] <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">PK_SIZE</span>];
+        <span class="ident">ubytes</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[<span class="number">0</span>..<span class="ident">PK_SIZE</span>]);
+        <span class="kw">let</span> <span class="ident">u</span> <span class="op">=</span> <span class="ident">g1_from_bytes</span>(<span class="ident">ubytes</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">w_compressed</span>: <span class="op">&lt;</span><span class="ident">G2Affine</span> <span class="kw">as</span> <span class="ident">CurveAffine</span><span class="op">&gt;</span><span class="ident">::Compressed</span> <span class="op">=</span> <span class="ident">EncodedPoint::empty</span>();
-        <span class="ident">w_compressed</span>
-            .<span class="ident">as_mut</span>()
-            .<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[<span class="ident">PK_SIZE</span>..<span class="ident">PK_SIZE</span> <span class="op">+</span> <span class="ident">SIG_SIZE</span>]);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wbytes</span>: [<span class="ident">u8</span>; <span class="ident">SIG_SIZE</span>] <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">SIG_SIZE</span>];
+        <span class="ident">wbytes</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[<span class="ident">PK_SIZE</span>..<span class="ident">PK_SIZE</span> <span class="op">+</span> <span class="ident">SIG_SIZE</span>]);
+        <span class="kw">let</span> <span class="ident">w</span> <span class="op">=</span> <span class="ident">g2_from_bytes</span>(<span class="ident">wbytes</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="ident">bytes</span>[<span class="ident">PK_SIZE</span> <span class="op">+</span> <span class="ident">SIG_SIZE</span>..]).<span class="ident">to_vec</span>();
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(
-            <span class="ident">u_compressed</span>
-                .<span class="ident">into_affine</span>()
-                .<span class="ident">ok</span>()
-                .<span class="ident">ok_or</span>(<span class="ident">Error::InvalidBytes</span>)<span class="question-mark">?</span>
-                .<span class="ident">into_projective</span>(),
-            <span class="ident">v</span>,
-            <span class="ident">w_compressed</span>
-                .<span class="ident">into_affine</span>()
-                .<span class="ident">ok</span>()
-                .<span class="ident">ok_or</span>(<span class="ident">Error::InvalidBytes</span>)<span class="question-mark">?</span>
-                .<span class="ident">into_projective</span>(),
-        ))
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>(<span class="ident">u</span>, <span class="ident">v</span>, <span class="ident">w</span>))
     }
 }
 
@@ -2506,7 +2357,7 @@
 
 <span class="kw">impl</span> <span class="ident">Hash</span> <span class="kw">for</span> <span class="ident">DecryptionShare</span> {
     <span class="kw">fn</span> <span class="ident">hash</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">Hasher</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;mut</span> <span class="ident">H</span>) {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>().<span class="ident">hash</span>(<span class="ident">state</span>);
     }
 }
 
@@ -2519,13 +2370,13 @@
 <span class="kw">impl</span> <span class="ident">DecryptionShare</span> {
     <span class="doccomment">/// Deserializes the share from big endian bytes</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_bytes</span>(<span class="ident">bytes</span>: [<span class="ident">u8</span>; <span class="ident">PK_SIZE</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">g1</span> <span class="op">=</span> <span class="ident">g1_from_be_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">g1</span> <span class="op">=</span> <span class="ident">g1_from_bytes</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">DecryptionShare</span>(<span class="ident">g1</span>))
     }
 
     <span class="doccomment">/// Serializes the share as big endian bytes</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">u8</span>; <span class="ident">PK_SIZE</span>] {
-        <span class="ident">g1_to_be_bytes</span>(<span class="self">self</span>.<span class="number">0</span>)
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_compressed</span>()
     }
 }
 
@@ -2596,18 +2447,18 @@
     <span class="doccomment">/// let msg = &quot;Happy birthday! If this is signed, at least four people remembered!&quot;;</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// // Create four signature shares for the message.</span>
-    <span class="doccomment">/// let sig_shares: BTreeMap&lt;_, _&gt; = (0..4).map(|i| (i, sk_shares[i].sign(msg).expect(&quot;failed to sign msg&quot;))).collect();</span>
+    <span class="doccomment">/// let sig_shares: BTreeMap&lt;_, _&gt; = (0..4).map(|i| (i, sk_shares[i].sign(msg))).collect();</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// // Validate the signature shares.</span>
     <span class="doccomment">/// for (i, sig_share) in &amp;sig_shares {</span>
-    <span class="doccomment">///     pk_set.public_key_share(*i).verify(sig_share, msg).expect(&quot;signature verification failed&quot;);</span>
+    <span class="doccomment">///     assert!(pk_set.public_key_share(*i).verify(sig_share, msg));</span>
     <span class="doccomment">/// }</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// // Combine them to produce the main signature.</span>
     <span class="doccomment">/// let sig = pk_set.combine_signatures(&amp;sig_shares).expect(&quot;not enough shares&quot;);</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// // Validate the main signature. If the shares were valid, this can&#39;t fail.</span>
-    <span class="doccomment">/// pk_set.public_key().verify(&amp;sig, msg).expect(&quot;signature verification failed&quot;);</span>
+    <span class="doccomment">/// assert!(pk_set.public_key().verify(&amp;sig, msg));</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">combine_signatures</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span>, <span class="ident">S</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">SignatureShare</span><span class="op">&gt;</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -2760,8 +2611,7 @@
 
 <span class="doccomment">/// Returns a hash of the given message in `G2`.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hash_g2</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">msg</span>: <span class="ident">M</span>) -&gt; <span class="ident">G2</span> {
-    <span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">sha3_256</span>(<span class="ident">msg</span>.<span class="ident">as_ref</span>());
-    <span class="ident">G2::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">ChaChaRng::from_seed</span>(<span class="ident">digest</span>))
+    <span class="ident">G2::hash_to_curve</span>(<span class="ident">msg</span>.<span class="ident">as_ref</span>(), <span class="ident">DST</span>, <span class="kw-2">&amp;</span>[])
 }
 
 <span class="doccomment">/// Returns a hash of the group element and message, in the second group.</span>
@@ -2773,13 +2623,13 @@
     } <span class="kw">else</span> {
         <span class="ident">msg</span>.<span class="ident">as_ref</span>().<span class="ident">to_vec</span>()
     };
-    <span class="ident">msg</span>.<span class="ident">extend</span>(<span class="ident">g1</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>());
+    <span class="ident">msg</span>.<span class="ident">extend</span>(<span class="ident">g1</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>());
     <span class="ident">hash_g2</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>)
 }
 
 <span class="doccomment">/// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.</span>
 <span class="kw">fn</span> <span class="ident">xor_with_hash</span>(<span class="ident">g1</span>: <span class="ident">G1</span>, <span class="ident">bytes</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">sha3_256</span>(<span class="ident">g1</span>.<span class="ident">into_affine</span>().<span class="ident">into_compressed</span>().<span class="ident">as_ref</span>());
+    <span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">sha3_256</span>(<span class="ident">g1</span>.<span class="ident">to_affine</span>().<span class="ident">to_compressed</span>().<span class="ident">as_ref</span>());
     <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ChaChaRng::from_seed</span>(<span class="ident">digest</span>);
     <span class="kw">let</span> <span class="ident">xor</span> <span class="op">=</span> <span class="op">|</span>(<span class="ident">a</span>, <span class="ident">b</span>): (<span class="ident">u8</span>, <span class="kw-2">&amp;</span><span class="ident">u8</span>)<span class="op">|</span> <span class="ident">a</span> <span class="op">^</span> <span class="ident">b</span>;
     <span class="ident">rng</span>.<span class="ident">sample_iter</span>(<span class="kw-2">&amp;</span><span class="ident">Standard</span>).<span class="ident">zip</span>(<span class="ident">bytes</span>).<span class="ident">map</span>(<span class="ident">xor</span>).<span class="ident">collect</span>()
@@ -2789,7 +2639,7 @@
 <span class="doccomment">/// group generator `g`, returns `f(0) * g`.</span>
 <span class="kw">fn</span> <span class="ident">interpolate</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">B</span>, <span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">t</span>: <span class="ident">usize</span>, <span class="ident">items</span>: <span class="ident">I</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>
 <span class="kw">where</span>
-    <span class="ident">C</span>: <span class="ident">CurveProjective</span><span class="op">&lt;</span><span class="ident">Scalar</span> <span class="op">=</span> <span class="ident">Fr</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>: <span class="ident">Curve</span><span class="op">&lt;</span><span class="ident">Scalar</span> <span class="op">=</span> <span class="ident">Fr</span><span class="op">&gt;</span>,
     <span class="ident">I</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">T</span>, <span class="ident">B</span>)<span class="op">&gt;</span>,
     <span class="ident">T</span>: <span class="ident">IntoFr</span>,
     <span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
@@ -2821,7 +2671,7 @@
         <span class="ident">x_prod</span>[<span class="ident">i</span>].<span class="ident">mul_assign</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>);
     }
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">C::zero</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">C::identity</span>();
     <span class="kw">for</span> (<span class="kw-2">mut</span> <span class="ident">l0</span>, (<span class="ident">x</span>, <span class="ident">sample</span>)) <span class="kw">in</span> <span class="ident">x_prod</span>.<span class="ident">into_iter</span>().<span class="ident">zip</span>(<span class="kw-2">&amp;</span><span class="ident">samples</span>) {
         <span class="comment">// Compute the value at 0 of the Lagrange polynomial that is `0` at the other data</span>
         <span class="comment">// points but `1` at `x`.</span>
@@ -2831,8 +2681,14 @@
             <span class="ident">diff</span>.<span class="ident">sub_assign</span>(<span class="ident">x</span>);
             <span class="ident">denom</span>.<span class="ident">mul_assign</span>(<span class="kw-2">&amp;</span><span class="ident">diff</span>);
         }
-        <span class="ident">l0</span>.<span class="ident">mul_assign</span>(<span class="kw-2">&amp;</span><span class="ident">denom</span>.<span class="ident">inverse</span>().<span class="ident">ok_or</span>(<span class="ident">Error::DuplicateEntry</span>)<span class="question-mark">?</span>);
-        <span class="ident">result</span>.<span class="ident">add_assign</span>(<span class="kw-2">&amp;</span><span class="ident">sample</span>.<span class="ident">borrow</span>().<span class="ident">into_affine</span>().<span class="ident">mul</span>(<span class="ident">l0</span>));
+        <span class="comment">// Can we avoid using unwrap with CtOption? Should always be ok</span>
+        <span class="comment">// because of `is_none` check.</span>
+        <span class="kw">let</span> <span class="ident">denom_inv</span> <span class="op">=</span> <span class="ident">denom</span>.<span class="ident">invert</span>();
+        <span class="kw">if</span> <span class="ident">denom_inv</span>.<span class="ident">is_none</span>().<span class="ident">into</span>() {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::DuplicateEntry</span>);
+        }
+        <span class="ident">l0</span>.<span class="ident">mul_assign</span>(<span class="kw-2">&amp;</span><span class="ident">denom_inv</span>.<span class="ident">unwrap</span>());
+        <span class="ident">result</span>.<span class="ident">add_assign</span>(<span class="kw-2">&amp;</span><span class="ident">sample</span>.<span class="ident">borrow</span>().<span class="ident">mul</span>(<span class="ident">l0</span>));
     }
     <span class="prelude-val">Ok</span>(<span class="ident">result</span>)
 }
@@ -2858,9 +2714,8 @@
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
     <span class="kw">use</span> <span class="ident">eyre</span>::{<span class="ident">eyre</span>, <span class="prelude-ty">Result</span>};
-    <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
-
     <span class="kw">use</span> <span class="ident">rand</span>::{<span class="self">self</span>, <span class="ident">distributions::Standard</span>, <span class="ident">random</span>, <span class="ident">Rng</span>};
+    <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_interpolate</span>() {
@@ -2871,7 +2726,7 @@
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">x</span> <span class="op">=</span> <span class="number">0</span>;
             <span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="op">=</span><span class="ident">deg</span> {
-                <span class="ident">x</span> <span class="op">+</span><span class="op">=</span> <span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">1</span>, <span class="number">5</span>);
+                <span class="ident">x</span> <span class="op">+</span><span class="op">=</span> <span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">1</span>..<span class="number">5</span>);
                 <span class="ident">values</span>.<span class="ident">push</span>((<span class="ident">x</span> <span class="op">-</span> <span class="number">1</span>, <span class="ident">comm</span>.<span class="ident">evaluate</span>(<span class="ident">x</span>)));
             }
             <span class="kw">let</span> <span class="ident">actual</span> <span class="op">=</span> <span class="ident">interpolate</span>(<span class="ident">deg</span>, <span class="ident">values</span>).<span class="ident">expect</span>(<span class="string">&quot;wrong number of values&quot;</span>);
@@ -2886,9 +2741,9 @@
         <span class="kw">let</span> <span class="ident">pk0</span> <span class="op">=</span> <span class="ident">sk0</span>.<span class="ident">public_key</span>();
         <span class="kw">let</span> <span class="ident">msg0</span> <span class="op">=</span> <span class="string">b&quot;Real news&quot;</span>;
         <span class="kw">let</span> <span class="ident">msg1</span> <span class="op">=</span> <span class="string">b&quot;Fake news&quot;</span>;
-        <span class="ident">pk0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sk0</span>.<span class="ident">sign</span>(<span class="ident">msg0</span>)<span class="question-mark">?</span>, <span class="ident">msg0</span>)<span class="question-mark">?</span>;
-        <span class="macro">assert!</span>(<span class="ident">pk0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sk1</span>.<span class="ident">sign</span>(<span class="ident">msg0</span>)<span class="question-mark">?</span>, <span class="ident">msg0</span>).<span class="ident">is_err</span>()); <span class="comment">// Wrong key.</span>
-        <span class="macro">assert!</span>(<span class="ident">pk0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sk0</span>.<span class="ident">sign</span>(<span class="ident">msg1</span>)<span class="question-mark">?</span>, <span class="ident">msg0</span>).<span class="ident">is_err</span>()); <span class="comment">// Wrong message.</span>
+        <span class="macro">assert!</span>(<span class="ident">pk0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sk0</span>.<span class="ident">sign</span>(<span class="ident">msg0</span>), <span class="ident">msg0</span>));
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">pk0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sk1</span>.<span class="ident">sign</span>(<span class="ident">msg0</span>), <span class="ident">msg0</span>)); <span class="comment">// Wrong key.</span>
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">pk0</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sk0</span>.<span class="ident">sign</span>(<span class="ident">msg1</span>), <span class="ident">msg0</span>)); <span class="comment">// Wrong message.</span>
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -2917,27 +2772,31 @@
 
         <span class="comment">// The threshold is 3, so 4 signature shares will suffice to recreate the share.</span>
         <span class="comment">// note: this tests passing a Vec to ::combine_signatures (instead of BTreeMap)</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sigs</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="kw">_</span>, <span class="kw">_</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[];
-        <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> [<span class="number">5</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">10</span>] {
-            <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk_set</span>.<span class="ident">secret_key_share</span>(<span class="ident">i</span>).<span class="ident">sign</span>(<span class="ident">msg</span>)<span class="question-mark">?</span>;
-            <span class="ident">sigs</span>.<span class="ident">push</span>((<span class="ident">i</span>, <span class="ident">sig</span>));
-        }
+        <span class="kw">let</span> <span class="ident">sigs</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="kw">_</span>, <span class="kw">_</span>)<span class="op">&gt;</span> <span class="op">=</span> [<span class="number">5</span>, <span class="number">8</span>, <span class="number">7</span>, <span class="number">10</span>]
+            .<span class="ident">iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">i</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk_set</span>.<span class="ident">secret_key_share</span>(<span class="ident">i</span>).<span class="ident">sign</span>(<span class="ident">msg</span>);
+                (<span class="ident">i</span>, <span class="ident">sig</span>)
+            })
+            .<span class="ident">collect</span>();
 
         <span class="comment">// Each of the shares is a valid signature matching its public key share.</span>
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">sig</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">sigs</span> {
-            <span class="ident">pk_set</span>.<span class="ident">public_key_share</span>(<span class="kw-2">*</span><span class="ident">i</span>).<span class="ident">verify</span>(<span class="ident">sig</span>, <span class="ident">msg</span>)<span class="question-mark">?</span>;
+            <span class="macro">assert!</span>(<span class="ident">pk_set</span>.<span class="ident">public_key_share</span>(<span class="kw-2">*</span><span class="ident">i</span>).<span class="ident">verify</span>(<span class="ident">sig</span>, <span class="ident">msg</span>));
         }
 
         <span class="comment">// Combined, they produce a signature matching the main public key.</span>
         <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">pk_set</span>.<span class="ident">combine_signatures</span>(<span class="ident">sigs</span>).<span class="ident">expect</span>(<span class="string">&quot;signatures match&quot;</span>);
-        <span class="ident">pk_set</span>.<span class="ident">public_key</span>().<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="ident">msg</span>)<span class="question-mark">?</span>;
+        <span class="macro">assert!</span>(<span class="ident">pk_set</span>.<span class="ident">public_key</span>().<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="ident">msg</span>));
 
         <span class="comment">// A different set of signatories produces the same signature.</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sigs2</span> <span class="op">=</span> <span class="ident">BTreeMap::default</span>();
-        <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> [<span class="number">42</span>, <span class="number">43</span>, <span class="number">44</span>, <span class="number">45</span>] {
-            <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk_set</span>.<span class="ident">secret_key_share</span>(<span class="ident">i</span>).<span class="ident">sign</span>(<span class="ident">msg</span>)<span class="question-mark">?</span>;
-            <span class="ident">sigs2</span>.<span class="ident">insert</span>(<span class="ident">i</span>, <span class="ident">sig</span>);
-        }
+        <span class="kw">let</span> <span class="ident">sigs2</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> [<span class="number">42</span>, <span class="number">43</span>, <span class="number">44</span>, <span class="number">45</span>]
+            .<span class="ident">iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">i</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk_set</span>.<span class="ident">secret_key_share</span>(<span class="ident">i</span>).<span class="ident">sign</span>(<span class="ident">msg</span>);
+                (<span class="ident">i</span>, <span class="ident">sig</span>)
+            })
+            .<span class="ident">collect</span>();
 
         <span class="kw">let</span> <span class="ident">sig2</span> <span class="op">=</span> <span class="ident">pk_set</span>.<span class="ident">combine_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">sigs2</span>).<span class="ident">expect</span>(<span class="string">&quot;signatures match&quot;</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">sig</span>, <span class="ident">sig2</span>);
@@ -3028,11 +2887,11 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_hash_g1_g2</span>() {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
+        <span class="kw">let</span> <span class="ident">g0</span> <span class="op">=</span> <span class="ident">G1::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">g1</span> <span class="op">=</span> <span class="ident">G1::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">msg</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">rng</span>.<span class="ident">sample_iter</span>(<span class="kw-2">&amp;</span><span class="ident">Standard</span>).<span class="ident">take</span>(<span class="number">1000</span>).<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">msg_end0</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">iter</span>().<span class="ident">chain</span>(<span class="string">b&quot;end0&quot;</span>).<span class="ident">cloned</span>().<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">msg_end1</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">iter</span>().<span class="ident">chain</span>(<span class="string">b&quot;end1&quot;</span>).<span class="ident">cloned</span>().<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">g0</span> <span class="op">=</span> <span class="ident">G1::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">g1</span> <span class="op">=</span> <span class="ident">G1::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
 
         <span class="macro">assert_eq!</span>(<span class="ident">hash_g1_g2</span>(<span class="ident">g0</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>), <span class="ident">hash_g1_g2</span>(<span class="ident">g0</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>));
         <span class="macro">assert_ne!</span>(<span class="ident">hash_g1_g2</span>(<span class="ident">g0</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>), <span class="ident">hash_g1_g2</span>(<span class="ident">g0</span>, <span class="kw-2">&amp;</span><span class="ident">msg_end0</span>));
@@ -3057,7 +2916,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_from_to_bytes</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">sk</span>: <span class="ident">SecretKey</span> <span class="op">=</span> <span class="ident">random</span>();
-        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="string">&quot;Please sign here: ______&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="string">&quot;Please sign here: ______&quot;</span>);
         <span class="kw">let</span> <span class="ident">pk</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">public_key</span>();
         <span class="kw">let</span> <span class="ident">pk2</span> <span class="op">=</span> <span class="ident">PublicKey::from_bytes</span>(<span class="ident">pk</span>.<span class="ident">to_bytes</span>()).<span class="ident">expect</span>(<span class="string">&quot;invalid pk representation&quot;</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">pk</span>, <span class="ident">pk2</span>);
@@ -3073,7 +2932,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_serde</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">sk</span> <span class="op">=</span> <span class="ident">SecretKey::random</span>();
-        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="string">&quot;Please sign here: ______&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="string">&quot;Please sign here: ______&quot;</span>);
         <span class="kw">let</span> <span class="ident">pk</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">public_key</span>();
         <span class="kw">let</span> <span class="ident">ser_pk</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">pk</span>).<span class="ident">expect</span>(<span class="string">&quot;serialize public key&quot;</span>);
         <span class="kw">let</span> <span class="ident">deser_pk</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_pk</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize public key&quot;</span>);
@@ -3086,58 +2945,11 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;codec-support&quot;</span>)]</span>
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_codec</span>() {
-        <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-        <span class="kw">use</span> <span class="ident">rand::distributions</span>::{<span class="ident">Distribution</span>, <span class="ident">Standard</span>};
-        <span class="kw">use</span> <span class="ident">rand::thread_rng</span>;
-
-        <span class="macro">macro_rules!</span> <span class="ident">assert_codec</span> {
-            (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">obj</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="kw">type</span>:<span class="macro-nonterminal">ty</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">encoded</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">obj</span>.<span class="ident">encode</span>();
-                <span class="kw">let</span> <span class="ident">decoded</span>: <span class="macro-nonterminal">$</span><span class="kw">type</span> <span class="op">=</span> <span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="kw">type</span><span class="op">&gt;</span><span class="macro-nonterminal">::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">encoded</span>[..])<span class="question-mark">?</span>;
-                <span class="macro">assert_eq!</span>(<span class="ident">decoded</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">obj</span>.<span class="ident">clone</span>());
-            };
-        }
-
-        <span class="kw">let</span> <span class="ident">sk</span> <span class="op">=</span> <span class="ident">SecretKey::random</span>();
-        <span class="kw">let</span> <span class="ident">pk</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">public_key</span>();
-        <span class="macro">assert_codec!</span>(<span class="ident">pk</span>, <span class="ident">PublicKey</span>);
-
-        <span class="kw">let</span> <span class="ident">pk_share</span> <span class="op">=</span> <span class="ident">PublicKeyShare</span>(<span class="ident">pk</span>);
-        <span class="macro">assert_codec!</span>(<span class="ident">pk_share</span>, <span class="ident">PublicKeyShare</span>);
-
-        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="string">b&quot;this is a test&quot;</span>);
-        <span class="macro">assert_codec!</span>(<span class="ident">sig</span>, <span class="ident">Signature</span>);
-
-        <span class="kw">let</span> <span class="ident">sig_share</span> <span class="op">=</span> <span class="ident">SignatureShare</span>(<span class="ident">sig</span>);
-        <span class="macro">assert_codec!</span>(<span class="ident">sig_share</span>, <span class="ident">SignatureShare</span>);
-
-        <span class="kw">let</span> <span class="ident">cipher_text</span> <span class="op">=</span> <span class="ident">pk</span>.<span class="ident">encrypt</span>(<span class="string">b&quot;cipher text&quot;</span>);
-        <span class="macro">assert_codec!</span>(<span class="ident">cipher_text</span>, <span class="ident">Ciphertext</span>);
-
-        <span class="kw">let</span> <span class="ident">dec_share</span>: <span class="ident">DecryptionShare</span> <span class="op">=</span> <span class="ident">Standard</span>.<span class="ident">sample</span>(<span class="kw-2">&amp;mut</span> <span class="ident">thread_rng</span>());
-        <span class="macro">assert_codec!</span>(<span class="ident">dec_share</span>, <span class="ident">DecryptionShare</span>);
-
-        <span class="kw">let</span> <span class="ident">sk_set</span> <span class="op">=</span> <span class="ident">SecretKeySet::random</span>(<span class="number">3</span>, <span class="kw-2">&amp;mut</span> <span class="ident">thread_rng</span>());
-        <span class="kw">let</span> <span class="ident">pk_set</span> <span class="op">=</span> <span class="ident">sk_set</span>.<span class="ident">public_keys</span>();
-        <span class="macro">assert_codec!</span>(<span class="ident">pk_set</span>, <span class="ident">PublicKeySet</span>);
-    }
-
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_size</span>() {
-        <span class="macro">assert_eq!</span>(<span class="op">&lt;</span><span class="ident">G1Affine</span> <span class="kw">as</span> <span class="ident">CurveAffine</span><span class="op">&gt;</span><span class="ident">::Compressed::size</span>(), <span class="ident">PK_SIZE</span>);
-        <span class="macro">assert_eq!</span>(<span class="op">&lt;</span><span class="ident">G2Affine</span> <span class="kw">as</span> <span class="ident">CurveAffine</span><span class="op">&gt;</span><span class="ident">::Compressed::size</span>(), <span class="ident">SIG_SIZE</span>);
-    }
-
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_zeroize</span>() {
         <span class="kw">let</span> <span class="ident">zero_sk</span> <span class="op">=</span> <span class="ident">SecretKey::from_mut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">Fr::zero</span>());
-
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sk</span> <span class="op">=</span> <span class="ident">SecretKey::random</span>();
         <span class="macro">assert_ne!</span>(<span class="ident">zero_sk</span>, <span class="ident">sk</span>);
-
         <span class="ident">sk</span>.<span class="ident">zeroize</span>();
         <span class="macro">assert_eq!</span>(<span class="ident">zero_sk</span>, <span class="ident">sk</span>);
     }
@@ -3181,19 +2993,15 @@
             <span class="number">41</span>, <span class="number">147</span>, <span class="number">127</span>, <span class="number">112</span>, <span class="number">220</span>, <span class="number">23</span>, <span class="number">106</span>, <span class="number">31</span>, <span class="number">1</span>, <span class="number">67</span>, <span class="number">33</span>, <span class="number">41</span>, <span class="number">187</span>, <span class="number">43</span>, <span class="number">148</span>, <span class="number">211</span>, <span class="number">213</span>, <span class="number">3</span>, <span class="number">31</span>, <span class="number">128</span>,
             <span class="number">101</span>, <span class="number">161</span>,
         ];
-        <span class="comment">// no SecretKey::from_bytes method, so use bincode which requires</span>
-        <span class="comment">// little endian bytes.</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">leskbytes</span> <span class="op">=</span> <span class="ident">skbytes</span>;
-        <span class="ident">leskbytes</span>.<span class="ident">reverse</span>();
-        <span class="kw">let</span> <span class="ident">sk</span>: <span class="ident">SecretKey</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">leskbytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">sk</span> <span class="op">=</span> <span class="ident">SecretKey::from_bytes</span>(<span class="ident">skbytes</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">pk</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">public_key</span>();
         <span class="comment">// secret key gives same public key</span>
         <span class="macro">assert_eq!</span>(<span class="ident">pkbytes</span>, <span class="ident">pk</span>.<span class="ident">to_bytes</span>());
         <span class="comment">// signature matches test vector</span>
-        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">msgbytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">msgbytes</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">sigbytes</span>, <span class="ident">sig</span>.<span class="ident">to_bytes</span>());
         <span class="comment">// signature can be verified</span>
-        <span class="ident">pk</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="ident">msgbytes</span>)<span class="question-mark">?</span>;
+        <span class="macro">assert!</span>(<span class="ident">pk</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="ident">msgbytes</span>));
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -3201,9 +3009,8 @@
     <span class="kw">fn</span> <span class="ident">test_sk_to_from_bytes</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::serde_impl::SerdeSecret</span>;
         <span class="kw">let</span> <span class="ident">sk</span> <span class="op">=</span> <span class="ident">SecretKey::random</span>();
-        <span class="comment">// bincode is little endian, so must reverse to get big endian</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bincode_bytes</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">SerdeSecret</span>(<span class="kw-2">&amp;</span><span class="ident">sk</span>))<span class="question-mark">?</span>;
-        <span class="ident">bincode_bytes</span>.<span class="ident">reverse</span>();
+        <span class="comment">// bincode is little endian, but will always serialize sk to big endian</span>
+        <span class="kw">let</span> <span class="ident">bincode_bytes</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">SerdeSecret</span>(<span class="kw-2">&amp;</span><span class="ident">sk</span>))<span class="question-mark">?</span>;
         <span class="comment">// sk.to_bytes() is big endian</span>
         <span class="kw">let</span> <span class="ident">sk_be_bytes</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">to_bytes</span>();
         <span class="macro">assert_eq!</span>(<span class="ident">bincode_bytes</span>, <span class="ident">sk_be_bytes</span>);
@@ -3526,9 +3333,9 @@
                 <span class="comment">// random index</span>
                 <span class="string">&quot;57cb1459985906a9c00036f0b1d700b52a4dc25b3e0ff3808dd2c9fa6ca6ba87&quot;</span>,
                 <span class="comment">// child secret key at random index</span>
-                <span class="string">&quot;4039a5958f0a10baa1d1f0d5d7e06435a126744e8b656289e74d74241492df89&quot;</span>,
+                <span class="string">&quot;2125994b85332e1478e7d01b81f30933e92074ff05c873ee8306a43dd5be17d4&quot;</span>,
                 <span class="comment">// child public key at random index</span>
-                <span class="string">&quot;b46666bbe6f6315df6cacd8200566a977d1875a09b233b0ea60ecd8ee4ffda6f2e1d2cd28665b60f48682f8d14a95a04&quot;</span>,
+                <span class="string">&quot;a01044f663a75c2000c4b33cec26c92e35c56bb77ed4dc1c1bfe88c890df9caf9153b7069dcf1d93c934ccf391fca3a1&quot;</span>,
             ],
             <span class="macro">vec!</span>[
                 <span class="comment">// secret key</span>
@@ -3538,72 +3345,66 @@
                 <span class="comment">// index 0</span>
                 <span class="string">&quot;00&quot;</span>,
                 <span class="comment">// child secret key at index 0</span>
-                <span class="string">&quot;46b9a6b0b09523de44c2df70650e93320ec9d252c89b7a9eedcebacc0b96ad7a&quot;</span>,
+                <span class="string">&quot;67b1bb08bee06eaa528d1a412d2d4237daa1204234543f27e0afe901a520b78e&quot;</span>,
                 <span class="comment">// child public key at index 0</span>
-                <span class="string">&quot;813695785a144e84c48c2a5644772514b6a58503f675f9c77ddfb7513eeb44888031f3ffe6b907a7f3889817a0de3abe&quot;</span>,
+                <span class="string">&quot;842de40cbb1d66e60b5e4ce3ce02e6081d5fdacf3dbd1cb0c5959c306d54cab40622c5188f4fa91c818c1a5560bcbcc1&quot;</span>,
                 <span class="comment">// index 1</span>
                 <span class="string">&quot;01&quot;</span>,
                 <span class="comment">// child secret key at index 1</span>
-                <span class="string">&quot;633a4afa473971245620d27dc5778102d000fff80fa15ce06e74e1f610a50493&quot;</span>,
+                <span class="string">&quot;379446550d351164cf5a8ed4f6ad4cb7cab5c7c3388f103515b84e40aaa1ef30&quot;</span>,
                 <span class="comment">// child public key at index 1</span>
-                <span class="string">&quot;8fd67eac24b4673a00000f57d40e10852eef9fda2800dff003536e3042a6ac5973f0709776c6c93191df4f0d7daf7e46&quot;</span>,
+                <span class="string">&quot;aecea20ec775b2fd9640517fa4da8e845217f1b4667ace6e7340d1b35ef986c1603056b4a6a66bebe5d2b5a86ff5a7b5&quot;</span>,
                 <span class="comment">// index 2</span>
                 <span class="string">&quot;02&quot;</span>,
                 <span class="comment">// child secret key at index 2</span>
-                <span class="string">&quot;2cc4bf8dd81c619e41146c963e00a245c6cf00163c2932132908f76edf539c7f&quot;</span>,
+                <span class="string">&quot;1ac3cee2dca114a3d0003e6bcf0ac2da26ec2b28044da4bc550a655b527b4693&quot;</span>,
                 <span class="comment">// child public key at index 2</span>
-                <span class="string">&quot;8ab99d21622d98ad8bea68c5db881298f317fac691db1ae1eef191407107978338383ef8408fca0743997d040dab27c1&quot;</span>,
+                <span class="string">&quot;8c9c00407c09dcc6ea186fd8d5e6a39018c83b95ff5610307b6e6b186d00ab925b82405adb120e9c3498b8581a282672&quot;</span>,
                 <span class="comment">// index 1 with left padding</span>
                 <span class="comment">// different to single byte index &quot;01&quot;</span>
                 <span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001&quot;</span>,
                 <span class="comment">// child secret key for 1 with left padding</span>
-                <span class="string">&quot;35f65c516e54a08e29f4f9996738dbfc33f5e1a22b023082ff9f01a4a507fc7c&quot;</span>,
+                <span class="string">&quot;41308f892e28336c5cbf3109c0a6717e759a68badd217e2816b02acc68a852ad&quot;</span>,
                 <span class="comment">// child public key for 1 with left padding</span>
-                <span class="string">&quot;81a2a9a1b3c891701dba0bdbe975bb06ff20947a35519e7938da7a783b0d561694ae5a9c2ec0c0011fc899dae67e11aa&quot;</span>,
+                <span class="string">&quot;a1be856a26d993fee069481b37b22fd4955fcc5cb289bb30f4c6e98d9c36fd6892c7d36674d400c4bda136f9b7c6e1dc&quot;</span>,
                 <span class="comment">// index 1 with right padding</span>
                 <span class="comment">// different to single byte index &quot;01&quot;</span>
                 <span class="string">&quot;0100000000000000000000000000000000000000000000000000000000000000&quot;</span>,
                 <span class="comment">// child secret key for 1 with right padding</span>
-                <span class="string">&quot;49df2b6e5b2d4310f8419d8ea651c790e502884c0b9e903c65d23c2f3d522f8b&quot;</span>,
+                <span class="string">&quot;48c9761c4350e2cf76a765b7d95e6021902d5daf3221cfe2d687ae3e9fba3717&quot;</span>,
                 <span class="comment">// child public key for 1 with right padding</span>
-                <span class="string">&quot;a2479d4554fbf8bc98f206bb09de80e2790f44fa3ea8f0cb02c44116111c60da2691683b17367cbb933c27836d721206&quot;</span>,
+                <span class="string">&quot;a6b1df11c4346da734253993e329ed54ad99907024f35e555374d46b33fb602790105479e68e0d89c48c3798aecc871b&quot;</span>,
                 <span class="comment">// index with 17 bytes</span>
                 <span class="string">&quot;0000000000000000000000000000000101&quot;</span>,
                 <span class="comment">// child secret key for 17 bytes</span>
-                <span class="string">&quot;65a44b4096fb8948d42a762c27141f58b678de54b9cba554f13e8e144f1ed889&quot;</span>,
+                <span class="string">&quot;120fb53090d6cfd1528c83e83af582f96dd105b43f6622df6d797b174429c0f4&quot;</span>,
                 <span class="comment">// child public key for 17 bytes</span>
-                <span class="string">&quot;b2a88bac72330a081500b3b27698664812039b61d6929d3ed0a4fea28a4ae35ebc72a149a8d8b2534860672b4348e7ef&quot;</span>,
-                <span class="comment">// large index greater than q</span>
+                <span class="string">&quot;8c6a3c63379c0c48e652ad3190205ec39e6d0679cf47abca5b92915319ecb5f1eda560801e0490aa6f6566b55e132744&quot;</span>,
+                <span class="comment">// large index greater than q, ie Fr::MAX</span>
                 <span class="string">&quot;fedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedcbafedc&quot;</span>,
                 <span class="comment">// child secret key at large index</span>
-                <span class="string">&quot;3da527e935752a7924b8b244be2b6e4b6a8ef54865ef7e1dfeae5187d1cf414d&quot;</span>,
+                <span class="string">&quot;2ffa71ee5cf75392ffcde2ce8d68fb4524453f55ba2e148d0d4a4000da876be6&quot;</span>,
                 <span class="comment">// child public key at large index</span>
-                <span class="string">&quot;85954d86b7028b362d43e8d8319ef529a8d69c5a4b0a9352f6d3f10d9aa9a5d44b576f14087882d6d51fd10b70e228e9&quot;</span>,
+                <span class="string">&quot;b492577c7a7e324dec2e34397689e41fa8a894890db931fe93cdb29c5342e1e50ea53c969fae1780677ab27c4ff62fca&quot;</span>,
                 <span class="comment">// index with more than 256 bits</span>
                 <span class="comment">// note different to single byte index &quot;00&quot;</span>
                 <span class="string">&quot;00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;</span>,
                 <span class="comment">// child secret key for index more than 256 bits</span>
-                <span class="string">&quot;50524fce1903b24900bd7ae12fce29d3e7cf0520f5fbaee08bc8efe9922458c0&quot;</span>,
+                <span class="string">&quot;10ca7b3cb66ce637d1de47d25cb6817c4b16efcb2221fc60f0190231b2ad656f&quot;</span>,
                 <span class="comment">// child public key for index more than 256 bits</span>
-                <span class="string">&quot;a419c001ca4f8261388f0ca55a43ded57f741d2833c532450bded670dad3b0654f2c7ffa81ca9a1fa7b03639d1fd9171&quot;</span>,
-                <span class="comment">// index with many repeated hashes (34 rounds for this index)</span>
-                <span class="string">&quot;0000000028c0acd2&quot;</span>,
-                <span class="comment">// child secret key for index with main repeated hashes</span>
-                <span class="string">&quot;319e0ac479cff5cb4261e465de3736d634c583bcb5a1ac33fb0dcb1d77908268&quot;</span>,
-                <span class="comment">// child public key for index with many repeated hashes</span>
-                <span class="string">&quot;86037c3f7fbd88572bd56025444bb2a49375d2e146f9a52d8a35689fd93d04ebc62559a1441cdc7edbf39189247b9620&quot;</span>,
-                <span class="comment">// index with child secret key leading zero</span>
-                <span class="string">&quot;0000000000000017&quot;</span>,
+                <span class="string">&quot;8b1d9fada310a22ec2523e42fa1ece8e6bf5b6bc91e591d352dbe96271a9ba9dbecd9a4529befffaf8e57bf929aa227c&quot;</span>,
+                <span class="comment">// index with child secret key leading and trailing zeros</span>
+                <span class="string">&quot;000000000014a06d&quot;</span>,
                 <span class="comment">// child secret key for sk leading zero</span>
-                <span class="string">&quot;00dc1689706a2de1f9b84b647776f200c61de5ba2699ab4be6890d96e7870ef8&quot;</span>,
+                <span class="string">&quot;0000ed12dc692ec6401e3e53be147671e1ab934e346fdc146835443e902d0e00&quot;</span>,
                 <span class="comment">// child public key for sk leading zero</span>
-                <span class="string">&quot;825cb1914a0b5f006d529b081c06b04f334c8c97456e83a4e61917ce6b5256dab462575b1c03a9bed913bf1c070fda0d&quot;</span>,
+                <span class="string">&quot;8258c937cb778d01ee22857b6a120c948638bbf8073e92517b44cde58c1c3117e76d7ee5b62ac3a4cdcdc2971e434643&quot;</span>,
                 <span class="comment">// index with child public key trailing zero</span>
-                <span class="string">&quot;0000000000000152&quot;</span>,
+                <span class="string">&quot;0000000000003f51&quot;</span>,
                 <span class="comment">// child secret key for child pk trailing zero</span>
-                <span class="string">&quot;4237e4e30390f33a329107edde05130ce84e403e0f78a0ba4e5dea79289ba200&quot;</span>,
+                <span class="string">&quot;16be290c63b85ad7c4db5a5c446e40cb79f7bdd2095589c7f1dd97fc869cb816&quot;</span>,
                 <span class="comment">// child public key for child pk trailing zero</span>
-                <span class="string">&quot;adb936c7a97c9c98c80b92635ce6ffaceba6620d133ddc7252bd5d11cf7c7a3aa3bbda9428f860987655820a9e940fd8&quot;</span>,
+                <span class="string">&quot;9493e3176f8a0f8e5e0f855b57f3f09246c628ccda707919e806192369c9f9b84a5c16d1c6a907c4bad01c17ab560000&quot;</span>,
             ],
         ];
         <span class="kw">for</span> <span class="ident">vector</span> <span class="kw">in</span> <span class="ident">vectors</span> {
@@ -3647,7 +3448,7 @@
                 <span class="comment">// plain text hex</span>
                 <span class="string">&quot;0102030405&quot;</span>,
                 <span class="comment">// ciphertext</span>
-                <span class="string">&quot;96f6ab7884f1d1627439df210ce0c192071612a2fe212ec4bf3c70a885be007c7514dc15b769ef02f92558e862d2894e95f892f1eb4a8cfb6f05ac83adcb5b429261bc8b195830d92a59859135157b1f3394156dba1e905f29158d0eeea49faa0238bc51704cfcffdab35fb0d4ca9311bbb5b80d616be2d505d8f82a2ff4e69e756cc835b19e622f5b94457ad9c084e91de6b13d27&quot;</span>,
+                <span class="string">&quot;9369436c4f3b930aebeb1458b5478a393c90c51de74ebe0ad53b178f25ea0ab51b8acae9847ca3ec9d85bea816e174ca81a7160b714ed5a2a2b6d473473e02345bdeabddad35f13127259b905a8b01ea8225a9449ead9922d8d388959d712bc719889f12f8f273c530e1a7b38a0c2bda9a568453e011c41bb3c66e6dc6c313451802bade49a97e2315507e9a68f1f8794cda1b5420&quot;</span>,
             ],
             <span class="comment">// Leading zeros and trailing</span>
             <span class="macro">vec!</span>[
@@ -3656,7 +3457,7 @@
                 <span class="comment">// plain text hex</span>
                 <span class="string">&quot;00bdc600&quot;</span>,
                 <span class="comment">// ciphertext with u and w having trailing zeros</span>
-                <span class="string">&quot;b01724be1ed730f0b1713c24aa5963bff7845a56892b78b1a24152dfe48848223ea54a358c27946323ec013ee46af80088f508ef7ce6abf174f51dbfa5692adc975fa99a569860cff555b3e7f68d06dfe6dd2621643ec859a64e61cee1f9aced1569b695253936197585696cfab0b38dfd159051ec569e0d3ba1bb0d2a3dec008467810621111fb2dd92c44ef251280038164cb6&quot;</span>,
+                <span class="string">&quot;8d86c6a960cf15f0170b855f5b8d7eca52885fa63ba9c242e54f9cdd5a91f0e42c5b16d39108457613eff00e50b21357af578a279b048d4334434402c129c7754b6461bf653bf57b4b09eb06f53b9360b52438cb9c32c580d9b58981dbf1671519f413245fc288f973d7a47ceca5a21d3e69de7561f70c1c4296f40cdcc0043f20b13e6953fbb1b3363af011350e315fed74a849&quot;</span>,
             ],
         ];
         <span class="kw">for</span> <span class="ident">vector</span> <span class="kw">in</span> <span class="ident">vectors</span> {
@@ -3765,7 +3566,7 @@
         <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="string">&quot;Totally real news&quot;</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">child_sig_shares</span> <span class="op">=</span> <span class="ident">BTreeMap::default</span>();
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">child_key_share</span>) <span class="kw">in</span> <span class="ident">child_key_shares</span>.<span class="ident">iter</span>() {
-            <span class="kw">let</span> <span class="ident">child_sig_share</span> <span class="op">=</span> <span class="ident">child_key_share</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">child_sig_share</span> <span class="op">=</span> <span class="ident">child_key_share</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>);
             <span class="ident">child_sig_shares</span>.<span class="ident">insert</span>(<span class="ident">i</span>, <span class="ident">child_sig_share</span>);
         }
         <span class="comment">// Combining the child shares creates a valid signature for the child</span>
@@ -3774,11 +3575,11 @@
         <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">pks_child</span>
             .<span class="ident">combine_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">child_sig_shares</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">eyre!</span>(<span class="string">&quot;signatures match: {}&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-        <span class="ident">pks_child</span>.<span class="ident">public_key</span>().<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="ident">msg</span>)<span class="question-mark">?</span>;
+        <span class="macro">assert!</span>(<span class="ident">pks_child</span>.<span class="ident">public_key</span>().<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="ident">msg</span>));
 
         <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>
 </body></html>
