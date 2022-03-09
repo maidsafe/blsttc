@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.1.0](https://github.com/maidsafe/blsttc/compare/v4.0.0...v4.1.0) (2022-03-09)
+
+
+### Features
+
+* replace bls12_381 with blstrs ([aca04ec](https://github.com/maidsafe/blsttc/commit/aca04ec8f2e2fa066fc890bb87c9a3f1c115f9bf))
+
 ## [4.0.0](https://github.com/maidsafe/blsttc/compare/v3.4.0...v4.0.0) (2022-02-21)
 
 
