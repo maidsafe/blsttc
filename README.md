@@ -100,11 +100,6 @@ must tolerate up to `t` adversarial (malicious or faulty) nodes. Because `t +
 1` nodes are required to sign or reveal information, messages can be trusted
 by third-parties as representing the consensus of the network.
 
-### Documentation
-
-* [threshold_crypto crate documentation](https://docs.rs/threshold_crypto/)
-* [threshold_crypto crates.io package](https://crates.io/crates/threshold_crypto)
-
 ## Performance
 
 Benchmarking functionality is kept in the [`benches` directory](benches). You
@@ -115,10 +110,6 @@ $ RUSTFLAGS="-C target_cpu=native" cargo bench
 ```
 
 We use the [`criterion`](https://crates.io/crates/criterion) benchmarking library.
-
-### Mock cryptography
-
-To speed up automatic tests of crates depending on `threshold_crypto`, the `use-insecure-test-only-mock-crypto` feature is available. **Activating this feature will effectively disable encryption and should only be used during tests!** Essentially, the underlying elliptic curves will be replaced by small finite fields, yielding a 10-200X speed-up in execution. The resulting ciphers can be trivially broken in a number of ways and should never be used in production.
 
 ## License
 
