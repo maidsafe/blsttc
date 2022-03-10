@@ -93,6 +93,13 @@ impl From<PublicKey> for G1 {
 }
 
 /// Utility to convert blsttc to blst types
+impl From<G1> for PublicKey {
+    fn from(item: G1) -> Self {
+        PublicKey(item)
+    }
+}
+
+/// Utility to convert blsttc to blst types
 impl From<PublicKey> for G1Affine {
     fn from(item: PublicKey) -> Self {
         item.0.to_affine()
