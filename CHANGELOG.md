@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0](https://github.com/maidsafe/blsttc/compare/v4.1.0...v5.0.0) (2022-03-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* ensure version bump to 5.0.0
+
+* update readme ([8251bb2](https://github.com/maidsafe/blsttc/commit/8251bb2b25239cb78f3d5f58a50c624142b2afe0))
+
 ## [4.1.0](https://github.com/maidsafe/blsttc/compare/v4.0.0...v4.1.0) (2022-03-09)
 
 
