@@ -1790,6 +1790,63 @@
 <span id="1788">1788</span>
 <span id="1789">1789</span>
 <span id="1790">1790</span>
+<span id="1791">1791</span>
+<span id="1792">1792</span>
+<span id="1793">1793</span>
+<span id="1794">1794</span>
+<span id="1795">1795</span>
+<span id="1796">1796</span>
+<span id="1797">1797</span>
+<span id="1798">1798</span>
+<span id="1799">1799</span>
+<span id="1800">1800</span>
+<span id="1801">1801</span>
+<span id="1802">1802</span>
+<span id="1803">1803</span>
+<span id="1804">1804</span>
+<span id="1805">1805</span>
+<span id="1806">1806</span>
+<span id="1807">1807</span>
+<span id="1808">1808</span>
+<span id="1809">1809</span>
+<span id="1810">1810</span>
+<span id="1811">1811</span>
+<span id="1812">1812</span>
+<span id="1813">1813</span>
+<span id="1814">1814</span>
+<span id="1815">1815</span>
+<span id="1816">1816</span>
+<span id="1817">1817</span>
+<span id="1818">1818</span>
+<span id="1819">1819</span>
+<span id="1820">1820</span>
+<span id="1821">1821</span>
+<span id="1822">1822</span>
+<span id="1823">1823</span>
+<span id="1824">1824</span>
+<span id="1825">1825</span>
+<span id="1826">1826</span>
+<span id="1827">1827</span>
+<span id="1828">1828</span>
+<span id="1829">1829</span>
+<span id="1830">1830</span>
+<span id="1831">1831</span>
+<span id="1832">1832</span>
+<span id="1833">1833</span>
+<span id="1834">1834</span>
+<span id="1835">1835</span>
+<span id="1836">1836</span>
+<span id="1837">1837</span>
+<span id="1838">1838</span>
+<span id="1839">1839</span>
+<span id="1840">1840</span>
+<span id="1841">1841</span>
+<span id="1842">1842</span>
+<span id="1843">1843</span>
+<span id="1844">1844</span>
+<span id="1845">1845</span>
+<span id="1846">1846</span>
+<span id="1847">1847</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.</span>
 
 <span class="comment">// Clippy warns that it&#39;s dangerous to derive `PartialEq` and explicitly implement `Hash`, but the</span>
@@ -1874,6 +1931,49 @@
 <span class="kw">impl</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
     <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">Ordering</span> {
         <span class="ident">cmp_projective</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="number">0</span>)
+    }
+}
+
+<span class="doccomment">/// Utility to convert blsttc to blst types</span>
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PublicKey</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">G1</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">item</span>: <span class="ident">PublicKey</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">item</span>.<span class="number">0</span>
+    }
+}
+
+<span class="doccomment">/// Utility to convert blsttc to blst types</span>
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">item</span>: <span class="ident">G1</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">PublicKey</span>(<span class="ident">item</span>)
+    }
+}
+
+<span class="doccomment">/// Utility to convert blsttc to blst types</span>
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PublicKey</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">G1Affine</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">item</span>: <span class="ident">PublicKey</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">item</span>.<span class="number">0</span>.<span class="ident">to_affine</span>()
+    }
+}
+
+<span class="doccomment">/// Utility to convert blst to blsttc types</span>
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">item</span>: <span class="ident">G1Affine</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">PublicKey</span>(<span class="ident">item</span>.<span class="ident">into</span>())
+    }
+}
+
+<span class="doccomment">/// Utility to compare between blsttc and blst types</span>
+<span class="kw">impl</span> <span class="ident">std::cmp::PartialEq</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">G1</span>) -&gt; <span class="ident">bool</span> {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span> <span class="op">==</span> <span class="ident">other</span>
+    }
+}
+
+<span class="doccomment">/// Utility to compare between blsttc and blst types</span>
+<span class="kw">impl</span> <span class="ident">std::cmp::PartialEq</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PublicKey</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">G1Affine</span>) -&gt; <span class="ident">bool</span> {
+        <span class="comment">// TODO is there a way to avoid the to_affine() by doing some cheap op on other?</span>
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_affine</span>() <span class="op">==</span> <span class="ident">other</span>
     }
 }
 
@@ -2106,6 +2206,20 @@
 <span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">SecretKey</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_tuple</span>(<span class="string">&quot;SecretKey&quot;</span>).<span class="ident">field</span>(<span class="kw-2">&amp;</span><span class="ident">DebugDots</span>).<span class="ident">finish</span>()
+    }
+}
+
+<span class="doccomment">/// Utility to convert blsttc to blst types</span>
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SecretKey</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">blstrs::Scalar</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">item</span>: <span class="ident">SecretKey</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">item</span>.<span class="number">0</span>
+    }
+}
+
+<span class="doccomment">/// Utility to compare between blsttc and blst types</span>
+<span class="kw">impl</span> <span class="ident">std::cmp::PartialEq</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SecretKey</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">Fr</span>) -&gt; <span class="ident">bool</span> {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span> <span class="op">==</span> <span class="ident">other</span>
     }
 }
 
@@ -2935,7 +3049,7 @@
         <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">sign</span>(<span class="string">&quot;Please sign here: ______&quot;</span>);
         <span class="kw">let</span> <span class="ident">pk</span> <span class="op">=</span> <span class="ident">sk</span>.<span class="ident">public_key</span>();
         <span class="kw">let</span> <span class="ident">ser_pk</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">pk</span>).<span class="ident">expect</span>(<span class="string">&quot;serialize public key&quot;</span>);
-        <span class="kw">let</span> <span class="ident">deser_pk</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_pk</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize public key&quot;</span>);
+        <span class="kw">let</span> <span class="ident">deser_pk</span>: <span class="ident">PublicKey</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_pk</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize public key&quot;</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">ser_pk</span>.<span class="ident">len</span>(), <span class="ident">PK_SIZE</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">pk</span>, <span class="ident">deser_pk</span>);
         <span class="kw">let</span> <span class="ident">ser_sig</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">sig</span>).<span class="ident">expect</span>(<span class="string">&quot;serialize signature&quot;</span>);
