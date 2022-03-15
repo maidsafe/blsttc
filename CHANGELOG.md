@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.1.0](https://github.com/maidsafe/blsttc/compare/v5.0.0...v5.1.0) (2022-03-15)
+
+
+### Features
+
+* add From<G1> for PublicKey ([a93c8e6](https://github.com/maidsafe/blsttc/commit/a93c8e6c2359ec0bdf3bb8719cb46546ba076595))
+* add generic partial eq and from impls ([7a198d3](https://github.com/maidsafe/blsttc/commit/7a198d372dc9fba2ef72be7dbe11f95fc93c85f3))
+* From<G1Affine> for PublicKey ([4c75c8a](https://github.com/maidsafe/blsttc/commit/4c75c8aa11b07597c237bd13c557001cb808aa7e))
+
 ## [5.0.0](https://github.com/maidsafe/blsttc/compare/v4.1.0...v5.0.0) (2022-03-10)
 
 
