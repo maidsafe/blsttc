@@ -5,7 +5,11 @@
 #![allow(clippy::derive_hash_xor_eq)]
 #![warn(missing_docs)]
 
+// re-export crates used in our public API.
+pub use blstrs;
 pub use group;
+pub use rand;
+pub use serde; // todo: add serde feature flag later.
 
 mod cmp_pairing;
 mod convert;
