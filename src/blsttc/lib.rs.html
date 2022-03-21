@@ -1847,6 +1847,10 @@
 <span id="1845">1845</span>
 <span id="1846">1846</span>
 <span id="1847">1847</span>
+<span id="1848">1848</span>
+<span id="1849">1849</span>
+<span id="1850">1850</span>
+<span id="1851">1851</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.</span>
 
 <span class="comment">// Clippy warns that it&#39;s dangerous to derive `PartialEq` and explicitly implement `Hash`, but the</span>
@@ -1854,7 +1858,11 @@
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy::derive_hash_xor_eq</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
+<span class="comment">// re-export crates used in our public API.</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">blstrs</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">group</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">rand</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">serde</span>; <span class="comment">// todo: add serde feature flag later.</span>
 
 <span class="kw">mod</span> <span class="ident">cmp_pairing</span>;
 <span class="kw">mod</span> <span class="ident">convert</span>;
