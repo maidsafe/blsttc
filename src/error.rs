@@ -1,8 +1,10 @@
 //! Crypto errors.
 use thiserror::Error;
 
+use serde::{Deserialize, Serialize};
+
 /// A crypto error.
-#[derive(Clone, Eq, PartialEq, Debug, Error)]
+#[derive(Clone, Eq, PartialEq, Debug, Error, Serialize, Deserialize)]
 pub enum Error {
     /// Not enough signature shares.
     #[error("Not enough shares for interpolation")]
