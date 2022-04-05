@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.2.0](https://github.com/maidsafe/blsttc/compare/v5.1.3...v5.2.0) (2022-04-05)
+
+
+### Features
+
+* derive [De-]Serialize on Error ([525cc71](https://github.com/maidsafe/blsttc/commit/525cc7171ca9dc375b25ba5cb0caafdae3949046))
+
 ### [5.1.3](https://github.com/maidsafe/blsttc/compare/v5.1.2...v5.1.3) (2022-03-22)
 
 ### [5.1.2](https://github.com/maidsafe/blsttc/compare/v5.1.1...v5.1.2) (2022-03-21)
