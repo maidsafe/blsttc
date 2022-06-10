@@ -1,10 +1,8 @@
 //! Crypto errors.
 use thiserror::Error;
 
-use serde::{Deserialize, Serialize};
-
 /// A crypto error.
-#[derive(Clone, Eq, PartialEq, Debug, Error, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Error)]
 pub enum Error {
     /// Not enough signature shares.
     #[error("Not enough shares for interpolation")]
@@ -21,6 +19,9 @@ pub enum Error {
     /// The result of Hash To Field is zero which should never happen.
     #[error("Hash To Field returned zero")]
     HashToFieldIsZero,
+    /// An error converting to or from a hex representation of a key.
+    #[error("Failed to convert the key from hex")]
+    HexConversionFailed(#[from] hex::FromHexError),
 }
 
 /// A crypto result.
