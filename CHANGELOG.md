@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.0.0](https://github.com/maidsafe/blsttc/compare/v5.2.0...v6.0.0) (2022-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `Eq`, `Serialize` and `Deserialize` derivations are removed from the error type
+because the derived hex error doesn't implement these.
+
+I'm finding myself repeating this code several times in places where I'm using the BLS library, so I
+thought it would be useful to just have it directly on these types.
+
+### Features
+
+* provide hex conversion utilities ([2509f30](https://github.com/maidsafe/blsttc/commit/2509f30c942115b8dbcd1e0ab9f82a0b835f4437))
+
 ## [5.2.0](https://github.com/maidsafe/blsttc/compare/v5.1.3...v5.2.0) (2022-04-05)
 
 
