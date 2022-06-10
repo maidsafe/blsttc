@@ -182,6 +182,18 @@ impl PublicKey {
     pub fn to_bytes(self) -> [u8; PK_SIZE] {
         self.0.to_compressed()
     }
+
+    /// Deserialize a hex-encoded representation of a `PublicKey` to a `PublicKey` instance.
+    pub fn from_hex(hex: &str) -> Result<Self> {
+        let pk_bytes = hex::decode(hex)?;
+        let pk_bytes: [u8; PK_SIZE] = pk_bytes.try_into().map_err(|_| Error::InvalidBytes)?;
+        Self::from_bytes(pk_bytes)
+    }
+
+    /// Serialize this `PublicKey` instance to a hex-encoded `String`.
+    pub fn to_hex(&self) -> String {
+        hex::encode(self.to_bytes())
+    }
 }
 
 /// A public key share.
@@ -428,6 +440,18 @@ impl SecretKey {
     pub fn from_bytes(bytes: [u8; SK_SIZE]) -> Result<Self> {
         let mut fr = fr_from_bytes(bytes)?;
         Ok(SecretKey::from_mut(&mut fr))
+    }
+
+    /// Deserialize a hex-encoded representation of a `SecretKey` to a `SecretKey` instance.
+    pub fn from_hex(hex: &str) -> Result<Self> {
+        let sk_bytes = hex::decode(hex)?;
+        let sk_bytes: [u8; SK_SIZE] = sk_bytes.try_into().map_err(|_| Error::InvalidBytes)?;
+        Self::from_bytes(sk_bytes)
+    }
+
+    /// Serialize this `SecretKey` instance to a hex-encoded `String`.
+    pub fn to_hex(&self) -> String {
+        hex::encode(self.to_bytes())
     }
 
     /// Returns the decrypted text, or `None`, if the ciphertext isn't valid.
@@ -1195,6 +1219,22 @@ mod tests {
         let cipher2 =
             Ciphertext::from_bytes(&cipher.to_bytes()).expect("invalid cipher representation");
         assert_eq!(cipher, cipher2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_to_hex() -> Result<()> {
+        let sk_hex = "4a353be3dac091a0a7e640620372f5e1e2e4401717c1e79cac6ffba8f6905604";
+        let sk = SecretKey::from_hex(sk_hex)?;
+        let sk2_hex = sk.to_hex();
+        let sk2 = SecretKey::from_hex(&sk2_hex)?;
+        assert_eq!(sk, sk2);
+        let pk_hex = "85695fcbc06cc4c4c9451f4dce21cbf8de3e5a13bf48f44cdbb18e203\
+                      8ba7b8bb1632d7911ef1e2e08749bddbf165352";
+        let pk = PublicKey::from_hex(pk_hex)?;
+        let pk2_hex = pk.to_hex();
+        let pk2 = PublicKey::from_hex(&pk2_hex)?;
+        assert_eq!(pk, pk2);
         Ok(())
     }
 
