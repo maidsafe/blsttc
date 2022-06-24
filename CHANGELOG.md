@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.1.0](https://github.com/maidsafe/blsttc/compare/v6.0.0...v6.1.0) (2022-06-24)
+
+
+### Features
+
+* simple example for generating a keypair ([c3cf652](https://github.com/maidsafe/blsttc/commit/c3cf65207561c4021ced8d179e5e56bd619da43c))
+
 ## [6.0.0](https://github.com/maidsafe/blsttc/compare/v5.2.0...v6.0.0) (2022-06-10)
 
 
