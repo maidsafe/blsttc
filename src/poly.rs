@@ -97,7 +97,7 @@ impl<B: Borrow<Poly>> ops::Add<B> for Poly {
     }
 }
 
-impl<'a> ops::Add<Fr> for Poly {
+impl ops::Add<Fr> for Poly {
     type Output = Poly;
 
     fn add(mut self, rhs: Fr) -> Self::Output {
@@ -111,7 +111,7 @@ impl<'a> ops::Add<Fr> for Poly {
     }
 }
 
-impl<'a> ops::Add<u64> for Poly {
+impl ops::Add<u64> for Poly {
     type Output = Poly;
 
     fn add(self, rhs: u64) -> Self::Output {
@@ -150,7 +150,7 @@ impl<B: Borrow<Poly>> ops::Sub<B> for Poly {
     }
 }
 
-impl<'a> ops::Sub<Fr> for Poly {
+impl ops::Sub<Fr> for Poly {
     type Output = Poly;
 
     fn sub(self, mut rhs: Fr) -> Self::Output {
@@ -159,7 +159,7 @@ impl<'a> ops::Sub<Fr> for Poly {
     }
 }
 
-impl<'a> ops::Sub<u64> for Poly {
+impl ops::Sub<u64> for Poly {
     type Output = Poly;
 
     fn sub(self, rhs: u64) -> Self::Output {
