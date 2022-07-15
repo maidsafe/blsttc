@@ -44,6 +44,11 @@
 <span id="39">39</span>
 <span id="40">40</span>
 <span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Crypto errors.</span>
 <span class="kw">use</span> <span class="ident">thiserror::Error</span>;
 
@@ -51,8 +56,13 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span> {
     <span class="doccomment">/// Not enough signature shares.</span>
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Not enough shares for interpolation&quot;</span>)]</span>
-    <span class="ident">NotEnoughShares</span>,
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Not enough shares ({current}) for interpolation, needed: ({required})&quot;</span>)]</span>
+    <span class="ident">NotEnoughShares</span> {
+        <span class="doccomment">/// Current number of signature shares</span>
+        <span class="ident">current</span>: <span class="ident">usize</span>,
+        <span class="doccomment">/// Required number of signature shares</span>
+        <span class="ident">required</span>: <span class="ident">usize</span>,
+    },
     <span class="doccomment">/// Samples for interpolation contain a duplicated index.</span>
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Samples for interpolation contain a duplicated index&quot;</span>)]</span>
     <span class="ident">DuplicateEntry</span>,
@@ -82,7 +92,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">errors_are_send_and_sync</span>() {
-        <span class="ident">is_send_and_sync</span>(<span class="ident">Error::NotEnoughShares</span>);
+        <span class="ident">is_send_and_sync</span>(<span class="ident">Error::HashToFieldIsZero</span>);
     }
 }
 </code></pre></div>

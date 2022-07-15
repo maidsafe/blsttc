@@ -1894,6 +1894,9 @@
 <span id="1889">1889</span>
 <span id="1890">1890</span>
 <span id="1891">1891</span>
+<span id="1892">1892</span>
+<span id="1893">1893</span>
+<span id="1894">1894</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.</span>
 
 <span class="comment">// Clippy warns that it&#39;s dangerous to derive `PartialEq` and explicitly implement `Hash`, but the</span>
@@ -2839,7 +2842,10 @@
         .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">sample</span>)<span class="op">|</span> (<span class="ident">into_fr_plus_1</span>(<span class="ident">i</span>), <span class="ident">sample</span>))
         .<span class="ident">collect</span>();
     <span class="kw">if</span> <span class="ident">samples</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">t</span> {
-        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::NotEnoughShares</span>);
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::NotEnoughShares</span> {
+            <span class="ident">current</span>: <span class="ident">samples</span>.<span class="ident">len</span>(),
+            <span class="ident">required</span>: <span class="ident">t</span> <span class="op">+</span> <span class="number">1</span>,
+        });
     }
 
     <span class="kw">if</span> <span class="ident">t</span> <span class="op">==</span> <span class="number">0</span> {
