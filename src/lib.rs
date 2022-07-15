@@ -943,7 +943,10 @@ where
         .map(|(i, sample)| (into_fr_plus_1(i), sample))
         .collect();
     if samples.len() <= t {
-        return Err(Error::NotEnoughShares);
+        return Err(Error::NotEnoughShares {
+            current: samples.len(),
+            required: t + 1,
+        });
     }
 
     if t == 0 {
