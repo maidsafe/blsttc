@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0](https://github.com/maidsafe/blsttc/compare/v6.2.0...v7.0.0) (2022-07-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* provide context information within Error::NotEnoughShares type
+
+### Features
+
+* provide context information within Error::NotEnoughShares type ([b95d347](https://github.com/maidsafe/blsttc/commit/b95d34764301e08b1fe855d7c600327cb083b08d))
+
 ## [6.2.0](https://github.com/maidsafe/blsttc/compare/v6.1.0...v6.2.0) (2022-07-05)
 
 
