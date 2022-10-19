@@ -638,7 +638,7 @@ impl Ciphertext {
         wbytes.copy_from_slice(&bytes[PK_SIZE..PK_SIZE + SIG_SIZE]);
         let w = g2_from_bytes(wbytes)?;
 
-        let v: Vec<u8> = (&bytes[PK_SIZE + SIG_SIZE..]).to_vec();
+        let v: Vec<u8> = (bytes[PK_SIZE + SIG_SIZE..]).to_vec();
 
         Ok(Self(u, v, w))
     }
