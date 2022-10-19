@@ -133,10 +133,16 @@ impl std::cmp::PartialEq<G1Affine> for PublicKey {
 }
 
 impl PublicKey {
+    // Utility to check if public key is 0, this is a measure to prevent rogue public key attacks
+    fn is_zero(&self) -> bool {
+        self.0.is_identity().unwrap_u8() == 1
+    }
+
     /// Returns `true` if the signature matches the element of `G2`.
     pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &Signature, hash: H) -> bool {
-        PEngine::pairing(&self.0.to_affine(), &hash.into())
-            == PEngine::pairing(&G1Affine::generator(), &sig.0.to_affine())
+        !self.is_zero()
+            && PEngine::pairing(&self.0.to_affine(), &hash.into())
+                == PEngine::pairing(&G1Affine::generator(), &sig.0.to_affine())
     }
 
     /// Returns `true` if the signature matches the message.
