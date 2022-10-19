@@ -1897,4 +1897,32 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_zero_pubkey_attack() {
+        let sk = SecretKey::random();
+        let pk = sk.public_key();
+
+        // Make sure the public key is not zero
+        assert!(!pk.is_zero());
+
+        // Rogue 0 pubkey
+        let rogue_public_key = PublicKey(G1::identity());
+        assert!(rogue_public_key.is_zero());
+
+        // Rogue 0 sig
+        let rogue_sig = Signature(G2::identity());
+
+        // just any hash will do
+        let hash = hash_g2(b"anything");
+
+        // check that the attack works without the 0 check
+        assert_eq!(
+            PEngine::pairing(&rogue_public_key.0.to_affine(), &hash.into()),
+            PEngine::pairing(&G1Affine::generator(), &rogue_sig.0.to_affine())
+        );
+
+        // check that verify_g2 is protected against this attack
+        assert!(!rogue_public_key.verify_g2(&rogue_sig, hash));
+    }
 }
