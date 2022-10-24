@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.1.0](https://github.com/maidsafe/blsttc/compare/v7.0.0...v7.1.0) (2022-10-24)
+
+
+### Features
+
+* check pubkey for 0 to prevent rogue key attack variant ([108c02c](https://github.com/maidsafe/blsttc/commit/108c02cdb8aef93172030b740c8d8af521deb17b))
+* test that reproduces the attack ([98876fc](https://github.com/maidsafe/blsttc/commit/98876fc3926961ab1d664c5dbcbfce48542f0bfb))
+
 ## [7.0.0](https://github.com/maidsafe/blsttc/compare/v6.2.0...v7.0.0) (2022-07-15)
 
 
