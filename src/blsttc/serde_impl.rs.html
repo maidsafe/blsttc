@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/serde_impl.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>serde_impl.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../blsttc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../blsttc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../blsttc/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/serde_impl.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>serde_impl.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../blsttc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../blsttc/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../blsttc/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -402,409 +402,413 @@
 <span id="402">402</span>
 <span id="403">403</span>
 <span id="404">404</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Serialization and deserialization implementations for group and field elements.</span>
+<span id="405">405</span>
+<span id="406">406</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Serialization and deserialization implementations for group and field elements.
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::field_vec::FieldWrap</span>;
+</span><span class="kw">pub use </span><span class="self">self</span>::field_vec::FieldWrap;
 
-<span class="kw">use</span> <span class="ident">std::borrow::Cow</span>;
-<span class="kw">use</span> <span class="ident">std::ops::Deref</span>;
+<span class="kw">use </span>std::borrow::Cow;
+<span class="kw">use </span>std::ops::Deref;
 
-<span class="kw">use</span> <span class="ident">serde::de::Error</span> <span class="kw">as</span> <span class="ident">DeserializeError</span>;
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
+<span class="kw">use </span>serde::de::Error <span class="kw">as </span>DeserializeError;
+<span class="kw">use </span>serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::poly</span>::{<span class="ident">coeff_pos</span>, <span class="ident">BivarCommitment</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::serde_impl::serialize_secret_internal::SerializeSecret</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">SecretKey</span>, <span class="ident">G1</span>};
+<span class="kw">use </span><span class="kw">crate</span>::poly::{coeff_pos, BivarCommitment};
+<span class="kw">use </span><span class="kw">crate</span>::serde_impl::serialize_secret_internal::SerializeSecret;
+<span class="kw">use crate</span>::{SecretKey, G1};
 
-<span class="kw">const</span> <span class="ident">ERR_DEG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;commitment degree does not match coefficients&quot;</span>;
+<span class="kw">const </span>ERR_DEG: <span class="kw-2">&amp;</span>str = <span class="string">&quot;commitment degree does not match coefficients&quot;</span>;
 
-<span class="kw">mod</span> <span class="ident">serialize_secret_internal</span> {
-    <span class="kw">use</span> <span class="ident">serde::Serializer</span>;
+<span class="kw">mod </span>serialize_secret_internal {
+    <span class="kw">use </span>serde::Serializer;
 
-    <span class="doccomment">/// To avoid deriving [`Serialize`] automatically for structs containing secret keys this trait</span>
-    <span class="doccomment">/// should be implemented instead. It only enables explicit serialization through</span>
-    <span class="doccomment">/// [`::serde_impls::SerdeSecret`].</span>
-    <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SerializeSecret</span> {
-        <span class="kw">fn</span> <span class="ident">serialize_secret</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// To avoid deriving [`Serialize`] automatically for structs containing secret keys this trait
+    /// should be implemented instead. It only enables explicit serialization through
+    /// [`::serde_impls::SerdeSecret`].
+    </span><span class="kw">pub trait </span>SerializeSecret {
+        <span class="kw">fn </span>serialize_secret&lt;S: Serializer&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;;
     }
 
-    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">SerializeSecret</span><span class="op">&gt;</span> <span class="ident">SerializeSecret</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">T</span> {
-        <span class="kw">fn</span> <span class="ident">serialize_secret</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(
+    <span class="kw">impl</span>&lt;T: SerializeSecret&gt; SerializeSecret <span class="kw">for </span><span class="kw-2">&amp;</span>T {
+        <span class="kw">fn </span>serialize_secret&lt;S: Serializer&gt;(
             <span class="kw-2">&amp;</span><span class="self">self</span>,
-            <span class="ident">serializer</span>: <span class="ident">S</span>,
-        ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">S</span> <span class="kw">as</span> <span class="ident">Serializer</span><span class="op">&gt;</span><span class="ident">::Ok</span>, <span class="op">&lt;</span><span class="ident">S</span> <span class="kw">as</span> <span class="ident">Serializer</span><span class="op">&gt;</span><span class="ident">::Error</span><span class="op">&gt;</span> {
-            (<span class="kw-2">*</span><span class="self">self</span>).<span class="ident">serialize_secret</span>(<span class="ident">serializer</span>)
+            serializer: S,
+        ) -&gt; <span class="prelude-ty">Result</span>&lt;&lt;S <span class="kw">as </span>Serializer&gt;::Ok, &lt;S <span class="kw">as </span>Serializer&gt;::Error&gt; {
+            (<span class="kw-2">*</span><span class="self">self</span>).serialize_secret(serializer)
         }
     }
 }
 
-<span class="doccomment">/// `SerdeSecret` is a wrapper struct for serializing and deserializing secret keys. Due to security</span>
-<span class="doccomment">/// concerns serialize shouldn&#39;t be implemented for secret keys to avoid accidental leakage.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Whenever this struct is used the integrity of security boundaries should be checked carefully.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">pub</span> <span class="ident">T</span>);
+<span class="doccomment">/// `SerdeSecret` is a wrapper struct for serializing and deserializing secret keys. Due to security
+/// concerns serialize shouldn&#39;t be implemented for secret keys to avoid accidental leakage.
+///
+/// Whenever this struct is used the integrity of security boundaries should be checked carefully.
+</span><span class="attribute">#[derive(Debug, Eq, PartialEq, Clone)]
+</span><span class="kw">pub struct </span>SerdeSecret&lt;T&gt;(<span class="kw">pub </span>T);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Deref</span> <span class="kw">for</span> <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">type</span> <span class="ident">Target</span> <span class="op">=</span> <span class="ident">T</span>;
+<span class="kw">impl</span>&lt;T&gt; Deref <span class="kw">for </span>SerdeSecret&lt;T&gt; {
+    <span class="kw">type </span>Target = T;
 
-    <span class="kw">fn</span> <span class="ident">deref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Target</span> {
-        <span class="self">self</span>.<span class="ident">inner</span>()
+    <span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+        <span class="self">self</span>.inner()
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Returns the actual secret from the wrapper</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_inner</span>(<span class="self">self</span>) -&gt; <span class="ident">T</span> {
-        <span class="self">self</span>.<span class="number">0</span>
-    }
+<span class="kw">impl</span>&lt;T&gt; SerdeSecret&lt;T&gt; {
+    <span class="doccomment">/// Returns the actual secret from the wrapper
+    </span><span class="kw">pub fn </span>into_inner(<span class="self">self</span>) -&gt; T {
+        <span class="self">self</span>.<span class="number">0
+    </span>}
 
-    <span class="doccomment">/// Returns a reference to the actual secret contained in the wrapper</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">inner</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">T</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>
-    }
+    <span class="doccomment">/// Returns a reference to the actual secret contained in the wrapper
+    </span><span class="kw">pub fn </span>inner(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0
+    </span>}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">T</span>: <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, T: Deserialize&lt;<span class="lifetime">&#39;de</span>&gt;&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>SerdeSecret&lt;T&gt; {
+    <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+    <span class="kw">where
+        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
     {
-        <span class="prelude-val">Ok</span>(<span class="ident">SerdeSecret</span>(<span class="ident">Deserialize::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>))
+        <span class="prelude-val">Ok</span>(SerdeSecret(Deserialize::deserialize(deserializer)<span class="question-mark">?</span>))
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">SerializeSecret</span><span class="op">&gt;</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">S</span>: <span class="ident">Serializer</span>,
+<span class="kw">impl</span>&lt;T: SerializeSecret&gt; Serialize <span class="kw">for </span>SerdeSecret&lt;T&gt; {
+    <span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+    <span class="kw">where
+        </span>S: Serializer,
     {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">serialize_secret</span>(<span class="ident">serializer</span>)
+        <span class="self">self</span>.<span class="number">0</span>.serialize_secret(serializer)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident"><span class="kw">crate</span>::SecretKey</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span><span class="kw">crate</span>::SecretKey {
+    <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+    <span class="kw">where
+        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
     {
-        <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Fr</span>;
+        <span class="kw">use </span><span class="kw">crate</span>::Fr;
 
-        <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">Deserialize::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fr</span> <span class="op">=</span> <span class="ident">Fr::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>();
-        <span class="prelude-val">Ok</span>(<span class="ident">SecretKey::from_mut</span>(<span class="kw-2">&amp;mut</span> <span class="ident">fr</span>))
+        <span class="kw">let </span>bytes = Deserialize::deserialize(deserializer)<span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>fr = Fr::from_bytes_be(<span class="kw-2">&amp;</span>bytes).unwrap();
+        <span class="prelude-val">Ok</span>(SecretKey::from_mut(<span class="kw-2">&amp;mut </span>fr))
     }
 }
 
-<span class="kw">impl</span> <span class="ident">SerializeSecret</span> <span class="kw">for</span> <span class="ident"><span class="kw">crate</span>::SecretKey</span> {
-    <span class="kw">fn</span> <span class="ident">serialize_secret</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> {
-        <span class="ident">Serialize::serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.<span class="ident">to_bytes_be</span>(), <span class="ident">serializer</span>)
+<span class="kw">impl </span>SerializeSecret <span class="kw">for </span><span class="kw">crate</span>::SecretKey {
+    <span class="kw">fn </span>serialize_secret&lt;S: Serializer&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt; {
+        Serialize::serialize(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.to_bytes_be(), serializer)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident"><span class="kw">crate</span>::SecretKeyShare</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span><span class="kw">crate</span>::SecretKeyShare {
+    <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+    <span class="kw">where
+        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
     {
-        <span class="prelude-val">Ok</span>(<span class="ident"><span class="kw">crate</span>::SecretKeyShare</span>(<span class="ident">Deserialize::deserialize</span>(
-            <span class="ident">deserializer</span>,
+        <span class="prelude-val">Ok</span>(<span class="kw">crate</span>::SecretKeyShare(Deserialize::deserialize(
+            deserializer,
         )<span class="question-mark">?</span>))
     }
 }
 
-<span class="kw">impl</span> <span class="ident">SerializeSecret</span> <span class="kw">for</span> <span class="ident"><span class="kw">crate</span>::SecretKeyShare</span> {
-    <span class="kw">fn</span> <span class="ident">serialize_secret</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">serialize_secret</span>(<span class="ident">serializer</span>)
+<span class="kw">impl </span>SerializeSecret <span class="kw">for </span><span class="kw">crate</span>::SecretKeyShare {
+    <span class="kw">fn </span>serialize_secret&lt;S: Serializer&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt; {
+        <span class="self">self</span>.<span class="number">0</span>.serialize_secret(serializer)
     }
 }
 
-<span class="doccomment">/// A type with the same content as `BivarCommitment`, but that has not been validated yet.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
-<span class="kw">struct</span> <span class="ident">WireBivarCommitment</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// The polynomial&#39;s degree in each of the two variables.</span>
-    <span class="ident">degree</span>: <span class="ident">usize</span>,
-    <span class="doccomment">/// The commitments to the coefficients.</span>
-    <span class="ident">coeff</span>: <span class="ident">Cow</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, [<span class="ident">G1</span>]<span class="op">&gt;</span>,
+<span class="doccomment">/// A type with the same content as `BivarCommitment`, but that has not been validated yet.
+</span><span class="attribute">#[derive(Serialize, Deserialize)]
+</span><span class="kw">struct </span>WireBivarCommitment&lt;<span class="lifetime">&#39;a</span>&gt; {
+    <span class="doccomment">/// The polynomial&#39;s degree in each of the two variables.
+    </span>degree: usize,
+    <span class="doccomment">/// The commitments to the coefficients.
+    </span>coeff: Cow&lt;<span class="lifetime">&#39;a</span>, [G1]&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">BivarCommitment</span> {
-    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">s</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> {
-        <span class="ident">WireBivarCommitment</span> {
-            <span class="ident">degree</span>: <span class="self">self</span>.<span class="ident">degree</span>,
-            <span class="ident">coeff</span>: <span class="ident">Cow::Borrowed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">coeff</span>),
+<span class="kw">impl </span>Serialize <span class="kw">for </span>BivarCommitment {
+    <span class="kw">fn </span>serialize&lt;S: Serializer&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, s: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt; {
+        WireBivarCommitment {
+            degree: <span class="self">self</span>.degree,
+            coeff: Cow::Borrowed(<span class="kw-2">&amp;</span><span class="self">self</span>.coeff),
         }
-        .<span class="ident">serialize</span>(<span class="ident">s</span>)
+        .serialize(s)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BivarCommitment</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">d</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">WireBivarCommitment</span> { <span class="ident">degree</span>, <span class="ident">coeff</span> } <span class="op">=</span> <span class="ident">Deserialize::deserialize</span>(<span class="ident">d</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">coeff_pos</span>(<span class="ident">degree</span>, <span class="ident">degree</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">l</span><span class="op">|</span> <span class="ident">l</span>.<span class="ident">checked_add</span>(<span class="number">1</span>)) <span class="op">!</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">coeff</span>.<span class="ident">len</span>()) {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">D::Error::custom</span>(<span class="ident">ERR_DEG</span>));
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>BivarCommitment {
+    <span class="kw">fn </span>deserialize&lt;D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;&gt;(d: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt; {
+        <span class="kw">let </span>WireBivarCommitment { degree, coeff } = Deserialize::deserialize(d)<span class="question-mark">?</span>;
+        <span class="kw">if </span>coeff_pos(degree, degree).and_then(|l| l.checked_add(<span class="number">1</span>)) != <span class="prelude-val">Some</span>(coeff.len()) {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(D::Error::custom(ERR_DEG));
         }
-        <span class="prelude-val">Ok</span>(<span class="ident">BivarCommitment</span> {
-            <span class="ident">degree</span>,
-            <span class="ident">coeff</span>: <span class="ident">coeff</span>.<span class="ident">into</span>(),
+        <span class="prelude-val">Ok</span>(BivarCommitment {
+            degree,
+            coeff: coeff.into(),
         })
     }
 }
 
-<span class="doccomment">/// Serialization and deserialization of a group element&#39;s compressed representation.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">projective</span> {
-    <span class="kw">use</span> <span class="ident">std::fmt</span>;
-    <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
+<span class="doccomment">/// Serialization and deserialization of a group element&#39;s compressed representation.
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>affine {
+    <span class="kw">use </span>std::fmt;
+    <span class="kw">use </span>std::marker::PhantomData;
 
-    <span class="kw">use</span> <span class="ident">group::prime::PrimeCurve</span>;
-    <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">DeserializeError</span>, <span class="ident">SeqAccess</span>, <span class="ident">Visitor</span>};
-    <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">ser::SerializeTuple</span>, <span class="ident">Deserializer</span>, <span class="ident">Serializer</span>};
+    <span class="kw">use </span>group::prime::PrimeCurveAffine;
+    <span class="kw">use </span>serde::de::{Error <span class="kw">as </span>DeserializeError, SeqAccess, Visitor};
+    <span class="kw">use </span>serde::{ser::SerializeTuple, Deserializer, Serializer};
 
-    <span class="kw">const</span> <span class="ident">ERR_CODE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;deserialized bytes don&#39;t encode a group element&quot;</span>;
+    <span class="kw">const </span>ERR_CODE: <span class="kw-2">&amp;</span>str = <span class="string">&quot;deserialized bytes don&#39;t encode a group element&quot;</span>;
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">c</span>: <span class="kw-2">&amp;</span><span class="ident">C</span>, <span class="ident">s</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">S</span>: <span class="ident">Serializer</span>,
-        <span class="ident">C</span>: <span class="ident">PrimeCurve</span>,
+    <span class="kw">pub fn </span>serialize&lt;S, C&gt;(c: <span class="kw-2">&amp;</span>C, s: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+    <span class="kw">where
+        </span>S: Serializer,
+        C: PrimeCurveAffine,
     {
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">C::Repr::default</span>().<span class="ident">as_ref</span>().<span class="ident">len</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tup</span> <span class="op">=</span> <span class="ident">s</span>.<span class="ident">serialize_tuple</span>(<span class="ident">len</span>)<span class="question-mark">?</span>;
-        <span class="kw">for</span> <span class="ident">byte</span> <span class="kw">in</span> <span class="ident">c</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ref</span>() {
-            <span class="ident">tup</span>.<span class="ident">serialize_element</span>(<span class="ident">byte</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>len = C::Repr::default().as_ref().len();
+        <span class="kw">let </span><span class="kw-2">mut </span>tup = s.serialize_tuple(len)<span class="question-mark">?</span>;
+        <span class="kw">for </span>byte <span class="kw">in </span>c.to_bytes().as_ref() {
+            tup.serialize_element(byte)<span class="question-mark">?</span>;
         }
-        <span class="ident">tup</span>.<span class="ident">end</span>()
+        tup.end()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">d</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
-        <span class="ident">C</span>: <span class="ident">PrimeCurve</span>,
+    <span class="kw">pub fn </span>deserialize&lt;<span class="lifetime">&#39;de</span>, D, C&gt;(d: D) -&gt; <span class="prelude-ty">Result</span>&lt;C, D::Error&gt;
+    <span class="kw">where
+        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+        C: PrimeCurveAffine,
     {
-        <span class="kw">struct</span> <span class="ident">TupleVisitor</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
-            <span class="ident">_ph</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+        <span class="kw">struct </span>TupleVisitor&lt;C&gt; {
+            _ph: PhantomData&lt;C&gt;,
         }
 
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">C</span>: <span class="ident">PrimeCurve</span><span class="op">&gt;</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TupleVisitor</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
-            <span class="kw">type</span> <span class="ident">Value</span> <span class="op">=</span> <span class="ident">C</span>;
+        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, C: PrimeCurveAffine&gt; Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>TupleVisitor&lt;C&gt; {
+            <span class="kw">type </span>Value = C;
 
-            <span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-                <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">C::Repr::default</span>().<span class="ident">as_ref</span>().<span class="ident">len</span>();
-                <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;a tuple of size {}&quot;</span>, <span class="ident">len</span>)
+            <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+                <span class="kw">let </span>len = C::Repr::default().as_ref().len();
+                <span class="macro">write!</span>(f, <span class="string">&quot;a tuple of size {}&quot;</span>, len)
             }
 
-            <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">visit_seq</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">SeqAccess</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">seq</span>: <span class="ident">A</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">A::Error</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">compressed</span> <span class="op">=</span> <span class="ident">C::Repr::default</span>();
-                <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">byte</span>) <span class="kw">in</span> <span class="ident">compressed</span>.<span class="ident">as_mut</span>().<span class="ident">iter_mut</span>().<span class="ident">enumerate</span>() {
-                    <span class="kw">let</span> <span class="ident">len_err</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="ident">DeserializeError::invalid_length</span>(<span class="ident">i</span>, <span class="kw-2">&amp;</span><span class="self">self</span>);
-                    <span class="kw-2">*</span><span class="ident">byte</span> <span class="op">=</span> <span class="ident">seq</span>.<span class="ident">next_element</span>()<span class="question-mark">?</span>.<span class="ident">ok_or_else</span>(<span class="ident">len_err</span>)<span class="question-mark">?</span>;
+            <span class="attribute">#[inline]
+            </span><span class="kw">fn </span>visit_seq&lt;A: SeqAccess&lt;<span class="lifetime">&#39;de</span>&gt;&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>seq: A) -&gt; <span class="prelude-ty">Result</span>&lt;C, A::Error&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>compressed = C::Repr::default();
+                <span class="kw">for </span>(i, byte) <span class="kw">in </span>compressed.as_mut().iter_mut().enumerate() {
+                    <span class="kw">let </span>len_err = || DeserializeError::invalid_length(i, <span class="kw-2">&amp;</span><span class="self">self</span>);
+                    <span class="kw-2">*</span>byte = seq.next_element()<span class="question-mark">?</span>.ok_or_else(len_err)<span class="question-mark">?</span>;
                 }
-                <span class="kw">let</span> <span class="ident">opt</span> <span class="op">=</span> <span class="ident">C::from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">compressed</span>);
-                <span class="kw">if</span> <span class="ident">opt</span>.<span class="ident">is_some</span>().<span class="ident">into</span>() {
-                    <span class="prelude-val">Ok</span>(<span class="ident">opt</span>.<span class="ident">unwrap</span>())
-                } <span class="kw">else</span> {
-                    <span class="prelude-val">Err</span>(<span class="ident">DeserializeError::custom</span>(<span class="ident">ERR_CODE</span>))
+                <span class="kw">let </span>opt = C::from_bytes(<span class="kw-2">&amp;</span>compressed);
+                <span class="kw">if </span>opt.is_some().into() {
+                    <span class="prelude-val">Ok</span>(opt.unwrap())
+                } <span class="kw">else </span>{
+                    <span class="prelude-val">Err</span>(DeserializeError::custom(ERR_CODE))
                 }
             }
         }
 
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">C::Repr::default</span>().<span class="ident">as_ref</span>().<span class="ident">len</span>();
-        <span class="ident">d</span>.<span class="ident">deserialize_tuple</span>(<span class="ident">len</span>, <span class="ident">TupleVisitor</span> { <span class="ident">_ph</span>: <span class="ident">PhantomData</span> })
+        <span class="kw">let </span>len = C::Repr::default().as_ref().len();
+        d.deserialize_tuple(len, TupleVisitor { _ph: PhantomData })
     }
 }
 
-<span class="doccomment">/// Serialization and deserialization of vectors of projective curve elements.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">projective_vec</span> {
-    <span class="kw">use</span> <span class="ident">std::borrow::Borrow</span>;
-    <span class="kw">use</span> <span class="ident">std::iter::FromIterator</span>;
-    <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
+<span class="doccomment">/// Serialization and deserialization of vectors of affine curve elements.
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>affine_vec {
+    <span class="kw">use </span>std::borrow::Borrow;
+    <span class="kw">use </span>std::iter::FromIterator;
+    <span class="kw">use </span>std::marker::PhantomData;
 
-    <span class="kw">use</span> <span class="ident">group::prime::PrimeCurve</span>;
-    <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
+    <span class="kw">use </span>group::prime::PrimeCurveAffine;
+    <span class="kw">use </span>serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-    <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::projective</span>;
+    <span class="kw">use </span><span class="kw">super</span>::affine;
 
-    <span class="doccomment">/// A wrapper type to facilitate serialization and deserialization of group elements.</span>
-    <span class="kw">struct</span> <span class="ident">CurveWrap</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span>(<span class="ident">B</span>, <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>);
+    <span class="doccomment">/// A wrapper type to facilitate serialization and deserialization of group elements.
+    </span><span class="kw">struct </span>CurveWrap&lt;C, B&gt;(B, PhantomData&lt;C&gt;);
 
-    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> <span class="ident">CurveWrap</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
-        <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">c</span>: <span class="ident">B</span>) -&gt; <span class="self">Self</span> {
-            <span class="ident">CurveWrap</span>(<span class="ident">c</span>, <span class="ident">PhantomData</span>)
+    <span class="kw">impl</span>&lt;C, B&gt; CurveWrap&lt;C, B&gt; {
+        <span class="kw">fn </span>new(c: B) -&gt; <span class="self">Self </span>{
+            CurveWrap(c, PhantomData)
         }
     }
 
-    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">PrimeCurve</span>, <span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">CurveWrap</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">B</span><span class="op">&gt;</span> {
-        <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">s</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> {
-            <span class="ident">projective::serialize</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">borrow</span>(), <span class="ident">s</span>)
+    <span class="kw">impl</span>&lt;C: PrimeCurveAffine, B: Borrow&lt;C&gt;&gt; Serialize <span class="kw">for </span>CurveWrap&lt;C, B&gt; {
+        <span class="kw">fn </span>serialize&lt;S: Serializer&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, s: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt; {
+            affine::serialize(<span class="self">self</span>.<span class="number">0</span>.borrow(), s)
         }
     }
 
-    <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">C</span>: <span class="ident">PrimeCurve</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CurveWrap</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">C</span><span class="op">&gt;</span> {
-        <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">d</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">CurveWrap::new</span>(<span class="ident">projective::deserialize</span>(<span class="ident">d</span>)<span class="question-mark">?</span>))
+    <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, C: PrimeCurveAffine&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>CurveWrap&lt;C, C&gt; {
+        <span class="kw">fn </span>deserialize&lt;D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;&gt;(d: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt; {
+            <span class="prelude-val">Ok</span>(CurveWrap::new(affine::deserialize(d)<span class="question-mark">?</span>))
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span>, <span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">vec</span>: <span class="ident">T</span>, <span class="ident">s</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">S</span>: <span class="ident">Serializer</span>,
-        <span class="ident">C</span>: <span class="ident">PrimeCurve</span>,
-        <span class="ident">T</span>: <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">C</span>]<span class="op">&gt;</span>,
+    <span class="kw">pub fn </span>serialize&lt;S, C, T&gt;(vec: T, s: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+    <span class="kw">where
+        </span>S: Serializer,
+        C: PrimeCurveAffine,
+        T: AsRef&lt;[C]&gt;,
     {
-        <span class="kw">let</span> <span class="ident">wrap_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CurveWrap</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="kw-2">&amp;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">vec</span>.<span class="ident">as_ref</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">CurveWrap::new</span>).<span class="ident">collect</span>();
-        <span class="ident">wrap_vec</span>.<span class="ident">serialize</span>(<span class="ident">s</span>)
+        <span class="kw">let </span>wrap_vec: Vec&lt;CurveWrap&lt;C, <span class="kw-2">&amp;</span>C&gt;&gt; = vec.as_ref().iter().map(CurveWrap::new).collect();
+        wrap_vec.serialize(s)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span>, <span class="ident">C</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">d</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
-        <span class="ident">C</span>: <span class="ident">PrimeCurve</span>,
-        <span class="ident">T</span>: <span class="ident">FromIterator</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="kw">pub fn </span>deserialize&lt;<span class="lifetime">&#39;de</span>, D, C, T&gt;(d: D) -&gt; <span class="prelude-ty">Result</span>&lt;T, D::Error&gt;
+    <span class="kw">where
+        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+        C: PrimeCurveAffine,
+        T: FromIterator&lt;C&gt;,
     {
-        <span class="kw">let</span> <span class="ident">wrap_vec</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CurveWrap</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::deserialize</span>(<span class="ident">d</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">wrap_vec</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">CurveWrap</span>(<span class="ident">c</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">c</span>).<span class="ident">collect</span>())
+        <span class="kw">let </span>wrap_vec = &lt;Vec&lt;CurveWrap&lt;C, C&gt;&gt;&gt;::deserialize(d)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(wrap_vec.into_iter().map(|CurveWrap(c, <span class="kw">_</span>)| c).collect())
     }
 }
 
-<span class="doccomment">/// Serialization and deserialization of vectors of field elements.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">field_vec</span> {
-    <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
-    <span class="kw">use</span> <span class="ident">std::borrow::Borrow</span>;
+<span class="doccomment">/// Serialization and deserialization of vectors of field elements.
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>field_vec {
+    <span class="kw">use </span>serde::{Deserialize, Deserializer, Serialize, Serializer};
+    <span class="kw">use </span>std::borrow::Borrow;
 
-    <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Fr</span>;
+    <span class="kw">use </span><span class="kw">crate</span>::Fr;
 
-    <span class="doccomment">/// A wrapper type to facilitate serialization and deserialization of field elements.</span>
-    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FieldWrap</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>(<span class="kw">pub</span> <span class="ident">B</span>);
+    <span class="doccomment">/// A wrapper type to facilitate serialization and deserialization of field elements.
+    </span><span class="kw">pub struct </span>FieldWrap&lt;B&gt;(<span class="kw">pub </span>B);
 
-    <span class="kw">impl</span> <span class="ident">FieldWrap</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
-        <span class="doccomment">/// Returns the wrapped field element.</span>
-        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_inner</span>(<span class="self">self</span>) -&gt; <span class="ident">Fr</span> {
-            <span class="self">self</span>.<span class="number">0</span>
+    <span class="kw">impl </span>FieldWrap&lt;Fr&gt; {
+        <span class="doccomment">/// Returns the wrapped field element.
+        </span><span class="kw">pub fn </span>into_inner(<span class="self">self</span>) -&gt; Fr {
+            <span class="self">self</span>.<span class="number">0
+        </span>}
+    }
+
+    <span class="kw">impl</span>&lt;B: Borrow&lt;Fr&gt;&gt; Serialize <span class="kw">for </span>FieldWrap&lt;B&gt; {
+        <span class="kw">fn </span>serialize&lt;S: Serializer&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, s: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.borrow().to_bytes_be().serialize(s)
         }
     }
 
-    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">FieldWrap</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span> {
-        <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">s</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> {
-            <span class="self">self</span>.<span class="number">0</span>.<span class="ident">borrow</span>().<span class="ident">to_bytes_be</span>().<span class="ident">serialize</span>(<span class="ident">s</span>)
+    <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>FieldWrap&lt;Fr&gt; {
+        <span class="kw">fn </span>deserialize&lt;D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;&gt;(d: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt; {
+            <span class="kw">let </span>bytes = Deserialize::deserialize(d)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(FieldWrap(Fr::from_bytes_be(<span class="kw-2">&amp;</span>bytes).unwrap()))
         }
     }
 
-    <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FieldWrap</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span> {
-        <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">d</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">Deserialize::deserialize</span>(<span class="ident">d</span>)<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(<span class="ident">FieldWrap</span>(<span class="ident">Fr::from_bytes_be</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>()))
-        }
+    <span class="kw">pub fn </span>serialize&lt;S: Serializer&gt;(vec: <span class="kw-2">&amp;</span>[Fr], s: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt; {
+        <span class="kw">let </span>wrap_vec: Vec&lt;FieldWrap&lt;<span class="kw-2">&amp;</span>Fr&gt;&gt; = vec.iter().map(FieldWrap).collect();
+        wrap_vec.serialize(s)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Serializer</span><span class="op">&gt;</span>(<span class="ident">vec</span>: <span class="kw-2">&amp;</span>[<span class="ident">Fr</span>], <span class="ident">s</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">wrap_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FieldWrap</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Fr</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">vec</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">FieldWrap</span>).<span class="ident">collect</span>();
-        <span class="ident">wrap_vec</span>.<span class="ident">serialize</span>(<span class="ident">s</span>)
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">d</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span>, <span class="ident">D::Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">wrap_vec</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FieldWrap</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::deserialize</span>(<span class="ident">d</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">wrap_vec</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="ident">FieldWrap::into_inner</span>).<span class="ident">collect</span>())
+    <span class="kw">pub fn </span>deserialize&lt;<span class="lifetime">&#39;de</span>, D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;&gt;(d: D) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Fr&gt;, D::Error&gt; {
+        <span class="kw">let </span>wrap_vec = &lt;Vec&lt;FieldWrap&lt;Fr&gt;&gt;&gt;::deserialize(d)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(wrap_vec.into_iter().map(FieldWrap::into_inner).collect())
     }
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">std::iter::repeat_with</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use </span>std::iter::repeat_with;
 
-    <span class="kw">use</span> <span class="ident">ff::Field</span>;
-    <span class="kw">use</span> <span class="ident">group::Group</span>;
-    <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
+    <span class="kw">use </span>ff::Field;
+    <span class="kw">use </span>group::{Curve, Group};
+    <span class="kw">use </span>serde::{Deserialize, Serialize};
 
-    <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::poly::BivarPoly</span>;
-    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Fr</span>, <span class="ident">G1</span>};
+    <span class="kw">use </span><span class="kw">crate</span>::poly::BivarPoly;
+    <span class="kw">use crate</span>::{Fr, G1Projective, G1};
 
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Vecs</span> {
-        <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;super::projective_vec&quot;</span>)]</span>
-        <span class="ident">curve_points</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1</span><span class="op">&gt;</span>,
-        <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;super::field_vec&quot;</span>)]</span>
-        <span class="ident">field_elements</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fr</span><span class="op">&gt;</span>,
+    <span class="attribute">#[derive(Debug, Serialize, Deserialize)]
+    </span><span class="kw">pub struct </span>Vecs {
+        <span class="attribute">#[serde(with = <span class="string">&quot;super::affine_vec&quot;</span>)]
+        </span>curve_points: Vec&lt;G1&gt;,
+        <span class="attribute">#[serde(with = <span class="string">&quot;super::field_vec&quot;</span>)]
+        </span>field_elements: Vec&lt;Fr&gt;,
     }
 
-    <span class="kw">impl</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">Vecs</span> {
-        <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">bool</span> {
-            <span class="self">self</span>.<span class="ident">curve_points</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">curve_points</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">field_elements</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">field_elements</span>
+    <span class="kw">impl </span>PartialEq <span class="kw">for </span>Vecs {
+        <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+            <span class="self">self</span>.curve_points == other.curve_points &amp;&amp; <span class="self">self</span>.field_elements == other.field_elements
         }
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">vecs</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
-        <span class="kw">let</span> <span class="ident">vecs</span> <span class="op">=</span> <span class="ident">Vecs</span> {
-            <span class="ident">curve_points</span>: <span class="ident">repeat_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">G1::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)).<span class="ident">take</span>(<span class="number">10</span>).<span class="ident">collect</span>(),
-            <span class="ident">field_elements</span>: <span class="ident">repeat_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Fr::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)).<span class="ident">take</span>(<span class="number">10</span>).<span class="ident">collect</span>(),
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>vecs() {
+        <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
+        <span class="kw">let </span>vecs = Vecs {
+            curve_points: repeat_with(|| G1Projective::random(<span class="kw-2">&amp;mut </span>rng).to_affine())
+                .take(<span class="number">10</span>)
+                .collect(),
+            field_elements: repeat_with(|| Fr::random(<span class="kw-2">&amp;mut </span>rng)).take(<span class="number">10</span>).collect(),
         };
-        <span class="kw">let</span> <span class="ident">ser_vecs</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">vecs</span>).<span class="ident">expect</span>(<span class="string">&quot;serialize vecs&quot;</span>);
-        <span class="kw">let</span> <span class="ident">de_vecs</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_vecs</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize vecs&quot;</span>);
-        <span class="macro">assert_eq!</span>(<span class="ident">vecs</span>, <span class="ident">de_vecs</span>);
+        <span class="kw">let </span>ser_vecs = bincode::serialize(<span class="kw-2">&amp;</span>vecs).expect(<span class="string">&quot;serialize vecs&quot;</span>);
+        <span class="kw">let </span>de_vecs = bincode::deserialize(<span class="kw-2">&amp;</span>ser_vecs).expect(<span class="string">&quot;deserialize vecs&quot;</span>);
+        <span class="macro">assert_eq!</span>(vecs, de_vecs);
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">bivar_commitment</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::thread_rng</span>();
-        <span class="kw">for</span> <span class="ident">deg</span> <span class="kw">in</span> <span class="number">1</span>..<span class="number">8</span> {
-            <span class="kw">let</span> <span class="ident">poly</span> <span class="op">=</span> <span class="ident">BivarPoly::random</span>(<span class="ident">deg</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
-            <span class="kw">let</span> <span class="ident">comm</span> <span class="op">=</span> <span class="ident">poly</span>.<span class="ident">commitment</span>();
-            <span class="kw">let</span> <span class="ident">ser_comm</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">comm</span>).<span class="ident">expect</span>(<span class="string">&quot;serialize commitment&quot;</span>);
-            <span class="kw">let</span> <span class="ident">de_comm</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_comm</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize commitment&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">comm</span>, <span class="ident">de_comm</span>);
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>bivar_commitment() {
+        <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
+        <span class="kw">for </span>deg <span class="kw">in </span><span class="number">1</span>..<span class="number">8 </span>{
+            <span class="kw">let </span>poly = BivarPoly::random(deg, <span class="kw-2">&amp;mut </span>rng);
+            <span class="kw">let </span>comm = poly.commitment();
+            <span class="kw">let </span>ser_comm = bincode::serialize(<span class="kw-2">&amp;</span>comm).expect(<span class="string">&quot;serialize commitment&quot;</span>);
+            <span class="kw">let </span>de_comm = bincode::deserialize(<span class="kw-2">&amp;</span>ser_comm).expect(<span class="string">&quot;deserialize commitment&quot;</span>);
+            <span class="macro">assert_eq!</span>(comm, de_comm);
         }
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">serde_secret_key</span>() {
-        <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::serde_impl::SerdeSecret</span>;
-        <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::SecretKey</span>;
-        <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>serde_secret_key() {
+        <span class="kw">use </span><span class="kw">crate</span>::serde_impl::SerdeSecret;
+        <span class="kw">use </span><span class="kw">crate</span>::SecretKey;
+        <span class="kw">use </span>rand::{thread_rng, Rng};
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">thread_rng</span>();
-        <span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">2048</span> {
-            <span class="kw">let</span> <span class="ident">sk</span>: <span class="ident">SecretKey</span> <span class="op">=</span> <span class="ident">rng</span>.<span class="ident">gen</span>();
-            <span class="kw">let</span> <span class="ident">ser_ref</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">SerdeSecret</span>(<span class="kw-2">&amp;</span><span class="ident">sk</span>)).<span class="ident">expect</span>(<span class="string">&quot;serialize secret key&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>rng = thread_rng();
+        <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">2048 </span>{
+            <span class="kw">let </span>sk: SecretKey = rng.gen();
+            <span class="kw">let </span>ser_ref = bincode::serialize(<span class="kw-2">&amp;</span>SerdeSecret(<span class="kw-2">&amp;</span>sk)).expect(<span class="string">&quot;serialize secret key&quot;</span>);
 
-            <span class="kw">let</span> <span class="ident">de</span>: <span class="ident">SecretKey</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_ref</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize secret key&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">sk</span>, <span class="ident">de</span>);
+            <span class="kw">let </span>de: SecretKey = bincode::deserialize(<span class="kw-2">&amp;</span>ser_ref).expect(<span class="string">&quot;deserialize secret key&quot;</span>);
+            <span class="macro">assert_eq!</span>(sk, de);
 
-            <span class="kw">let</span> <span class="ident">de_serde_secret</span>: <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">SecretKey</span><span class="op">&gt;</span> <span class="op">=</span>
-                <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_ref</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize secret key&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">sk</span>, <span class="ident">de_serde_secret</span>.<span class="ident">into_inner</span>());
+            <span class="kw">let </span>de_serde_secret: SerdeSecret&lt;SecretKey&gt; =
+                bincode::deserialize(<span class="kw-2">&amp;</span>ser_ref).expect(<span class="string">&quot;deserialize secret key&quot;</span>);
+            <span class="macro">assert_eq!</span>(sk, de_serde_secret.into_inner());
 
-            <span class="kw">let</span> <span class="ident">ser_val</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">SerdeSecret</span>(<span class="ident">sk</span>)).<span class="ident">expect</span>(<span class="string">&quot;serialize secret key&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">ser_ref</span>, <span class="ident">ser_val</span>);
+            <span class="kw">let </span>ser_val = bincode::serialize(<span class="kw-2">&amp;</span>SerdeSecret(sk)).expect(<span class="string">&quot;serialize secret key&quot;</span>);
+            <span class="macro">assert_eq!</span>(ser_ref, ser_val);
         }
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">serde_secret_key_share</span>() {
-        <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::serde_impl::SerdeSecret</span>;
-        <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::SecretKeyShare</span>;
-        <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>serde_secret_key_share() {
+        <span class="kw">use </span><span class="kw">crate</span>::serde_impl::SerdeSecret;
+        <span class="kw">use </span><span class="kw">crate</span>::SecretKeyShare;
+        <span class="kw">use </span>rand::{thread_rng, Rng};
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">thread_rng</span>();
-        <span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">2048</span> {
-            <span class="kw">let</span> <span class="ident">sk</span>: <span class="ident">SecretKeyShare</span> <span class="op">=</span> <span class="ident">rng</span>.<span class="ident">gen</span>();
-            <span class="kw">let</span> <span class="ident">ser_ref</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">SerdeSecret</span>(<span class="kw-2">&amp;</span><span class="ident">sk</span>)).<span class="ident">expect</span>(<span class="string">&quot;serialize secret key&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>rng = thread_rng();
+        <span class="kw">for _ in </span><span class="number">0</span>..<span class="number">2048 </span>{
+            <span class="kw">let </span>sk: SecretKeyShare = rng.gen();
+            <span class="kw">let </span>ser_ref = bincode::serialize(<span class="kw-2">&amp;</span>SerdeSecret(<span class="kw-2">&amp;</span>sk)).expect(<span class="string">&quot;serialize secret key&quot;</span>);
 
-            <span class="kw">let</span> <span class="ident">de</span>: <span class="ident">SecretKeyShare</span> <span class="op">=</span>
-                <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_ref</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize secret key&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">sk</span>, <span class="ident">de</span>);
+            <span class="kw">let </span>de: SecretKeyShare =
+                bincode::deserialize(<span class="kw-2">&amp;</span>ser_ref).expect(<span class="string">&quot;deserialize secret key&quot;</span>);
+            <span class="macro">assert_eq!</span>(sk, de);
 
-            <span class="kw">let</span> <span class="ident">de_serde_secret</span>: <span class="ident">SerdeSecret</span><span class="op">&lt;</span><span class="ident">SecretKeyShare</span><span class="op">&gt;</span> <span class="op">=</span>
-                <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_ref</span>).<span class="ident">expect</span>(<span class="string">&quot;deserialize secret key&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">sk</span>, <span class="ident">de_serde_secret</span>.<span class="ident">into_inner</span>());
+            <span class="kw">let </span>de_serde_secret: SerdeSecret&lt;SecretKeyShare&gt; =
+                bincode::deserialize(<span class="kw-2">&amp;</span>ser_ref).expect(<span class="string">&quot;deserialize secret key&quot;</span>);
+            <span class="macro">assert_eq!</span>(sk, de_serde_secret.into_inner());
 
-            <span class="kw">let</span> <span class="ident">ser_val</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">SerdeSecret</span>(<span class="ident">sk</span>)).<span class="ident">expect</span>(<span class="string">&quot;serialize secret key&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">ser_ref</span>, <span class="ident">ser_val</span>);
+            <span class="kw">let </span>ser_val = bincode::serialize(<span class="kw-2">&amp;</span>SerdeSecret(sk)).expect(<span class="string">&quot;serialize secret key&quot;</span>);
+            <span class="macro">assert_eq!</span>(ser_ref, ser_val);
 
-            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;use-insecure-test-only-mock-crypto&quot;</span>))]</span>
-            <span class="macro">assert_eq!</span>(<span class="ident">ser_val</span>.<span class="ident">len</span>(), <span class="number">32</span>);
+            <span class="attribute">#[cfg(not(feature = <span class="string">&quot;use-insecure-test-only-mock-crypto&quot;</span>))]
+            </span><span class="macro">assert_eq!</span>(ser_val.len(), <span class="number">32</span>);
         }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="blsttc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
