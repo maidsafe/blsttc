@@ -418,10 +418,10 @@ mod public_key_benches {
                 let pk = sk.public_key();
                 let mut msg = [0u8; 1000];
                 rng.fill_bytes(&mut msg);
-                let sig = sk.sign(&msg);
+                let sig = sk.sign(msg);
                 (pk, msg, sig)
             };
-            b.iter_with_setup(rand_factors, |(pk, msg, sig)| pk.verify(&sig, &msg));
+            b.iter_with_setup(rand_factors, |(pk, msg, sig)| pk.verify(&sig, msg));
         });
     }
 
@@ -435,11 +435,11 @@ mod public_key_benches {
                 let pk = sk.public_key();
                 let mut msg = [0u8; 1000];
                 rng.fill_bytes(&mut msg);
-                let hash = hash_g2(&msg);
-                let sig = sk.sign_g2(&hash);
+                let hash = hash_g2(msg);
+                let sig = sk.sign_g2(hash);
                 (pk, hash, sig)
             };
-            b.iter_with_setup(rand_factors, |(pk, hash, sig)| pk.verify_g2(&sig, &hash));
+            b.iter_with_setup(rand_factors, |(pk, hash, sig)| pk.verify_g2(&sig, hash));
         });
     }
 
@@ -471,7 +471,7 @@ mod public_key_benches {
                 rng.fill_bytes(&mut msg);
                 (pk, msg)
             };
-            b.iter_with_setup(rand_factors, |(pk, msg)| pk.encrypt(&msg));
+            b.iter_with_setup(rand_factors, |(pk, msg)| pk.encrypt(msg));
         });
     }
 
@@ -499,7 +499,7 @@ mod secret_key_benches {
                 rng.fill_bytes(&mut msg);
                 (sk, msg)
             };
-            b.iter_with_setup(rand_factors, |(sk, msg)| sk.sign(&msg));
+            b.iter_with_setup(rand_factors, |(sk, msg)| sk.sign(msg));
         });
     }
 
@@ -512,10 +512,10 @@ mod secret_key_benches {
                 let sk = SecretKey::random();
                 let mut msg = [0u8; 1000];
                 rng.fill_bytes(&mut msg);
-                let hash = hash_g2(&msg);
+                let hash = hash_g2(msg);
                 (sk, hash)
             };
-            b.iter_with_setup(rand_factors, |(sk, hash)| sk.sign_g2(&hash));
+            b.iter_with_setup(rand_factors, |(sk, hash)| sk.sign_g2(hash));
         });
     }
 
@@ -528,10 +528,10 @@ mod secret_key_benches {
                 let sk = SecretKey::random();
                 let mut msg = [0u8; 1000];
                 rng.fill_bytes(&mut msg);
-                let hash = hash_g2(&msg);
+                let hash = hash_g2(msg);
                 (sk, hash)
             };
-            b.iter_with_setup(rand_factors, |(sk, hash)| sk.sign_g2(&hash));
+            b.iter_with_setup(rand_factors, |(sk, hash)| sk.sign_g2(hash));
         });
     }
 
@@ -545,7 +545,7 @@ mod secret_key_benches {
                 let pk = sk.public_key();
                 let mut msg = [0u8; 1000];
                 rng.fill_bytes(&mut msg);
-                let ct = pk.encrypt(&msg);
+                let ct = pk.encrypt(msg);
                 (sk, ct)
             };
             b.iter_with_setup(rand_factors, |(sk, ct)| sk.decrypt(&ct));
@@ -576,7 +576,7 @@ mod ciphertext_benches {
                 let pk = sk.public_key();
                 let mut msg = [0u8; 1000];
                 rng.fill_bytes(&mut msg);
-                pk.encrypt(&msg)
+                pk.encrypt(msg)
             };
             b.iter_with_setup(rand_factors, |ct| ct.verify());
         });
@@ -606,7 +606,7 @@ mod lib_benches {
                 rng.fill_bytes(&mut msg);
                 msg
             };
-            b.iter_with_setup(rand_factors, |msg| hash_g2(&msg));
+            b.iter_with_setup(rand_factors, hash_g2);
         });
     }
 

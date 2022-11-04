@@ -43,7 +43,7 @@ fn main() {
     let msg = b"let's get pizza";
     let signed_msg = bob.create_signed_msg(msg);
     let serialized = serialize(&signed_msg).expect("Failed to serialize `SignedMsg`");
-    let ciphertext = alice.pk.encrypt(&serialized);
+    let ciphertext = alice.pk.encrypt(serialized);
 
     // Alice receives Bob's encrypted message. She decrypts the message using her secret key. She
     // then verifies that the signature of the plaintext is valid using Bob's public key.
