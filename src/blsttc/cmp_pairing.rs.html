@@ -10,12 +10,12 @@
 <span id="10">10</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::cmp::Ordering;
 
-<span class="kw">use </span>group::prime::PrimeCurveAffine;
+<span class="kw">use </span>group::{prime::PrimeCurve, GroupEncoding};
 
 <span class="doccomment">/// Compares two curve elements and returns their `Ordering`.
-</span><span class="kw">pub fn </span>cmp_affine&lt;G: PrimeCurveAffine&gt;(x: <span class="kw-2">&amp;</span>G, y: <span class="kw-2">&amp;</span>G) -&gt; Ordering {
-    <span class="kw">let </span>xc = x.to_bytes();
-    <span class="kw">let </span>yc = y.to_bytes();
+</span><span class="kw">pub fn </span>cmp_projective&lt;G: PrimeCurve&gt;(x: <span class="kw-2">&amp;</span>G, y: <span class="kw-2">&amp;</span>G) -&gt; Ordering {
+    <span class="kw">let </span>xc = x.to_affine().to_bytes();
+    <span class="kw">let </span>yc = y.to_affine().to_bytes();
     xc.as_ref().cmp(yc.as_ref())
 }
 </code></pre></div>
