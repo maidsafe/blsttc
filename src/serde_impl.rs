@@ -148,11 +148,11 @@ impl<'de> Deserialize<'de> for BivarCommitment {
 }
 
 /// Serialization and deserialization of a group element's compressed representation.
-pub(crate) mod projective {
+pub(crate) mod affine {
     use std::fmt;
     use std::marker::PhantomData;
 
-    use group::prime::PrimeCurve;
+    use group::prime::PrimeCurveAffine;
     use serde::de::{Error as DeserializeError, SeqAccess, Visitor};
     use serde::{ser::SerializeTuple, Deserializer, Serializer};
 
@@ -161,7 +161,7 @@ pub(crate) mod projective {
     pub fn serialize<S, C>(c: &C, s: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        C: PrimeCurve,
+        C: PrimeCurveAffine,
     {
         let len = C::Repr::default().as_ref().len();
         let mut tup = s.serialize_tuple(len)?;
@@ -174,13 +174,13 @@ pub(crate) mod projective {
     pub fn deserialize<'de, D, C>(d: D) -> Result<C, D::Error>
     where
         D: Deserializer<'de>,
-        C: PrimeCurve,
+        C: PrimeCurveAffine,
     {
         struct TupleVisitor<C> {
             _ph: PhantomData<C>,
         }
 
-        impl<'de, C: PrimeCurve> Visitor<'de> for TupleVisitor<C> {
+        impl<'de, C: PrimeCurveAffine> Visitor<'de> for TupleVisitor<C> {
             type Value = C;
 
             fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -209,16 +209,16 @@ pub(crate) mod projective {
     }
 }
 
-/// Serialization and deserialization of vectors of projective curve elements.
-pub(crate) mod projective_vec {
+/// Serialization and deserialization of vectors of affine curve elements.
+pub(crate) mod affine_vec {
     use std::borrow::Borrow;
     use std::iter::FromIterator;
     use std::marker::PhantomData;
 
-    use group::prime::PrimeCurve;
+    use group::prime::PrimeCurveAffine;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-    use super::projective;
+    use super::affine;
 
     /// A wrapper type to facilitate serialization and deserialization of group elements.
     struct CurveWrap<C, B>(B, PhantomData<C>);
@@ -229,22 +229,22 @@ pub(crate) mod projective_vec {
         }
     }
 
-    impl<C: PrimeCurve, B: Borrow<C>> Serialize for CurveWrap<C, B> {
+    impl<C: PrimeCurveAffine, B: Borrow<C>> Serialize for CurveWrap<C, B> {
         fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-            projective::serialize(self.0.borrow(), s)
+            affine::serialize(self.0.borrow(), s)
         }
     }
 
-    impl<'de, C: PrimeCurve> Deserialize<'de> for CurveWrap<C, C> {
+    impl<'de, C: PrimeCurveAffine> Deserialize<'de> for CurveWrap<C, C> {
         fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-            Ok(CurveWrap::new(projective::deserialize(d)?))
+            Ok(CurveWrap::new(affine::deserialize(d)?))
         }
     }
 
     pub fn serialize<S, C, T>(vec: T, s: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        C: PrimeCurve,
+        C: PrimeCurveAffine,
         T: AsRef<[C]>,
     {
         let wrap_vec: Vec<CurveWrap<C, &C>> = vec.as_ref().iter().map(CurveWrap::new).collect();
@@ -254,7 +254,7 @@ pub(crate) mod projective_vec {
     pub fn deserialize<'de, D, C, T>(d: D) -> Result<T, D::Error>
     where
         D: Deserializer<'de>,
-        C: PrimeCurve,
+        C: PrimeCurveAffine,
         T: FromIterator<C>,
     {
         let wrap_vec = <Vec<CurveWrap<C, C>>>::deserialize(d)?;
@@ -308,15 +308,15 @@ mod tests {
     use std::iter::repeat_with;
 
     use ff::Field;
-    use group::Group;
+    use group::{Curve, Group};
     use serde::{Deserialize, Serialize};
 
     use crate::poly::BivarPoly;
-    use crate::{Fr, G1};
+    use crate::{Fr, G1Projective, G1};
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Vecs {
-        #[serde(with = "super::projective_vec")]
+        #[serde(with = "super::affine_vec")]
         curve_points: Vec<G1>,
         #[serde(with = "super::field_vec")]
         field_elements: Vec<Fr>,
@@ -332,7 +332,9 @@ mod tests {
     fn vecs() {
         let mut rng = rand::thread_rng();
         let vecs = Vecs {
-            curve_points: repeat_with(|| G1::random(&mut rng)).take(10).collect(),
+            curve_points: repeat_with(|| G1Projective::random(&mut rng).to_affine())
+                .take(10)
+                .collect(),
             field_elements: repeat_with(|| Fr::random(&mut rng)).take(10).collect(),
         };
         let ser_vecs = bincode::serialize(&vecs).expect("serialize vecs");
