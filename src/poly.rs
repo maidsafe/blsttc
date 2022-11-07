@@ -34,7 +34,7 @@ use crate::convert::{fr_from_bytes, g1_from_bytes};
 use crate::error::{Error, Result};
 use crate::into_fr::IntoFr;
 use crate::secret::clear_fr;
-use crate::{Field, Fr, G1Projective, G1, PK_SIZE, SK_SIZE};
+use crate::{Field, Fr, G1Affine, G1Projective, PK_SIZE, SK_SIZE};
 
 /// A univariate polynomial in the prime field.
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -371,7 +371,7 @@ impl Poly {
 
     /// Returns the corresponding commitment.
     pub fn commitment(&self) -> Commitment {
-        let to_g1 = |c: &Fr| G1::generator().mul(c).to_affine();
+        let to_g1 = |c: &Fr| G1Affine::generator().mul(c).to_affine();
         Commitment {
             coeff: self.coeff.iter().map(to_g1).collect(),
         }
@@ -470,12 +470,12 @@ impl Poly {
 pub struct Commitment {
     /// The coefficients of the polynomial.
     #[serde(with = "super::serde_impl::affine_vec")]
-    pub(super) coeff: Vec<G1>,
+    pub(super) coeff: Vec<G1Affine>,
 }
 
 /// Creates a new `Commitment` instance
-impl From<Vec<G1>> for Commitment {
-    fn from(coeff: Vec<G1>) -> Self {
+impl From<Vec<G1Affine>> for Commitment {
+    fn from(coeff: Vec<G1Affine>) -> Self {
         Commitment { coeff }
     }
 }
@@ -510,7 +510,7 @@ impl Hash for Commitment {
 impl<B: Borrow<Commitment>> ops::AddAssign<B> for Commitment {
     fn add_assign(&mut self, rhs: B) {
         let len = cmp::max(self.coeff.len(), rhs.borrow().coeff.len());
-        self.coeff.resize(len, G1::identity());
+        self.coeff.resize(len, G1Affine::identity());
         for (self_c, rhs_c) in self.coeff.iter_mut().zip(&rhs.borrow().coeff) {
             *self_c = (*self_c + G1Projective::from(rhs_c)).to_affine();
         }
@@ -542,9 +542,9 @@ impl Commitment {
     }
 
     /// Returns the `i`-th public key share.
-    pub fn evaluate<T: IntoFr>(&self, i: T) -> G1 {
+    pub fn evaluate<T: IntoFr>(&self, i: T) -> G1Affine {
         let mut result = match self.coeff.last() {
-            None => return G1::identity(),
+            None => return G1Affine::identity(),
             Some(c) => G1Projective::from(c),
         };
         let x = i.into_fr();
@@ -573,7 +573,7 @@ impl Commitment {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<G1> = vec![];
+        let mut c: Vec<G1Affine> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
             let mut g1_bytes = [0; PK_SIZE];
@@ -708,7 +708,7 @@ impl BivarPoly {
 
     /// Returns the corresponding commitment. That information can be shared publicly.
     pub fn commitment(&self) -> BivarCommitment {
-        let to_pub = |c: &Fr| G1::generator().mul(c).to_affine();
+        let to_pub = |c: &Fr| G1Affine::generator().mul(c).to_affine();
         BivarCommitment {
             degree: self.degree,
             coeff: self.coeff.iter().map(to_pub).collect(),
@@ -773,7 +773,7 @@ pub struct BivarCommitment {
     /// The polynomial's degree in each of the two variables.
     pub(crate) degree: usize,
     /// The commitments to the coefficients.
-    pub(crate) coeff: Vec<G1>,
+    pub(crate) coeff: Vec<G1Affine>,
 }
 
 impl Hash for BivarCommitment {
@@ -810,7 +810,7 @@ impl BivarCommitment {
     }
 
     /// Returns the commitment's value at the point `(x, y)`.
-    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> G1 {
+    pub fn evaluate<T: IntoFr>(&self, x: T, y: T) -> G1Affine {
         let x_pow = self.powers(x);
         let y_pow = self.powers(y);
         // TODO: Can we save a few multiplication steps here due to the symmetry?
@@ -830,7 +830,7 @@ impl BivarCommitment {
     /// Returns the `x`-th row, as a commitment to a univariate polynomial.
     pub fn row<T: IntoFr>(&self, x: T) -> Commitment {
         let x_pow = self.powers(x);
-        let coeff: Vec<G1> = (0..=self.degree)
+        let coeff: Vec<G1Affine> = (0..=self.degree)
             .map(|i| {
                 let mut result = G1Projective::identity();
                 for (j, x_pow_j) in x_pow.iter().enumerate() {
@@ -870,7 +870,7 @@ impl BivarCommitment {
 
     /// Deserializes from big endian bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
-        let mut c: Vec<G1> = vec![];
+        let mut c: Vec<G1Affine> = vec![];
         let coeff_size = bytes.len() / PK_SIZE;
         for i in 0..coeff_size {
             let mut g1_bytes = [0; PK_SIZE];
@@ -966,7 +966,7 @@ mod tests {
         assert_ne!(random_commitment, zero_commitment);
         let mut rng = rand::thread_rng();
         let (x, y): (Fr, Fr) = (Fr::random(&mut rng), Fr::random(&mut rng));
-        assert_eq!(zero_commitment.evaluate(x, y), G1::identity());
+        assert_eq!(zero_commitment.evaluate(x, y), G1Affine::identity());
     }
 
     #[test]
@@ -998,7 +998,7 @@ mod tests {
                 // Node `s` receives the `s`-th value and verifies it.
                 for s in 1..=node_num {
                     let val = row_poly.evaluate(s);
-                    let val_g1 = G1::generator().mul(val);
+                    let val_g1 = G1Affine::generator().mul(val);
                     assert_eq!(bi_commit.evaluate(m, s), val_g1.to_affine());
                     // The node can't verify this directly, but it should have the correct value:
                     assert_eq!(bi_poly.evaluate(m, s), val);

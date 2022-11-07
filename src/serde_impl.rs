@@ -10,7 +10,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::poly::{coeff_pos, BivarCommitment};
 use crate::serde_impl::serialize_secret_internal::SerializeSecret;
-use crate::{SecretKey, G1};
+use crate::{G1Affine, SecretKey};
 
 const ERR_DEG: &str = "commitment degree does not match coefficients";
 
@@ -121,7 +121,7 @@ struct WireBivarCommitment<'a> {
     /// The polynomial's degree in each of the two variables.
     degree: usize,
     /// The commitments to the coefficients.
-    coeff: Cow<'a, [G1]>,
+    coeff: Cow<'a, [G1Affine]>,
 }
 
 impl Serialize for BivarCommitment {
@@ -312,12 +312,12 @@ mod tests {
     use serde::{Deserialize, Serialize};
 
     use crate::poly::BivarPoly;
-    use crate::{Fr, G1Projective, G1};
+    use crate::{Fr, G1Affine, G1Projective};
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Vecs {
         #[serde(with = "super::affine_vec")]
-        curve_points: Vec<G1>,
+        curve_points: Vec<G1Affine>,
         #[serde(with = "super::field_vec")]
         field_elements: Vec<Fr>,
     }
