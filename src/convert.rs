@@ -4,7 +4,7 @@ use blst::blst_scalar;
 
 use crate::{
     error::{Error, Result},
-    Fr, DST, G1, G2, PK_SIZE, SIG_SIZE, SK_SIZE,
+    Fr, G1Affine, G2Affine, DST, PK_SIZE, SIG_SIZE, SK_SIZE,
 };
 
 pub(crate) fn derivation_index_into_fr(index: &[u8]) -> Fr {
@@ -43,18 +43,18 @@ pub(crate) fn fr_from_bytes(bytes: [u8; SK_SIZE]) -> Result<Fr> {
     Ok(fr.unwrap())
 }
 
-pub(crate) fn g1_from_bytes(bytes: [u8; PK_SIZE]) -> Result<G1> {
+pub(crate) fn g1_from_bytes(bytes: [u8; PK_SIZE]) -> Result<G1Affine> {
     // TODO IC remove unwrap here? I'm not sure if it's possible with CtOption
-    let g1 = G1::from_compressed(&bytes);
+    let g1 = G1Affine::from_compressed(&bytes);
     if g1.is_none().into() {
         return Err(Error::InvalidBytes);
     };
     Ok(g1.unwrap())
 }
 
-pub(crate) fn g2_from_bytes(bytes: [u8; SIG_SIZE]) -> Result<G2> {
+pub(crate) fn g2_from_bytes(bytes: [u8; SIG_SIZE]) -> Result<G2Affine> {
     // TODO IC remove unwrap here? I'm not sure if it's possible with CtOption
-    let g2 = G2::from_compressed(&bytes);
+    let g2 = G2Affine::from_compressed(&bytes);
     if g2.is_none().into() {
         return Err(Error::InvalidBytes);
     };

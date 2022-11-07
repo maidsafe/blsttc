@@ -44,9 +44,7 @@ use crate::poly::{Commitment, Poly};
 use crate::secret::clear_fr;
 use crate::util::sha3_256;
 
-pub use blstrs::{
-    Bls12 as PEngine, G1Affine as G1, G1Projective, G2Affine as G2, G2Projective, Scalar as Fr,
-};
+pub use blstrs::{Bls12 as PEngine, G1Affine, G1Projective, G2Affine, G2Projective, Scalar as Fr};
 
 /// The size of a secret key's representation in bytes.
 pub const SK_SIZE: usize = 32;
@@ -62,7 +60,7 @@ pub const DST: &[u8; 43] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 /// A public key.
 #[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
-pub struct PublicKey(#[serde(with = "serde_impl::affine")] G1);
+pub struct PublicKey(#[serde(with = "serde_impl::affine")] G1Affine);
 
 impl Hash for PublicKey {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -90,15 +88,15 @@ impl Ord for PublicKey {
 }
 
 /// Utility to convert blsttc to blst types
-impl From<PublicKey> for G1 {
+impl From<PublicKey> for G1Affine {
     fn from(item: PublicKey) -> Self {
         item.0
     }
 }
 
 /// Utility to convert blsttc to blst types
-impl From<G1> for PublicKey {
-    fn from(item: G1) -> Self {
+impl From<G1Affine> for PublicKey {
+    fn from(item: G1Affine) -> Self {
         PublicKey(item)
     }
 }
@@ -118,8 +116,8 @@ impl From<G1Projective> for PublicKey {
 }
 
 /// Utility to compare between blsttc and blst types
-impl std::cmp::PartialEq<G1> for PublicKey {
-    fn eq(&self, other: &G1) -> bool {
+impl std::cmp::PartialEq<G1Affine> for PublicKey {
+    fn eq(&self, other: &G1Affine) -> bool {
         &self.0 == other
     }
 }
@@ -138,9 +136,10 @@ impl PublicKey {
     }
 
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2<H: Into<G2>>(&self, sig: &Signature, hash: H) -> bool {
+    pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &Signature, hash: H) -> bool {
         !self.is_zero()
-            && PEngine::pairing(&self.0, &hash.into()) == PEngine::pairing(&G1::generator(), &sig.0)
+            && PEngine::pairing(&self.0, &hash.into())
+                == PEngine::pairing(&G1Affine::generator(), &sig.0)
     }
 
     /// Returns `true` if the signature matches the message.
@@ -159,7 +158,7 @@ impl PublicKey {
     /// Encrypts the message.
     pub fn encrypt_with_rng<R: RngCore, M: AsRef<[u8]>>(&self, rng: &mut R, msg: M) -> Ciphertext {
         let r: Fr = Fr::random(rng);
-        let u = G1::generator().mul(r).to_affine();
+        let u = G1Affine::generator().mul(r).to_affine();
         let v: Vec<u8> = {
             let g = self.0.mul(r);
             xor_with_hash(g.to_affine(), msg.as_ref())
@@ -213,7 +212,7 @@ impl fmt::Debug for PublicKeyShare {
 
 impl PublicKeyShare {
     /// Returns `true` if the signature matches the element of `G2`.
-    pub fn verify_g2<H: Into<G2>>(&self, sig: &SignatureShare, hash: H) -> bool {
+    pub fn verify_g2<H: Into<G2Affine>>(&self, sig: &SignatureShare, hash: H) -> bool {
         self.0.verify_g2(&sig.0, hash)
     }
 
@@ -248,7 +247,7 @@ impl PublicKeyShare {
 /// A signature.
 // Note: Random signatures can be generated for testing.
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
-pub struct Signature(#[serde(with = "serde_impl::affine")] G2);
+pub struct Signature(#[serde(with = "serde_impl::affine")] G2Affine);
 
 impl PartialOrd for Signature {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -421,11 +420,11 @@ impl SecretKey {
 
     /// Returns the matching public key.
     pub fn public_key(&self) -> PublicKey {
-        PublicKey((G1::generator() * self.0).to_affine())
+        PublicKey((G1Affine::generator() * self.0).to_affine())
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2<H: Into<G2>>(&self, hash: H) -> Signature {
+    pub fn sign_g2<H: Into<G2Affine>>(&self, hash: H) -> Signature {
         Signature(hash.into().mul(self.0).to_affine())
     }
 
@@ -523,7 +522,7 @@ impl SecretKeyShare {
     }
 
     /// Signs the given element of `G2`.
-    pub fn sign_g2<H: Into<G2>>(&self, hash: H) -> SignatureShare {
+    pub fn sign_g2<H: Into<G2Affine>>(&self, hash: H) -> SignatureShare {
         SignatureShare(self.0.sign_g2(hash))
     }
 
@@ -571,9 +570,9 @@ impl SecretKeyShare {
 /// An encrypted message.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct Ciphertext(
-    #[serde(with = "serde_impl::affine")] G1,
+    #[serde(with = "serde_impl::affine")] G1Affine,
     Vec<u8>,
-    #[serde(with = "serde_impl::affine")] G2,
+    #[serde(with = "serde_impl::affine")] G2Affine,
 );
 
 impl Hash for Ciphertext {
@@ -605,7 +604,7 @@ impl Ciphertext {
     pub fn verify(&self) -> bool {
         let Ciphertext(ref u, ref v, ref w) = *self;
         let hash = hash_g1_g2(*u, v);
-        PEngine::pairing(&G1::generator(), w) == PEngine::pairing(u, &hash)
+        PEngine::pairing(&G1Affine::generator(), w) == PEngine::pairing(u, &hash)
     }
 
     /// Returns byte representation of Ciphertext
@@ -640,7 +639,7 @@ impl Ciphertext {
 
 /// A decryption share. A threshold of decryption shares can be used to decrypt a message.
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct DecryptionShare(#[serde(with = "serde_impl::affine")] G1);
+pub struct DecryptionShare(#[serde(with = "serde_impl::affine")] G1Affine);
 
 impl Distribution<DecryptionShare> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> DecryptionShare {
@@ -785,7 +784,7 @@ impl PublicKeySet {
     /// Derives a child public key set for a given index.
     pub fn derive_child(&self, index: &[u8]) -> Self {
         let index_fr = derivation_index_into_fr(index);
-        let child_coeffs: Vec<G1> = self
+        let child_coeffs: Vec<G1Affine> = self
             .commit
             .coeff
             .iter()
@@ -907,12 +906,12 @@ impl SecretKeySet {
 }
 
 /// Returns a hash of the given message in `G2`.
-pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2 {
+pub fn hash_g2<M: AsRef<[u8]>>(msg: M) -> G2Affine {
     G2Projective::hash_to_curve(msg.as_ref(), DST, &[]).to_affine()
 }
 
 /// Returns a hash of the group element and message, in the second group.
-fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> G2 {
+fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1Affine, msg: M) -> G2Affine {
     // If the message is large, hash it, otherwise copy it.
     // TODO: Benchmark and optimize the threshold.
     let mut msg = if msg.as_ref().len() > 64 {
@@ -925,7 +924,7 @@ fn hash_g1_g2<M: AsRef<[u8]>>(g1: G1, msg: M) -> G2 {
 }
 
 /// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.
-fn xor_with_hash(g1: G1, bytes: &[u8]) -> Vec<u8> {
+fn xor_with_hash(g1: G1Affine, bytes: &[u8]) -> Vec<u8> {
     let digest = sha3_256(&g1.to_compressed());
     let rng = ChaChaRng::from_seed(digest);
     let xor = |(a, b): (u8, &u8)| a ^ b;
@@ -1905,11 +1904,11 @@ mod tests {
         assert!(!pk.is_zero());
 
         // Rogue 0 pubkey
-        let rogue_public_key = PublicKey(G1::identity());
+        let rogue_public_key = PublicKey(G1Affine::identity());
         assert!(rogue_public_key.is_zero());
 
         // Rogue 0 sig
-        let rogue_sig = Signature(G2::identity());
+        let rogue_sig = Signature(G2Affine::identity());
 
         // just any hash will do
         let hash = hash_g2(b"anything");
@@ -1917,7 +1916,7 @@ mod tests {
         // check that the attack works without the 0 check
         assert_eq!(
             PEngine::pairing(&rogue_public_key.0, &hash),
-            PEngine::pairing(&G1::generator(), &rogue_sig.0)
+            PEngine::pairing(&G1Affine::generator(), &rogue_sig.0)
         );
 
         // check that verify_g2 is protected against this attack
