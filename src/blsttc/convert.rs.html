@@ -66,7 +66,7 @@
 
 <span class="kw">use crate</span>::{
     error::{Error, <span class="prelude-ty">Result</span>},
-    Fr, DST, G1, G2, PK_SIZE, SIG_SIZE, SK_SIZE,
+    Fr, G1Affine, G2Affine, DST, PK_SIZE, SIG_SIZE, SK_SIZE,
 };
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derivation_index_into_fr(index: <span class="kw-2">&amp;</span>[u8]) -&gt; Fr {
@@ -105,18 +105,18 @@
     <span class="prelude-val">Ok</span>(fr.unwrap())
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>g1_from_bytes(bytes: [u8; PK_SIZE]) -&gt; <span class="prelude-ty">Result</span>&lt;G1&gt; {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>g1_from_bytes(bytes: [u8; PK_SIZE]) -&gt; <span class="prelude-ty">Result</span>&lt;G1Affine&gt; {
     <span class="comment">// TODO IC remove unwrap here? I&#39;m not sure if it&#39;s possible with CtOption
-    </span><span class="kw">let </span>g1 = G1::from_compressed(<span class="kw-2">&amp;</span>bytes);
+    </span><span class="kw">let </span>g1 = G1Affine::from_compressed(<span class="kw-2">&amp;</span>bytes);
     <span class="kw">if </span>g1.is_none().into() {
         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::InvalidBytes);
     };
     <span class="prelude-val">Ok</span>(g1.unwrap())
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>g2_from_bytes(bytes: [u8; SIG_SIZE]) -&gt; <span class="prelude-ty">Result</span>&lt;G2&gt; {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>g2_from_bytes(bytes: [u8; SIG_SIZE]) -&gt; <span class="prelude-ty">Result</span>&lt;G2Affine&gt; {
     <span class="comment">// TODO IC remove unwrap here? I&#39;m not sure if it&#39;s possible with CtOption
-    </span><span class="kw">let </span>g2 = G2::from_compressed(<span class="kw-2">&amp;</span>bytes);
+    </span><span class="kw">let </span>g2 = G2Affine::from_compressed(<span class="kw-2">&amp;</span>bytes);
     <span class="kw">if </span>g2.is_none().into() {
         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::InvalidBytes);
     };

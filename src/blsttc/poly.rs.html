@@ -1274,12 +1274,12 @@
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>zeroize::Zeroize;
 
-<span class="kw">use </span><span class="kw">crate</span>::cmp_pairing::cmp_projective;
+<span class="kw">use </span><span class="kw">crate</span>::cmp_pairing::cmp_affine;
 <span class="kw">use </span><span class="kw">crate</span>::convert::{fr_from_bytes, g1_from_bytes};
 <span class="kw">use </span><span class="kw">crate</span>::error::{Error, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span><span class="kw">crate</span>::into_fr::IntoFr;
 <span class="kw">use </span><span class="kw">crate</span>::secret::clear_fr;
-<span class="kw">use crate</span>::{Field, Fr, G1Affine, G1, PK_SIZE, SK_SIZE};
+<span class="kw">use crate</span>::{Field, Fr, G1Affine, G1Projective, PK_SIZE, SK_SIZE};
 
 <span class="doccomment">/// A univariate polynomial in the prime field.
 </span><span class="attribute">#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -1616,7 +1616,7 @@
 
     <span class="doccomment">/// Returns the corresponding commitment.
     </span><span class="kw">pub fn </span>commitment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Commitment {
-        <span class="kw">let </span>to_g1 = |c: <span class="kw-2">&amp;</span>Fr| G1Affine::generator().mul(<span class="kw-2">*</span>c);
+        <span class="kw">let </span>to_g1 = |c: <span class="kw-2">&amp;</span>Fr| G1Affine::generator().mul(c).to_affine();
         Commitment {
             coeff: <span class="self">self</span>.coeff.iter().map(to_g1).collect(),
         }
@@ -1714,13 +1714,13 @@
 </span><span class="attribute">#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Commitment {
     <span class="doccomment">/// The coefficients of the polynomial.
-    </span><span class="attribute">#[serde(with = <span class="string">&quot;super::serde_impl::projective_vec&quot;</span>)]
-    </span><span class="kw">pub</span>(<span class="kw">super</span>) coeff: Vec&lt;G1&gt;,
+    </span><span class="attribute">#[serde(with = <span class="string">&quot;super::serde_impl::affine_vec&quot;</span>)]
+    </span><span class="kw">pub</span>(<span class="kw">super</span>) coeff: Vec&lt;G1Affine&gt;,
 }
 
 <span class="doccomment">/// Creates a new `Commitment` instance
-</span><span class="kw">impl </span>From&lt;Vec&lt;G1&gt;&gt; <span class="kw">for </span>Commitment {
-    <span class="kw">fn </span>from(coeff: Vec&lt;G1&gt;) -&gt; <span class="self">Self </span>{
+</span><span class="kw">impl </span>From&lt;Vec&lt;G1Affine&gt;&gt; <span class="kw">for </span>Commitment {
+    <span class="kw">fn </span>from(coeff: Vec&lt;G1Affine&gt;) -&gt; <span class="self">Self </span>{
         Commitment { coeff }
     }
 }
@@ -1738,7 +1738,7 @@
                 .iter()
                 .zip(<span class="kw-2">&amp;</span>other.coeff)
                 .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_projective(x, y))
+                .map_or(Ordering::Equal, |(x, y)| cmp_affine(x, y))
         })
     }
 }
@@ -1747,7 +1747,7 @@
     <span class="kw">fn </span>hash&lt;H: Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
         <span class="self">self</span>.coeff.len().hash(state);
         <span class="kw">for </span>c <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.coeff {
-            c.to_affine().to_compressed().as_ref().hash(state);
+            c.to_compressed().hash(state);
         }
     }
 }
@@ -1755,9 +1755,9 @@
 <span class="kw">impl</span>&lt;B: Borrow&lt;Commitment&gt;&gt; ops::AddAssign&lt;B&gt; <span class="kw">for </span>Commitment {
     <span class="kw">fn </span>add_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, rhs: B) {
         <span class="kw">let </span>len = cmp::max(<span class="self">self</span>.coeff.len(), rhs.borrow().coeff.len());
-        <span class="self">self</span>.coeff.resize(len, G1::identity());
+        <span class="self">self</span>.coeff.resize(len, G1Affine::identity());
         <span class="kw">for </span>(self_c, rhs_c) <span class="kw">in </span><span class="self">self</span>.coeff.iter_mut().zip(<span class="kw-2">&amp;</span>rhs.borrow().coeff) {
-            self_c.add_assign(rhs_c);
+            <span class="kw-2">*</span>self_c = (<span class="kw-2">*</span>self_c + G1Projective::from(rhs_c)).to_affine();
         }
         <span class="self">self</span>.remove_zeros();
     }
@@ -1787,17 +1787,17 @@
     </span>}
 
     <span class="doccomment">/// Returns the `i`-th public key share.
-    </span><span class="kw">pub fn </span>evaluate&lt;T: IntoFr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, i: T) -&gt; G1 {
+    </span><span class="kw">pub fn </span>evaluate&lt;T: IntoFr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, i: T) -&gt; G1Affine {
         <span class="kw">let </span><span class="kw-2">mut </span>result = <span class="kw">match </span><span class="self">self</span>.coeff.last() {
-            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>G1::identity(),
-            <span class="prelude-val">Some</span>(c) =&gt; <span class="kw-2">*</span>c,
+            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>G1Affine::identity(),
+            <span class="prelude-val">Some</span>(c) =&gt; G1Projective::from(c),
         };
         <span class="kw">let </span>x = i.into_fr();
         <span class="kw">for </span>c <span class="kw">in </span><span class="self">self</span>.coeff.iter().rev().skip(<span class="number">1</span>) {
             result.mul_assign(x);
             result.add_assign(c);
         }
-        result
+        result.to_affine()
     }
 
     <span class="doccomment">/// Serializes to big endian bytes
@@ -1818,7 +1818,7 @@
 
     <span class="doccomment">/// Deserializes from big endian bytes
     </span><span class="kw">pub fn </span>from_bytes(bytes: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>c: Vec&lt;G1&gt; = <span class="macro">vec!</span>[];
+        <span class="kw">let </span><span class="kw-2">mut </span>c: Vec&lt;G1Affine&gt; = <span class="macro">vec!</span>[];
         <span class="kw">let </span>coeff_size = bytes.len() / PK_SIZE;
         <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..coeff_size {
             <span class="kw">let </span><span class="kw-2">mut </span>g1_bytes = [<span class="number">0</span>; PK_SIZE];
@@ -1953,7 +1953,7 @@
 
     <span class="doccomment">/// Returns the corresponding commitment. That information can be shared publicly.
     </span><span class="kw">pub fn </span>commitment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BivarCommitment {
-        <span class="kw">let </span>to_pub = |c: <span class="kw-2">&amp;</span>Fr| G1Affine::generator().mul(<span class="kw-2">*</span>c);
+        <span class="kw">let </span>to_pub = |c: <span class="kw-2">&amp;</span>Fr| G1Affine::generator().mul(c).to_affine();
         BivarCommitment {
             degree: <span class="self">self</span>.degree,
             coeff: <span class="self">self</span>.coeff.iter().map(to_pub).collect(),
@@ -2018,14 +2018,14 @@
     <span class="doccomment">/// The polynomial&#39;s degree in each of the two variables.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) degree: usize,
     <span class="doccomment">/// The commitments to the coefficients.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) coeff: Vec&lt;G1&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) coeff: Vec&lt;G1Affine&gt;,
 }
 
 <span class="kw">impl </span>Hash <span class="kw">for </span>BivarCommitment {
     <span class="kw">fn </span>hash&lt;H: Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
         <span class="self">self</span>.degree.hash(state);
         <span class="kw">for </span>c <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.coeff {
-            c.to_affine().to_compressed().as_ref().hash(state);
+            c.to_compressed().hash(state);
         }
     }
 }
@@ -2043,7 +2043,7 @@
                 .iter()
                 .zip(<span class="kw-2">&amp;</span>other.coeff)
                 .find(|(x, y)| x != y)
-                .map_or(Ordering::Equal, |(x, y)| cmp_projective(x, y))
+                .map_or(Ordering::Equal, |(x, y)| cmp_affine(x, y))
         })
     }
 }
@@ -2055,11 +2055,11 @@
     }
 
     <span class="doccomment">/// Returns the commitment&#39;s value at the point `(x, y)`.
-    </span><span class="kw">pub fn </span>evaluate&lt;T: IntoFr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, x: T, y: T) -&gt; G1 {
+    </span><span class="kw">pub fn </span>evaluate&lt;T: IntoFr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, x: T, y: T) -&gt; G1Affine {
         <span class="kw">let </span>x_pow = <span class="self">self</span>.powers(x);
         <span class="kw">let </span>y_pow = <span class="self">self</span>.powers(y);
         <span class="comment">// TODO: Can we save a few multiplication steps here due to the symmetry?
-        </span><span class="kw">let </span><span class="kw-2">mut </span>result = G1::identity();
+        </span><span class="kw">let </span><span class="kw-2">mut </span>result = G1Projective::identity();
         <span class="kw">for </span>(i, x_pow_i) <span class="kw">in </span>x_pow.into_iter().enumerate() {
             <span class="kw">for </span>(j, y_pow_j) <span class="kw">in </span>y_pow.iter().enumerate() {
                 <span class="kw">let </span>index = coeff_pos(i, j).expect(<span class="string">&quot;polynomial degree too high&quot;</span>);
@@ -2069,22 +2069,22 @@
                 result.add_assign(<span class="kw-2">&amp;</span>summand);
             }
         }
-        result
+        result.to_affine()
     }
 
     <span class="doccomment">/// Returns the `x`-th row, as a commitment to a univariate polynomial.
     </span><span class="kw">pub fn </span>row&lt;T: IntoFr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, x: T) -&gt; Commitment {
         <span class="kw">let </span>x_pow = <span class="self">self</span>.powers(x);
-        <span class="kw">let </span>coeff: Vec&lt;G1&gt; = (<span class="number">0</span>..=<span class="self">self</span>.degree)
+        <span class="kw">let </span>coeff: Vec&lt;G1Affine&gt; = (<span class="number">0</span>..=<span class="self">self</span>.degree)
             .map(|i| {
-                <span class="kw">let </span><span class="kw-2">mut </span>result = G1::identity();
+                <span class="kw">let </span><span class="kw-2">mut </span>result = G1Projective::identity();
                 <span class="kw">for </span>(j, x_pow_j) <span class="kw">in </span>x_pow.iter().enumerate() {
                     <span class="kw">let </span>index = coeff_pos(i, j).expect(<span class="string">&quot;polynomial degree too high&quot;</span>);
                     <span class="kw">let </span><span class="kw-2">mut </span>summand = <span class="self">self</span>.coeff[index];
                     summand.mul_assign(<span class="kw-2">*</span>x_pow_j);
                     result.add_assign(<span class="kw-2">&amp;</span>summand);
                 }
-                result
+                result.to_affine()
             })
             .collect();
         Commitment { coeff }
@@ -2115,7 +2115,7 @@
 
     <span class="doccomment">/// Deserializes from big endian bytes
     </span><span class="kw">pub fn </span>from_bytes(bytes: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>c: Vec&lt;G1&gt; = <span class="macro">vec!</span>[];
+        <span class="kw">let </span><span class="kw-2">mut </span>c: Vec&lt;G1Affine&gt; = <span class="macro">vec!</span>[];
         <span class="kw">let </span>coeff_size = bytes.len() / PK_SIZE;
         <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..coeff_size {
             <span class="kw">let </span><span class="kw-2">mut </span>g1_bytes = [<span class="number">0</span>; PK_SIZE];
@@ -2211,7 +2211,7 @@
         <span class="macro">assert_ne!</span>(random_commitment, zero_commitment);
         <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
         <span class="kw">let </span>(x, y): (Fr, Fr) = (Fr::random(<span class="kw-2">&amp;mut </span>rng), Fr::random(<span class="kw-2">&amp;mut </span>rng));
-        <span class="macro">assert_eq!</span>(zero_commitment.evaluate(x, y), G1::identity());
+        <span class="macro">assert_eq!</span>(zero_commitment.evaluate(x, y), G1Affine::identity());
     }
 
     <span class="attribute">#[test]
@@ -2244,7 +2244,7 @@
                 </span><span class="kw">for </span>s <span class="kw">in </span><span class="number">1</span>..=node_num {
                     <span class="kw">let </span>val = row_poly.evaluate(s);
                     <span class="kw">let </span>val_g1 = G1Affine::generator().mul(val);
-                    <span class="macro">assert_eq!</span>(bi_commit.evaluate(m, s), val_g1);
+                    <span class="macro">assert_eq!</span>(bi_commit.evaluate(m, s), val_g1.to_affine());
                     <span class="comment">// The node can&#39;t verify this directly, but it should have the correct value:
                     </span><span class="macro">assert_eq!</span>(bi_poly.evaluate(m, s), val);
                 }
@@ -2310,7 +2310,7 @@
         <span class="macro">assert_eq!</span>(commitment_bytes.len(), (degree + <span class="number">1</span>) * <span class="number">48</span>);
         <span class="comment">// the first bytes of the commitment match the first G1
         </span><span class="kw">let </span>g1 = commitment.evaluate(<span class="number">0</span>);
-        <span class="kw">let </span>g1_bytes = g1.to_affine().to_compressed().as_ref().to_vec();
+        <span class="kw">let </span>g1_bytes = g1.to_compressed().as_ref().to_vec();
         <span class="kw">let </span>g1_bytes_size = g1_bytes.len();
         <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..g1_bytes_size {
             <span class="macro">assert_eq!</span>(g1_bytes[i], commitment_bytes[i]);

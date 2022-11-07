@@ -1923,9 +1923,6 @@
 <span id="1923">1923</span>
 <span id="1924">1924</span>
 <span id="1925">1925</span>
-<span id="1926">1926</span>
-<span id="1927">1927</span>
-<span id="1928">1928</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A pairing-based threshold cryptosystem for collaborative decryption and signatures.
 
 </span><span class="comment">// Clippy warns that it&#39;s dangerous to derive `PartialEq` and explicitly implement `Hash`, but the
@@ -1964,7 +1961,7 @@
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>zeroize::Zeroize;
 
-<span class="kw">use </span><span class="kw">crate</span>::cmp_pairing::cmp_projective;
+<span class="kw">use </span><span class="kw">crate</span>::cmp_pairing::cmp_affine;
 <span class="kw">use </span><span class="kw">crate</span>::convert::{derivation_index_into_fr, fr_from_bytes, g1_from_bytes, g2_from_bytes};
 <span class="kw">pub use </span><span class="kw">crate</span>::error::{Error, <span class="prelude-ty">Result</span>};
 <span class="kw">pub use </span><span class="kw">crate</span>::into_fr::IntoFr;
@@ -1972,9 +1969,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::secret::clear_fr;
 <span class="kw">use </span><span class="kw">crate</span>::util::sha3_256;
 
-<span class="kw">pub use </span>blstrs::{
-    Bls12 <span class="kw">as </span>PEngine, G1Affine, G1Projective <span class="kw">as </span>G1, G2Affine, G2Projective <span class="kw">as </span>G2, Scalar <span class="kw">as </span>Fr,
-};
+<span class="kw">pub use </span>blstrs::{Bls12 <span class="kw">as </span>PEngine, G1Affine, G1Projective, G2Affine, G2Projective, Scalar <span class="kw">as </span>Fr};
 
 <span class="doccomment">/// The size of a secret key&#39;s representation in bytes.
 </span><span class="kw">pub const </span>SK_SIZE: usize = <span class="number">32</span>;
@@ -1990,17 +1985,17 @@
 
 <span class="doccomment">/// A public key.
 </span><span class="attribute">#[derive(Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>PublicKey(<span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::projective&quot;</span>)] </span>G1);
+</span><span class="kw">pub struct </span>PublicKey(<span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::affine&quot;</span>)] </span>G1Affine);
 
 <span class="kw">impl </span>Hash <span class="kw">for </span>PublicKey {
     <span class="kw">fn </span>hash&lt;H: Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
-        <span class="self">self</span>.<span class="number">0</span>.to_affine().to_compressed().as_ref().hash(state);
+        <span class="self">self</span>.<span class="number">0</span>.to_compressed().as_ref().hash(state);
     }
 }
 
 <span class="kw">impl </span>fmt::Debug <span class="kw">for </span>PublicKey {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
-        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0</span>.to_affine().to_uncompressed();
+        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0</span>.to_uncompressed();
         <span class="macro">write!</span>(f, <span class="string">&quot;PublicKey({:0.10})&quot;</span>, HexFmt(uncomp))
     }
 }
@@ -2013,50 +2008,49 @@
 
 <span class="kw">impl </span>Ord <span class="kw">for </span>PublicKey {
     <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Ordering {
-        cmp_projective(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
-    }
-}
-
-<span class="doccomment">/// Utility to convert blsttc to blst types
-</span><span class="kw">impl </span>From&lt;PublicKey&gt; <span class="kw">for </span>G1 {
-    <span class="kw">fn </span>from(item: PublicKey) -&gt; <span class="self">Self </span>{
-        item.<span class="number">0
-    </span>}
-}
-
-<span class="doccomment">/// Utility to convert blsttc to blst types
-</span><span class="kw">impl </span>From&lt;G1&gt; <span class="kw">for </span>PublicKey {
-    <span class="kw">fn </span>from(item: G1) -&gt; <span class="self">Self </span>{
-        PublicKey(item)
+        cmp_affine(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
     }
 }
 
 <span class="doccomment">/// Utility to convert blsttc to blst types
 </span><span class="kw">impl </span>From&lt;PublicKey&gt; <span class="kw">for </span>G1Affine {
     <span class="kw">fn </span>from(item: PublicKey) -&gt; <span class="self">Self </span>{
-        item.<span class="number">0</span>.to_affine()
+        item.<span class="number">0
+    </span>}
+}
+
+<span class="doccomment">/// Utility to convert blsttc to blst types
+</span><span class="kw">impl </span>From&lt;G1Affine&gt; <span class="kw">for </span>PublicKey {
+    <span class="kw">fn </span>from(item: G1Affine) -&gt; <span class="self">Self </span>{
+        PublicKey(item)
+    }
+}
+
+<span class="doccomment">/// Utility to convert blsttc to blst types
+</span><span class="kw">impl </span>From&lt;PublicKey&gt; <span class="kw">for </span>G1Projective {
+    <span class="kw">fn </span>from(item: PublicKey) -&gt; <span class="self">Self </span>{
+        item.<span class="number">0</span>.into()
     }
 }
 
 <span class="doccomment">/// Utility to convert blst to blsttc types
-</span><span class="kw">impl </span>From&lt;G1Affine&gt; <span class="kw">for </span>PublicKey {
-    <span class="kw">fn </span>from(item: G1Affine) -&gt; <span class="self">Self </span>{
+</span><span class="kw">impl </span>From&lt;G1Projective&gt; <span class="kw">for </span>PublicKey {
+    <span class="kw">fn </span>from(item: G1Projective) -&gt; <span class="self">Self </span>{
         PublicKey(item.into())
-    }
-}
-
-<span class="doccomment">/// Utility to compare between blsttc and blst types
-</span><span class="kw">impl </span>std::cmp::PartialEq&lt;G1&gt; <span class="kw">for </span>PublicKey {
-    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>G1) -&gt; bool {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>== other
     }
 }
 
 <span class="doccomment">/// Utility to compare between blsttc and blst types
 </span><span class="kw">impl </span>std::cmp::PartialEq&lt;G1Affine&gt; <span class="kw">for </span>PublicKey {
     <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>G1Affine) -&gt; bool {
-        <span class="comment">// TODO is there a way to avoid the to_affine() by doing some cheap op on other?
-        </span><span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.to_affine() == other
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>== other
+    }
+}
+
+<span class="doccomment">/// Utility to compare between blsttc and blst types
+</span><span class="kw">impl </span>std::cmp::PartialEq&lt;G1Projective&gt; <span class="kw">for </span>PublicKey {
+    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>G1Projective) -&gt; bool {
+        <span class="kw-2">&amp;</span>G1Projective::from(<span class="self">self</span>.<span class="number">0</span>) == other
     }
 }
 
@@ -2069,8 +2063,8 @@
     <span class="doccomment">/// Returns `true` if the signature matches the element of `G2`.
     </span><span class="kw">pub fn </span>verify_g2&lt;H: Into&lt;G2Affine&gt;&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, sig: <span class="kw-2">&amp;</span>Signature, hash: H) -&gt; bool {
         !<span class="self">self</span>.is_zero()
-            &amp;&amp; PEngine::pairing(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.to_affine(), <span class="kw-2">&amp;</span>hash.into())
-                == PEngine::pairing(<span class="kw-2">&amp;</span>G1Affine::generator(), <span class="kw-2">&amp;</span>sig.<span class="number">0</span>.to_affine())
+            &amp;&amp; PEngine::pairing(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>hash.into())
+                == PEngine::pairing(<span class="kw-2">&amp;</span>G1Affine::generator(), <span class="kw-2">&amp;</span>sig.<span class="number">0</span>)
     }
 
     <span class="doccomment">/// Returns `true` if the signature matches the message.
@@ -2089,12 +2083,12 @@
     <span class="doccomment">/// Encrypts the message.
     </span><span class="kw">pub fn </span>encrypt_with_rng&lt;R: RngCore, M: AsRef&lt;[u8]&gt;&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, rng: <span class="kw-2">&amp;mut </span>R, msg: M) -&gt; Ciphertext {
         <span class="kw">let </span>r: Fr = Fr::random(rng);
-        <span class="kw">let </span>u = G1Affine::generator().mul(r);
+        <span class="kw">let </span>u = G1Affine::generator().mul(r).to_affine();
         <span class="kw">let </span>v: Vec&lt;u8&gt; = {
-            <span class="kw">let </span>g = <span class="self">self</span>.<span class="number">0</span>.to_affine().mul(r);
-            xor_with_hash(g, msg.as_ref())
+            <span class="kw">let </span>g = <span class="self">self</span>.<span class="number">0</span>.mul(r);
+            xor_with_hash(g.to_affine(), msg.as_ref())
         };
-        <span class="kw">let </span>w = hash_g1_g2(u, <span class="kw-2">&amp;</span>v).to_affine().mul(r);
+        <span class="kw">let </span>w = hash_g1_g2(u, <span class="kw-2">&amp;</span>v).mul(r).to_affine();
         Ciphertext(u, v, w)
     }
 
@@ -2136,7 +2130,7 @@
 
 <span class="kw">impl </span>fmt::Debug <span class="kw">for </span>PublicKeyShare {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
-        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0 </span>.<span class="number">0</span>.to_affine().to_uncompressed();
+        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0 </span>.<span class="number">0</span>.to_uncompressed();
         <span class="macro">write!</span>(f, <span class="string">&quot;PublicKeyShare({:0.10})&quot;</span>, HexFmt(uncomp))
     }
 }
@@ -2156,8 +2150,7 @@
     </span><span class="kw">pub fn </span>verify_decryption_share(<span class="kw-2">&amp;</span><span class="self">self</span>, share: <span class="kw-2">&amp;</span>DecryptionShare, ct: <span class="kw-2">&amp;</span>Ciphertext) -&gt; bool {
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u, <span class="kw-2">ref </span>v, <span class="kw-2">ref </span>w) = <span class="kw-2">*</span>ct;
         <span class="kw">let </span>hash = hash_g1_g2(<span class="kw-2">*</span>u, v);
-        PEngine::pairing(<span class="kw-2">&amp;</span>share.<span class="number">0</span>.to_affine(), <span class="kw-2">&amp;</span>hash.to_affine())
-            == PEngine::pairing(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.to_affine(), <span class="kw-2">&amp;</span>w.to_affine())
+        PEngine::pairing(<span class="kw-2">&amp;</span>share.<span class="number">0</span>, <span class="kw-2">&amp;</span>hash) == PEngine::pairing(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>, w)
     }
 
     <span class="doccomment">/// Derives a child public key share for a given index.
@@ -2179,7 +2172,7 @@
 <span class="doccomment">/// A signature.
 </span><span class="comment">// Note: Random signatures can be generated for testing.
 </span><span class="attribute">#[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>Signature(<span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::projective&quot;</span>)] </span>G2);
+</span><span class="kw">pub struct </span>Signature(<span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::affine&quot;</span>)] </span>G2Affine);
 
 <span class="kw">impl </span>PartialOrd <span class="kw">for </span>Signature {
     <span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Ordering&gt; {
@@ -2189,33 +2182,33 @@
 
 <span class="kw">impl </span>Ord <span class="kw">for </span>Signature {
     <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Ordering {
-        cmp_projective(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+        cmp_affine(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
     }
 }
 
 <span class="kw">impl </span>Distribution&lt;Signature&gt; <span class="kw">for </span>Standard {
     <span class="kw">fn </span>sample&lt;R: Rng + <span class="question-mark">?</span>Sized&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, rng: <span class="kw-2">&amp;mut </span>R) -&gt; Signature {
-        Signature(G2::random(rng))
+        Signature(G2Projective::random(rng).to_affine())
     }
 }
 
 <span class="kw">impl </span>fmt::Debug <span class="kw">for </span>Signature {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
-        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0</span>.to_affine().to_uncompressed();
+        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0</span>.to_uncompressed();
         <span class="macro">write!</span>(f, <span class="string">&quot;Signature({:0.10})&quot;</span>, HexFmt(uncomp))
     }
 }
 
 <span class="kw">impl </span>Hash <span class="kw">for </span>Signature {
     <span class="kw">fn </span>hash&lt;H: Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
-        <span class="self">self</span>.<span class="number">0</span>.to_affine().to_compressed().as_ref().hash(state);
+        <span class="self">self</span>.<span class="number">0</span>.to_compressed().hash(state);
     }
 }
 
 <span class="kw">impl </span>Signature {
     <span class="doccomment">/// Returns `true` if the signature contains an odd number of ones.
     </span><span class="kw">pub fn </span>parity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0</span>.to_affine().to_uncompressed();
+        <span class="kw">let </span>uncomp = <span class="self">self</span>.<span class="number">0</span>.to_uncompressed();
         <span class="kw">let </span>xor_bytes: u8 = uncomp.as_ref().iter().fold(<span class="number">0</span>, |result, byte| result ^ byte);
         <span class="number">0 </span>!= xor_bytes.count_ones() % <span class="number">2
     </span>}
@@ -2245,7 +2238,7 @@
 
 <span class="kw">impl </span>fmt::Debug <span class="kw">for </span>SignatureShare {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
-        <span class="kw">let </span>uncomp = (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.to_affine().to_uncompressed();
+        <span class="kw">let </span>uncomp = (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>.to_uncompressed();
         <span class="macro">write!</span>(f, <span class="string">&quot;SignatureShare({:0.10})&quot;</span>, HexFmt(uncomp))
     }
 }
@@ -2352,12 +2345,12 @@
 
     <span class="doccomment">/// Returns the matching public key.
     </span><span class="kw">pub fn </span>public_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PublicKey {
-        PublicKey(G1Affine::generator() * <span class="self">self</span>.<span class="number">0</span>)
+        PublicKey((G1Affine::generator() * <span class="self">self</span>.<span class="number">0</span>).to_affine())
     }
 
     <span class="doccomment">/// Signs the given element of `G2`.
     </span><span class="kw">pub fn </span>sign_g2&lt;H: Into&lt;G2Affine&gt;&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H) -&gt; Signature {
-        Signature(hash.into().mul(<span class="self">self</span>.<span class="number">0</span>))
+        Signature(hash.into().mul(<span class="self">self</span>.<span class="number">0</span>).to_affine())
     }
 
     <span class="doccomment">/// Signs the given message.
@@ -2394,7 +2387,7 @@
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u, <span class="kw-2">ref </span>v, <span class="kw">_</span>) = <span class="kw-2">*</span>ct;
-        <span class="kw">let </span>g = u.to_affine().mul(<span class="self">self</span>.<span class="number">0</span>);
+        <span class="kw">let </span>g = u.mul(<span class="self">self</span>.<span class="number">0</span>).to_affine();
         <span class="prelude-val">Some</span>(xor_with_hash(g, v))
     }
 
@@ -2473,7 +2466,7 @@
 
     <span class="doccomment">/// Returns a decryption share, without validating the ciphertext.
     </span><span class="kw">pub fn </span>decrypt_share_no_verify(<span class="kw-2">&amp;</span><span class="self">self</span>, ct: <span class="kw-2">&amp;</span>Ciphertext) -&gt; DecryptionShare {
-        DecryptionShare(ct.<span class="number">0</span>.to_affine() * (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>)
+        DecryptionShare((ct.<span class="number">0 </span>* (<span class="self">self</span>.<span class="number">0</span>).<span class="number">0</span>).to_affine())
     }
 
     <span class="doccomment">/// Generates a non-redacted debug string. This method differs from
@@ -2502,17 +2495,17 @@
 <span class="doccomment">/// An encrypted message.
 </span><span class="attribute">#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Ciphertext(
-    <span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::projective&quot;</span>)] </span>G1,
+    <span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::affine&quot;</span>)] </span>G1Affine,
     Vec&lt;u8&gt;,
-    <span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::projective&quot;</span>)] </span>G2,
+    <span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::affine&quot;</span>)] </span>G2Affine,
 );
 
 <span class="kw">impl </span>Hash <span class="kw">for </span>Ciphertext {
     <span class="kw">fn </span>hash&lt;H: Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u, <span class="kw-2">ref </span>v, <span class="kw-2">ref </span>w) = <span class="kw-2">*</span><span class="self">self</span>;
-        u.to_affine().to_compressed().as_ref().hash(state);
+        u.to_compressed().as_ref().hash(state);
         v.hash(state);
-        w.to_affine().to_compressed().as_ref().hash(state);
+        w.to_compressed().as_ref().hash(state);
     }
 }
 
@@ -2526,9 +2519,7 @@
     <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Ordering {
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u0, <span class="kw-2">ref </span>v0, <span class="kw-2">ref </span>w0) = <span class="self">self</span>;
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u1, <span class="kw-2">ref </span>v1, <span class="kw-2">ref </span>w1) = other;
-        cmp_projective(u0, u1)
-            .then(v0.cmp(v1))
-            .then(cmp_projective(w0, w1))
+        cmp_affine(u0, u1).then(v0.cmp(v1)).then(cmp_affine(w0, w1))
     }
 }
 
@@ -2538,16 +2529,15 @@
     </span><span class="kw">pub fn </span>verify(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u, <span class="kw-2">ref </span>v, <span class="kw-2">ref </span>w) = <span class="kw-2">*</span><span class="self">self</span>;
         <span class="kw">let </span>hash = hash_g1_g2(<span class="kw-2">*</span>u, v);
-        PEngine::pairing(<span class="kw-2">&amp;</span>G1Affine::generator(), <span class="kw-2">&amp;</span>w.to_affine())
-            == PEngine::pairing(<span class="kw-2">&amp;</span>u.to_affine(), <span class="kw-2">&amp;</span>hash.to_affine())
+        PEngine::pairing(<span class="kw-2">&amp;</span>G1Affine::generator(), w) == PEngine::pairing(u, <span class="kw-2">&amp;</span>hash)
     }
 
     <span class="doccomment">/// Returns byte representation of Ciphertext
     </span><span class="kw">pub fn </span>to_bytes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
         <span class="kw">let </span>Ciphertext(<span class="kw-2">ref </span>u, <span class="kw-2">ref </span>v, <span class="kw-2">ref </span>w) = <span class="kw-2">*</span><span class="self">self</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>result: Vec&lt;u8&gt; = Default::default();
-        result.extend(u.to_affine().to_compressed().as_ref());
-        result.extend(w.to_affine().to_compressed().as_ref());
+        result.extend(u.to_compressed().as_ref());
+        result.extend(w.to_compressed().as_ref());
         result.extend(v);
         result
     }
@@ -2574,17 +2564,17 @@
 
 <span class="doccomment">/// A decryption share. A threshold of decryption shares can be used to decrypt a message.
 </span><span class="attribute">#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>DecryptionShare(<span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::projective&quot;</span>)] </span>G1);
+</span><span class="kw">pub struct </span>DecryptionShare(<span class="attribute">#[serde(with = <span class="string">&quot;serde_impl::affine&quot;</span>)] </span>G1Affine);
 
 <span class="kw">impl </span>Distribution&lt;DecryptionShare&gt; <span class="kw">for </span>Standard {
     <span class="kw">fn </span>sample&lt;R: Rng + <span class="question-mark">?</span>Sized&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, rng: <span class="kw-2">&amp;mut </span>R) -&gt; DecryptionShare {
-        DecryptionShare(G1::random(rng))
+        DecryptionShare(G1Projective::random(rng).to_affine())
     }
 }
 
 <span class="kw">impl </span>Hash <span class="kw">for </span>DecryptionShare {
     <span class="kw">fn </span>hash&lt;H: Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
-        <span class="self">self</span>.<span class="number">0</span>.to_affine().to_compressed().as_ref().hash(state);
+        <span class="self">self</span>.<span class="number">0</span>.to_compressed().as_ref().hash(state);
     }
 }
 
@@ -2697,8 +2687,10 @@
     {
         <span class="kw">let </span>samples = shares
             .into_iter()
-            .map(|(i, share)| (i, (share.borrow().<span class="number">0</span>).<span class="number">0</span>));
-        <span class="prelude-val">Ok</span>(Signature(interpolate(<span class="self">self</span>.commit.degree(), samples)<span class="question-mark">?</span>))
+            .map(|(i, share)| (i, G2Projective::from((share.borrow().<span class="number">0</span>).<span class="number">0</span>)));
+        <span class="prelude-val">Ok</span>(Signature(
+            interpolate(<span class="self">self</span>.commit.degree(), samples)<span class="question-mark">?</span>.to_affine(),
+        ))
     }
 
     <span class="doccomment">/// Combines the shares to decrypt the ciphertext.
@@ -2707,15 +2699,17 @@
         </span>I: IntoIterator&lt;Item = (T, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>DecryptionShare)&gt;,
         T: IntoFr,
     {
-        <span class="kw">let </span>samples = shares.into_iter().map(|(i, share)| (i, <span class="kw-2">&amp;</span>share.<span class="number">0</span>));
-        <span class="kw">let </span>g = interpolate(<span class="self">self</span>.commit.degree(), samples)<span class="question-mark">?</span>;
+        <span class="kw">let </span>samples = shares
+            .into_iter()
+            .map(|(i, share)| (i, G1Projective::from(share.<span class="number">0</span>)));
+        <span class="kw">let </span>g = interpolate(<span class="self">self</span>.commit.degree(), samples)<span class="question-mark">?</span>.to_affine();
         <span class="prelude-val">Ok</span>(xor_with_hash(g, <span class="kw-2">&amp;</span>ct.<span class="number">1</span>))
     }
 
     <span class="doccomment">/// Derives a child public key set for a given index.
     </span><span class="kw">pub fn </span>derive_child(<span class="kw-2">&amp;</span><span class="self">self</span>, index: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>index_fr = derivation_index_into_fr(index);
-        <span class="kw">let </span>child_coeffs: Vec&lt;G1&gt; = <span class="self">self
+        <span class="kw">let </span>child_coeffs: Vec&lt;G1Affine&gt; = <span class="self">self
             </span>.commit
             .coeff
             .iter()
@@ -2837,12 +2831,12 @@
 }
 
 <span class="doccomment">/// Returns a hash of the given message in `G2`.
-</span><span class="kw">pub fn </span>hash_g2&lt;M: AsRef&lt;[u8]&gt;&gt;(msg: M) -&gt; G2 {
-    G2::hash_to_curve(msg.as_ref(), DST, <span class="kw-2">&amp;</span>[])
+</span><span class="kw">pub fn </span>hash_g2&lt;M: AsRef&lt;[u8]&gt;&gt;(msg: M) -&gt; G2Affine {
+    G2Projective::hash_to_curve(msg.as_ref(), DST, <span class="kw-2">&amp;</span>[]).to_affine()
 }
 
 <span class="doccomment">/// Returns a hash of the group element and message, in the second group.
-</span><span class="kw">fn </span>hash_g1_g2&lt;M: AsRef&lt;[u8]&gt;&gt;(g1: G1, msg: M) -&gt; G2 {
+</span><span class="kw">fn </span>hash_g1_g2&lt;M: AsRef&lt;[u8]&gt;&gt;(g1: G1Affine, msg: M) -&gt; G2Affine {
     <span class="comment">// If the message is large, hash it, otherwise copy it.
     // TODO: Benchmark and optimize the threshold.
     </span><span class="kw">let </span><span class="kw-2">mut </span>msg = <span class="kw">if </span>msg.as_ref().len() &gt; <span class="number">64 </span>{
@@ -2850,13 +2844,13 @@
     } <span class="kw">else </span>{
         msg.as_ref().to_vec()
     };
-    msg.extend(g1.to_affine().to_compressed().as_ref());
+    msg.extend(g1.to_compressed().as_ref());
     hash_g2(<span class="kw-2">&amp;</span>msg)
 }
 
 <span class="doccomment">/// Returns the bitwise xor of `bytes` with a sequence of pseudorandom bytes determined by `g1`.
-</span><span class="kw">fn </span>xor_with_hash(g1: G1, bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; Vec&lt;u8&gt; {
-    <span class="kw">let </span>digest = sha3_256(g1.to_affine().to_compressed().as_ref());
+</span><span class="kw">fn </span>xor_with_hash(g1: G1Affine, bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; Vec&lt;u8&gt; {
+    <span class="kw">let </span>digest = sha3_256(<span class="kw-2">&amp;</span>g1.to_compressed());
     <span class="kw">let </span>rng = ChaChaRng::from_seed(digest);
     <span class="kw">let </span>xor = |(a, b): (u8, <span class="kw-2">&amp;</span>u8)| a ^ b;
     rng.sample_iter(<span class="kw-2">&amp;</span>Standard).zip(bytes).map(xor).collect()
@@ -2957,10 +2951,10 @@
             <span class="kw">let </span><span class="kw-2">mut </span>x = <span class="number">0</span>;
             <span class="kw">for _ in </span><span class="number">0</span>..=deg {
                 x += rng.gen_range(<span class="number">1</span>..<span class="number">5</span>);
-                values.push((x - <span class="number">1</span>, comm.evaluate(x)));
+                values.push((x - <span class="number">1</span>, G1Projective::from(comm.evaluate(x))));
             }
             <span class="kw">let </span>actual = interpolate(deg, values).expect(<span class="string">&quot;wrong number of values&quot;</span>);
-            <span class="macro">assert_eq!</span>(comm.evaluate(<span class="number">0</span>), actual);
+            <span class="macro">assert_eq!</span>(comm.evaluate(<span class="number">0</span>), actual.to_affine());
         }
     }
 
@@ -3110,22 +3104,22 @@
 
         <span class="macro">assert_eq!</span>(hash_g2(<span class="kw-2">&amp;</span>msg), hash_g2(<span class="kw-2">&amp;</span>msg));
         <span class="macro">assert_ne!</span>(hash_g2(<span class="kw-2">&amp;</span>msg), hash_g2(<span class="kw-2">&amp;</span>msg_end0));
-        <span class="macro">assert_ne!</span>(hash_g2(<span class="kw-2">&amp;</span>msg_end0), hash_g2(<span class="kw-2">&amp;</span>msg_end1));
+        <span class="macro">assert_ne!</span>(hash_g2(<span class="kw-2">&amp;</span>msg_end0), hash_g2(msg_end1));
     }
 
     <span class="doccomment">/// Some basic sanity checks for the `hash_g1_g2` function.
     </span><span class="attribute">#[test]
     </span><span class="kw">fn </span>test_hash_g1_g2() {
         <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
-        <span class="kw">let </span>g0 = G1::random(<span class="kw-2">&amp;mut </span>rng);
-        <span class="kw">let </span>g1 = G1::random(<span class="kw-2">&amp;mut </span>rng);
+        <span class="kw">let </span>g0 = G1Projective::random(<span class="kw-2">&amp;mut </span>rng).to_affine();
+        <span class="kw">let </span>g1 = G1Projective::random(<span class="kw-2">&amp;mut </span>rng).to_affine();
         <span class="kw">let </span>msg: Vec&lt;u8&gt; = rng.sample_iter(<span class="kw-2">&amp;</span>Standard).take(<span class="number">1000</span>).collect();
         <span class="kw">let </span>msg_end0: Vec&lt;u8&gt; = msg.iter().chain(<span class="string">b&quot;end0&quot;</span>).cloned().collect();
         <span class="kw">let </span>msg_end1: Vec&lt;u8&gt; = msg.iter().chain(<span class="string">b&quot;end1&quot;</span>).cloned().collect();
 
         <span class="macro">assert_eq!</span>(hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg), hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg));
         <span class="macro">assert_ne!</span>(hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg), hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg_end0));
-        <span class="macro">assert_ne!</span>(hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg_end0), hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg_end1));
+        <span class="macro">assert_ne!</span>(hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg_end0), hash_g1_g2(g0, msg_end1));
         <span class="macro">assert_ne!</span>(hash_g1_g2(g0, <span class="kw-2">&amp;</span>msg), hash_g1_g2(g1, <span class="kw-2">&amp;</span>msg));
     }
 
@@ -3133,8 +3127,8 @@
     </span><span class="attribute">#[test]
     </span><span class="kw">fn </span>test_xor_with_hash() {
         <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
-        <span class="kw">let </span>g0 = G1::random(<span class="kw-2">&amp;mut </span>rng);
-        <span class="kw">let </span>g1 = G1::random(<span class="kw-2">&amp;mut </span>rng);
+        <span class="kw">let </span>g0 = G1Projective::random(<span class="kw-2">&amp;mut </span>rng).to_affine();
+        <span class="kw">let </span>g1 = G1Projective::random(<span class="kw-2">&amp;mut </span>rng).to_affine();
         <span class="kw">let </span>xwh = xor_with_hash;
         <span class="macro">assert_eq!</span>(xwh(g0, <span class="kw-2">&amp;</span>[<span class="number">0</span>; <span class="number">5</span>]), xwh(g0, <span class="kw-2">&amp;</span>[<span class="number">0</span>; <span class="number">5</span>]));
         <span class="macro">assert_ne!</span>(xwh(g0, <span class="kw-2">&amp;</span>[<span class="number">0</span>; <span class="number">5</span>]), xwh(g1, <span class="kw-2">&amp;</span>[<span class="number">0</span>; <span class="number">5</span>]));
@@ -3244,7 +3238,7 @@
         <span class="comment">// secret key gives same public key
         </span><span class="macro">assert_eq!</span>(pkbytes, pk.to_bytes());
         <span class="comment">// signature matches test vector
-        </span><span class="kw">let </span>sig = sk.sign(<span class="kw-2">&amp;</span>msgbytes);
+        </span><span class="kw">let </span>sig = sk.sign(msgbytes);
         <span class="macro">assert_eq!</span>(sigbytes, sig.to_bytes());
         <span class="comment">// signature can be verified
         </span><span class="macro">assert!</span>(pk.verify(<span class="kw-2">&amp;</span>sig, msgbytes));
@@ -3812,7 +3806,7 @@
         </span><span class="kw">let </span>msg = <span class="string">&quot;Totally real news&quot;</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>child_sig_shares = BTreeMap::default();
         <span class="kw">for </span>(i, child_key_share) <span class="kw">in </span>child_key_shares.iter() {
-            <span class="kw">let </span>child_sig_share = child_key_share.sign(<span class="kw-2">&amp;</span>msg);
+            <span class="kw">let </span>child_sig_share = child_key_share.sign(msg);
             child_sig_shares.insert(i, child_sig_share);
         }
         <span class="comment">// Combining the child shares creates a valid signature for the child
@@ -3835,19 +3829,19 @@
         </span><span class="macro">assert!</span>(!pk.is_zero());
 
         <span class="comment">// Rogue 0 pubkey
-        </span><span class="kw">let </span>rogue_public_key = PublicKey(G1::identity());
+        </span><span class="kw">let </span>rogue_public_key = PublicKey(G1Affine::identity());
         <span class="macro">assert!</span>(rogue_public_key.is_zero());
 
         <span class="comment">// Rogue 0 sig
-        </span><span class="kw">let </span>rogue_sig = Signature(G2::identity());
+        </span><span class="kw">let </span>rogue_sig = Signature(G2Affine::identity());
 
         <span class="comment">// just any hash will do
         </span><span class="kw">let </span>hash = hash_g2(<span class="string">b&quot;anything&quot;</span>);
 
         <span class="comment">// check that the attack works without the 0 check
         </span><span class="macro">assert_eq!</span>(
-            PEngine::pairing(<span class="kw-2">&amp;</span>rogue_public_key.<span class="number">0</span>.to_affine(), <span class="kw-2">&amp;</span>hash.into()),
-            PEngine::pairing(<span class="kw-2">&amp;</span>G1Affine::generator(), <span class="kw-2">&amp;</span>rogue_sig.<span class="number">0</span>.to_affine())
+            PEngine::pairing(<span class="kw-2">&amp;</span>rogue_public_key.<span class="number">0</span>, <span class="kw-2">&amp;</span>hash),
+            PEngine::pairing(<span class="kw-2">&amp;</span>G1Affine::generator(), <span class="kw-2">&amp;</span>rogue_sig.<span class="number">0</span>)
         );
 
         <span class="comment">// check that verify_g2 is protected against this attack
