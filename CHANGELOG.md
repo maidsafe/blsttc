@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [8.0.0](https://github.com/maidsafe/blsttc/compare/v7.1.0...v8.0.0) (2022-11-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **repr:** switch internal representation to Affine
+
+### Features
+
+* **repr:** switch internal representation to Affine ([f52d1f0](https://github.com/maidsafe/blsttc/commit/f52d1f06a070daace955c6685762e31242e183fc))
+
+
+### Bug Fixes
+
+* **repr:** don't alias G{1,2}Affine with G1 G2 ([9dffa7c](https://github.com/maidsafe/blsttc/commit/9dffa7cd45d85a8eb3dd65b39a28bfe82bfe31fa))
+
 ## [7.1.0](https://github.com/maidsafe/blsttc/compare/v7.0.0...v7.1.0) (2022-10-24)
 
 
