@@ -37,7 +37,10 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
 use crate::cmp_pairing::cmp_affine;
-use crate::convert::{derivation_index_into_fr, fr_from_bytes, g1_from_bytes, g2_from_bytes};
+use crate::convert::{
+    derivation_index_into_fr, derivation_index_into_fr_inv, fr_from_bytes, g1_from_bytes,
+    g2_from_bytes,
+};
 pub use crate::error::{Error, Result};
 pub use crate::into_fr::IntoFr;
 use crate::poly::{Commitment, Poly};
@@ -175,6 +178,14 @@ impl PublicKey {
         PublicKey(child_g1)
     }
 
+    /// Derives a parent public key for a given index.
+    pub fn derive_parent(&self, index: &[u8]) -> Self {
+        let index_inv = derivation_index_into_fr_inv(index);
+        let mut parent_g1 = self.0;
+        parent_g1.mul_assign(index_inv);
+        PublicKey(parent_g1)
+    }
+
     /// Returns the key with the given representation, if valid.
     pub fn from_bytes(bytes: [u8; PK_SIZE]) -> Result<Self> {
         let g1 = g1_from_bytes(bytes)?;
@@ -231,6 +242,11 @@ impl PublicKeyShare {
     /// Derives a child public key share for a given index.
     pub fn derive_child(&self, index: &[u8]) -> Self {
         PublicKeyShare(self.0.derive_child(index))
+    }
+
+    /// Derives a parent public key share for a given index.
+    pub fn derive_parent(&self, index: &[u8]) -> Self {
+        PublicKeyShare(self.0.derive_parent(index))
     }
 
     /// Returns the key share with the given representation, if valid.
@@ -479,6 +495,13 @@ impl SecretKey {
         index_fr.mul_assign(&self.0);
         SecretKey(index_fr)
     }
+
+    /// Derives a parent secret key for a given index.
+    pub fn derive_parent(&self, index: &[u8]) -> Self {
+        let mut index_inv = derivation_index_into_fr_inv(index);
+        index_inv.mul_assign(&self.0);
+        SecretKey(index_inv)
+    }
 }
 
 /// A secret key share.
@@ -554,6 +577,11 @@ impl SecretKeyShare {
     /// Derives a child secret key share for a given index.
     pub fn derive_child(&self, index: &[u8]) -> Self {
         SecretKeyShare(self.0.derive_child(index))
+    }
+
+    /// Derives a parent secret key share for a given index.
+    pub fn derive_parent(&self, index: &[u8]) -> Self {
+        SecretKeyShare(self.0.derive_parent(index))
     }
 
     /// Serializes to big endian bytes
@@ -797,6 +825,22 @@ impl PublicKeySet {
         PublicKeySet::from(Commitment::from(child_coeffs))
     }
 
+    /// Derives a parent public key set for a given index.
+    pub fn derive_parent(&self, index: &[u8]) -> Self {
+        let index_inv = derivation_index_into_fr_inv(index);
+        let parent_coeffs: Vec<G1Affine> = self
+            .commit
+            .coeff
+            .iter()
+            .map(|coeff| {
+                let mut parent_coeff = *coeff;
+                parent_coeff.mul_assign(index_inv);
+                parent_coeff
+            })
+            .collect();
+        PublicKeySet::from(Commitment::from(parent_coeffs))
+    }
+
     /// Serializes to big endian bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         self.commit.to_bytes()
@@ -891,6 +935,22 @@ impl SecretKeySet {
             })
             .collect();
         SecretKeySet::from(Poly::from(child_coeffs))
+    }
+
+    /// Derives a parent secret key set for a given index.
+    pub fn derive_parent(&self, index: &[u8]) -> Self {
+        let index_inv = derivation_index_into_fr_inv(index);
+        let parent_coeffs: Vec<Fr> = self
+            .poly
+            .coeff
+            .iter()
+            .map(|coeff| {
+                let mut parent_coeff = *coeff;
+                parent_coeff.mul_assign(&index_inv);
+                parent_coeff
+            })
+            .collect();
+        SecretKeySet::from(Poly::from(parent_coeffs))
     }
 
     /// Serializes to big endian bytes
@@ -1921,5 +1981,49 @@ mod tests {
 
         // check that verify_g2 is protected against this attack
         assert!(!rogue_public_key.verify_g2(&rogue_sig, hash));
+    }
+
+    #[test]
+    fn test_pubkey_derive_parent() {
+        let sk = SecretKey::random();
+        let pk = sk.public_key();
+        let index = [0, 1, 2, 3];
+        let child = pk.derive_child(&index);
+        let parent = child.derive_parent(&index);
+        // check that the parent of the child is the original key
+        assert_eq!(pk, parent);
+    }
+
+    #[test]
+    fn test_secretkey_derive_parent() {
+        let sk = SecretKey::random();
+        let index = [0, 1, 2, 3];
+        let child = sk.derive_child(&index);
+        let parent = child.derive_parent(&index);
+        // check that the parent of the child is the original key
+        assert_eq!(sk, parent);
+    }
+
+    #[test]
+    fn test_pubkeyset_derive_parent() {
+        let mut rng = rand::thread_rng();
+        let sks = SecretKeySet::random(3, &mut rng);
+        let pks = sks.public_keys();
+        let index = [0, 1, 2, 3];
+        let child = pks.derive_child(&index);
+        let parent = child.derive_parent(&index);
+        // check that the parent of the child is the original key
+        assert_eq!(pks, parent);
+    }
+
+    #[test]
+    fn test_secretkeyset_derive_parent() {
+        let mut rng = rand::thread_rng();
+        let sks = SecretKeySet::random(3, &mut rng);
+        let index = [0, 1, 2, 3];
+        let child = sks.derive_child(&index);
+        let parent = child.derive_parent(&index);
+        // check that the parent of the child is the original key
+        assert_eq!(sks.to_bytes(), parent.to_bytes());
     }
 }

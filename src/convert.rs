@@ -7,6 +7,8 @@ use crate::{
     Fr, G1Affine, G2Affine, DST, PK_SIZE, SIG_SIZE, SK_SIZE,
 };
 
+use group::ff::Field;
+
 pub(crate) fn derivation_index_into_fr(index: &[u8]) -> Fr {
     hash_to_field(index).unwrap_or_else(|_| {
         // If the new fr is zero (which should in practice never happen!) do a
@@ -16,6 +18,14 @@ pub(crate) fn derivation_index_into_fr(index: &[u8]) -> Fr {
         // for tests.
         derivation_index_into_fr(&[0u8; 32])
     })
+}
+
+pub(crate) fn derivation_index_into_fr_inv(index: &[u8]) -> Fr {
+    let index_fr = derivation_index_into_fr(index);
+    // invert will fail if index_fr is zero, which will never happen (see
+    // comment in fn derivation_index_into_fr)
+    // so it's safe to use unwrap after invert here.
+    index_fr.invert().unwrap()
 }
 
 /// Generates a scalar as described in IETF hash to curve
