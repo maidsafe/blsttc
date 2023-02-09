@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.2](https://github.com/maidsafe/blsttc/compare/v8.0.1...v8.0.2) (2023-02-09)
+
+
+### Bug Fixes
+
+* fixing clippy issues ([ca691ab](https://github.com/maidsafe/blsttc/commit/ca691ab036205ed4011969ad525ace14a4389b10))
+* fixing fmt issues ([9a84f33](https://github.com/maidsafe/blsttc/commit/9a84f337b87615776c3758e3dd3c00771a141e09))
+* **SecretKey:** adding PartilaOrd and Ord attributes for the SecretKey ([0e72eee](https://github.com/maidsafe/blsttc/commit/0e72eee2f45b9b68a23dcb963b391e79bf2c3ade))
+
 ### [8.0.1](https://github.com/maidsafe/blsttc/compare/v8.0.0...v8.0.1) (2022-11-17)
 
 ## [8.0.0](https://github.com/maidsafe/blsttc/compare/v7.1.0...v8.0.0) (2022-11-08)
