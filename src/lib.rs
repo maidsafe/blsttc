@@ -338,7 +338,7 @@ impl SignatureShare {
 /// `SecretKey` implements `Deserialize` but not `Serialize` to avoid accidental
 /// serialization in insecure contexts. To enable both use the `::serde_impl::SerdeSecret`
 /// wrapper which implements both `Deserialize` and `Serialize`.
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct SecretKey(Fr);
 
 impl Zeroize for SecretKey {
@@ -487,7 +487,7 @@ impl SecretKey {
 /// `SecretKeyShare` implements `Deserialize` but not `Serialize` to avoid accidental
 /// serialization in insecure contexts. To enable both use the `::serde_impl::SerdeSecret`
 /// wrapper which implements both `Deserialize` and `Serialize`.
-#[derive(Clone, PartialEq, Eq, Default)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct SecretKeyShare(SecretKey);
 
 /// Can be used to create a new random instance of `SecretKeyShare`. This is only useful for testing
