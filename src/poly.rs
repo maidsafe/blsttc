@@ -645,9 +645,7 @@ impl BivarPoly {
     /// Panics if the degree is too high for the coefficients to fit into a `Vec`.
     pub fn random<R: Rng>(degree: usize, rng: &mut R) -> Self {
         BivarPoly::try_random(degree, rng).unwrap_or_else(|e| {
-            panic!(
-                "Failed to create random `BivarPoly` of degree {degree}: {e}"
-            )
+            panic!("Failed to create random `BivarPoly` of degree {degree}: {e}")
         })
     }
 
