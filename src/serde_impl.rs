@@ -185,7 +185,7 @@ pub(crate) mod affine {
 
             fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let len = C::Repr::default().as_ref().len();
-                write!(f, "a tuple of size {}", len)
+                write!(f, "a tuple of size {len}")
             }
 
             #[inline]

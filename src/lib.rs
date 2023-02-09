@@ -833,7 +833,7 @@ impl SecretKeySet {
     /// Panics if the `threshold` is too large for the coefficients to fit into a `Vec`.
     pub fn random<R: Rng>(threshold: usize, rng: &mut R) -> Self {
         SecretKeySet::try_random(threshold, rng)
-            .unwrap_or_else(|e| panic!("Failed to create random `SecretKeySet`: {}", e))
+            .unwrap_or_else(|e| panic!("Failed to create random `SecretKeySet`: {e}"))
     }
 
     /// Creates a set of secret key shares, where any `threshold + 1` of them can collaboratively
@@ -1020,7 +1020,7 @@ mod tests {
     fn test_interpolate() {
         let mut rng = rand::thread_rng();
         for deg in 0..5 {
-            println!("deg = {}", deg);
+            println!("deg = {deg}");
             let comm = Poly::random(deg, &mut rng).commitment();
             let mut values = Vec::new();
             let mut x = 0;

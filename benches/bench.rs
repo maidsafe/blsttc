@@ -19,7 +19,7 @@ mod poly_benches {
         let mut group = c.benchmark_group("Polynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("multiplication", parameter_string),
                 &deg,
@@ -41,7 +41,7 @@ mod poly_benches {
         let mut group = c.benchmark_group("Polynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("subtraction", parameter_string),
                 &deg,
@@ -62,7 +62,7 @@ mod poly_benches {
         let mut group = c.benchmark_group("Polynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("addition", parameter_string),
                 &deg,
@@ -83,7 +83,7 @@ mod poly_benches {
         let mut group = c.benchmark_group("Polynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("interpolation", parameter_string),
                 &deg,
@@ -106,7 +106,7 @@ mod poly_benches {
         let mut group = c.benchmark_group("Polynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("evaluate", parameter_string),
                 &deg,
@@ -139,7 +139,7 @@ mod bivarpoly_benches {
         let mut group = c.benchmark_group("BivarPolynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("evaluate", parameter_string),
                 &deg,
@@ -161,7 +161,7 @@ mod bivarpoly_benches {
         let mut group = c.benchmark_group("BivarPolynomial");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(BenchmarkId::new("row", parameter_string), &deg, |b, deg| {
                 let rand_factors = || {
                     let poly = BivarPoly::random(*deg, &mut rng);
@@ -190,7 +190,7 @@ mod commitment_benches {
         let mut group = c.benchmark_group("Commitment");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("addition", parameter_string),
                 &deg,
@@ -211,7 +211,7 @@ mod commitment_benches {
         let mut group = c.benchmark_group("Commitment");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("evaluate", parameter_string),
                 &deg,
@@ -244,7 +244,7 @@ mod bivarcommitment_benches {
         let mut group = c.benchmark_group("BivarCommitment");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(
                 BenchmarkId::new("evaluate", parameter_string),
                 &deg,
@@ -266,7 +266,7 @@ mod bivarcommitment_benches {
         let mut group = c.benchmark_group("BivarCommitment");
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         for deg in TEST_DEGREES {
-            let parameter_string = format!("{}", deg);
+            let parameter_string = format!("{deg}");
             group.bench_with_input(BenchmarkId::new("row", parameter_string), &deg, |b, deg| {
                 let rand_factors = || {
                     let commit = BivarPoly::random(*deg, &mut rng).commitment();
@@ -298,7 +298,7 @@ mod public_key_set_benches {
         let mut group = c.benchmark_group("PublicKeySet");
         let msg = "Test message";
         for threshold in TEST_THRESHOLDS {
-            let parameter_string = format!("{}", threshold);
+            let parameter_string = format!("{threshold}");
             group.bench_with_input(
                 BenchmarkId::new("combine signatures", parameter_string),
                 &threshold,
@@ -327,7 +327,7 @@ mod public_key_set_benches {
         let mut group = c.benchmark_group("PublicKeySet");
         let msg = "Test message";
         for threshold in TEST_THRESHOLDS {
-            let parameter_string = format!("{}", threshold);
+            let parameter_string = format!("{threshold}");
             group.bench_with_input(
                 BenchmarkId::new("combine decryption_shares", parameter_string),
                 &threshold,
@@ -359,7 +359,7 @@ mod public_key_set_benches {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("PublicKeySet");
         for threshold in TEST_THRESHOLDS {
-            let parameter_string = format!("{}", threshold);
+            let parameter_string = format!("{threshold}");
             group.bench_with_input(
                 BenchmarkId::new("serialize", parameter_string),
                 &threshold,
@@ -379,7 +379,7 @@ mod public_key_set_benches {
         let mut rng = XorShiftRng::from_seed(RNG_SEED);
         let mut group = c.benchmark_group("PublicKeySet");
         for threshold in TEST_THRESHOLDS {
-            let parameter_string = format!("{}", threshold);
+            let parameter_string = format!("{threshold}");
             group.bench_with_input(
                 BenchmarkId::new("deserialize", parameter_string),
                 &threshold,

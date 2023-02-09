@@ -282,7 +282,7 @@ impl Poly {
     /// Panics if the `degree` is too large for the coefficients to fit into a `Vec`.
     pub fn random<R: Rng>(degree: usize, rng: &mut R) -> Self {
         Poly::try_random(degree, rng)
-            .unwrap_or_else(|e| panic!("Failed to create random `Poly`: {}", e))
+            .unwrap_or_else(|e| panic!("Failed to create random `Poly`: {e}"))
     }
 
     /// Creates a random polynomial. This constructor is identical to the `Poly::random()`
@@ -646,8 +646,7 @@ impl BivarPoly {
     pub fn random<R: Rng>(degree: usize, rng: &mut R) -> Self {
         BivarPoly::try_random(degree, rng).unwrap_or_else(|e| {
             panic!(
-                "Failed to create random `BivarPoly` of degree {}: {}",
-                degree, e
+                "Failed to create random `BivarPoly` of degree {degree}: {e}"
             )
         })
     }
