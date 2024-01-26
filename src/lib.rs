@@ -2,7 +2,7 @@
 
 // Clippy warns that it's dangerous to derive `PartialEq` and explicitly implement `Hash`, but the
 // `blstrs` types don't implement `Hash`, so we can't derive it.
-#![allow(clippy::derive_hash_xor_eq)]
+#![allow(clippy::derived_hash_with_manual_eq)]
 #![warn(missing_docs)]
 
 // re-export crates used in our public API.
@@ -1857,7 +1857,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         // The threshold is 3, so 4 signature shares will suffice to decrypt.
         let sks = SecretKeySet::random(3, &mut rng);
-        let share_indexes = vec![5, 8, 7, 10];
+        let share_indexes = [5, 8, 7, 10];
         // all participants have the public key set and their key share.
         let pks = sks.public_keys();
         let key_shares: BTreeMap<_, _> = share_indexes
