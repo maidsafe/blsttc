@@ -6,7 +6,7 @@ The `blsttc` crate provides cryptographic keys with methods for signing and encr
 
 `blsttc` is an adaptation of the [threshold_crypto](https://github.com/poanetwork/threshold_crypto) crate using blast ([blst](https://github.com/supranational/blst)) for signing and verification speed improvements.
 
-The threshold signature scheme is described in [Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme](https://www.iacr.org/archive/pkc2003/25670031/25670031.pdf) by Alexandra Boldyreva. This paper extends [Boneh-Lynn-Shacham](https://www.iacr.org/archive/asiacrypt2001/22480516.pdf) signatures to the threshold setting. Message encryption uses the [scheme by Baek and Zhang](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1717&rep=rep1&type=pdf).
+The threshold signature scheme is described in [Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme](https://www.iacr.org/archive/pkc2003/25670031/25670031.pdf) by Alexandra Boldyreva. This paper extends [Boneh-Lynn-Shacham](https://www.iacr.org/archive/asiacrypt2001/22480516.pdf) signatures to the threshold setting. Message encryption uses the [scheme by Baek and Zhang](https://web.archive.org/web/20230610212925/https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.119.1717&rep=rep1&type=pdf).
 Our implementation is based on the [`pairing`](https://crates.io/crates/pairing) elliptic curve library.
 
 In a network environment, messages are signed and encrypted, and key and signature shares are distributed to network participants. A message can be decrypted and authenticated only with cooperation from at least `threshold +
